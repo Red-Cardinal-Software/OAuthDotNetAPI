@@ -223,5 +223,7 @@ public static class ServiceCollectionExtensions
     /// <typeparam name="TDto">The type of the DTO that the validator validates.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> instance to which the validator will be added.</param>
     /// <returns>The modified <see cref="IServiceCollection"/> instance.</returns>
-    private static IServiceCollection AddTypedValidation<TAbstractValidator, TDto>(this IServiceCollection services) where TAbstractValidator : AbstractValidator<TDto> => services.AddScoped<TAbstractValidator>().AddScoped<IValidator<TDto>, TAbstractValidator>(x => x.GetService<TAbstractValidator>());
+    private static IServiceCollection AddTypedValidation<TAbstractValidator, TDto>(this IServiceCollection services)
+        where TAbstractValidator : AbstractValidator<TDto> => services.AddScoped<TAbstractValidator>()
+        .AddScoped<IValidator<TDto>, TAbstractValidator>(x => x.GetService<TAbstractValidator>() ?? throw new InvalidOperationException());
 }

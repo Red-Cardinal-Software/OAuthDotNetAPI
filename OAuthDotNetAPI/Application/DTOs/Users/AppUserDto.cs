@@ -43,7 +43,7 @@ public class AppUserDto
     /// <summary>
     /// Gets the collection of roles assigned to this user.
     /// </summary>
-    public ICollection<RoleDto> Roles { get; set; }
+    public ICollection<RoleDto> Roles { get; set; } = new List<RoleDto>();
 
     /// <summary>
     /// Gets the unique identifier of the user's organization.

@@ -11,11 +11,11 @@ public class Organization
     /// Gets the unique identifier of the organization.
     /// </summary>
     public Guid Id { get; private set; }
-    
+
     /// <summary>
     /// Gets the name of the organization.
     /// </summary>
-    public string Name { get; private set; }
+    public string Name { get; private set; } = null!;
     
     /// <summary>
     /// Gets a value indicating whether the organization is currently active.

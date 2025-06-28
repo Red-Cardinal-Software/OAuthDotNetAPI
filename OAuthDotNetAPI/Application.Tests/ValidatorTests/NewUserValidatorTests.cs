@@ -28,7 +28,8 @@ public class NewUserValidatorTests
         {
             FirstName = "John",
             LastName = "Doe",
-            Username = "john.doe@example.com"
+            Username = "john.doe@example.com",
+            Password = ""
         };
 
         _userRepository.Setup(x =>
@@ -46,7 +47,8 @@ public class NewUserValidatorTests
         {
             FirstName = "",
             LastName = "Doe",
-            Username = "john.doe@example.com"
+            Username = "john.doe@example.com",
+            Password = ""
         };
 
         var result = await _validator.ValidateAsync(dto);
@@ -60,7 +62,8 @@ public class NewUserValidatorTests
         {
             FirstName = "John",
             LastName = "Doe",
-            Username = "invalid-email"
+            Username = "invalid-email",
+            Password = ""
         };
 
         var result = await _validator.ValidateAsync(dto);
@@ -80,7 +83,8 @@ public class NewUserValidatorTests
         {
             FirstName = "John",
             LastName = "Doe",
-            Username = "john.doe@example.com"
+            Username = "john.doe@example.com",
+            Password = ""
         };
 
         var result = await _validator.ValidateAsync(dto);

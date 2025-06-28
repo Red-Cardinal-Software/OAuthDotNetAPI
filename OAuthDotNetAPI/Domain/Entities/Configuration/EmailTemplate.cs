@@ -26,7 +26,7 @@ public class EmailTemplate
     /// The key is a string identifier provided during the creation of an <see cref="EmailTemplate"/> instance.
     /// It is used to reference the email template for retrieval and management purposes.
     /// </remarks>
-    public string Key { get; private set; }
+    public string Key { get; private set; } = null!;
 
     /// <summary>
     /// Gets the subject of the email template.
@@ -35,7 +35,7 @@ public class EmailTemplate
     /// The subject defines the title or topic of the email and is displayed to the recipient
     /// in their email client. It cannot be null or whitespace during instantiation or updates.
     /// </remarks>
-    public string Subject { get; private set; }
+    public string Subject { get; private set; } = null!;
 
     /// <summary>
     /// Gets the content of the email template.
@@ -44,7 +44,7 @@ public class EmailTemplate
     /// The body contains the main message or content of the email. It can include plain text
     /// or HTML, depending on the value of the <see cref="IsHtml"/> property.
     /// </remarks>
-    public string Body { get; private set; }
+    public string Body { get; private set; } = null!;
 
     /// <summary>
     /// Indicates whether the email body content is formatted as HTML.

@@ -86,7 +86,14 @@ namespace Application.Tests.ServiceTests
         [Fact]
         public async Task AdminAddNewUserAsync_ShouldAddUserSuccessfully()
         {
-            var dto = new CreateNewUserDto();
+            var dto = new CreateNewUserDto
+            {
+                FirstName = "test",
+                LastName = "User",
+                Password = "",
+                Roles = [],
+                Username = "test"
+            };
             var user = new AppUserBuilder().Build();
             _mapperMock.Setup(m => m.MapForCreate(It.IsAny<CreateNewUserDto>(), It.IsAny<Guid>())).ReturnsAsync(user);
             _userRepoMock.Setup(r => r.CreateUserAsync(It.IsAny<AppUser>())).ReturnsAsync(user);
@@ -139,8 +146,16 @@ namespace Application.Tests.ServiceTests
         public async Task GetBasicUsersAsync_ShouldReturnBasicUserDtos()
         {
             var users = new List<AppUser> { new AppUserBuilder().Build() };
+
+            var userDto = new BasicAppUserDto
+            {
+                FirstName = users[0].FirstName,
+                LastName = users[0].LastName,
+                Username = users[0].Username
+            };
+            
             _userRepoMock.Setup(r => r.GetUsersForOrganizationAsync(It.IsAny<Guid>())).ReturnsAsync(users);
-            _mapperMock.Setup(m => m.ToBasicDto(It.IsAny<AppUser>())).Returns(new BasicAppUserDto());
+            _mapperMock.Setup(m => m.ToBasicDto(It.IsAny<AppUser>())).Returns(userDto);
 
             var result = await _service.GetBasicUsersAsync(_claimsUser);
 

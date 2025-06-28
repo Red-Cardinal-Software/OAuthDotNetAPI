@@ -15,7 +15,7 @@ public class Role : IEquatable<Role>
     /// <summary>
     /// Gets the name of the role.
     /// </summary>
-    public string Name { get; private set; }
+    public string Name { get; private set; } = null!;
     
     /// <summary>
     /// The ID of the Organization that carries this role

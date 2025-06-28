@@ -10,5 +10,5 @@ public class PrivilegeDto
     /// <summary>
     /// Gets the name of the privilege.
     /// </summary>
-    public string Name { get; set; }
+    public required string Name { get; set; }
 }

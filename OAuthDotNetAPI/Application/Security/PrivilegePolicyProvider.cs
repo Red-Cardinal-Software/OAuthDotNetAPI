@@ -30,7 +30,7 @@ public class PrivilegePolicyProvider(IOptions<AuthorizationOptions> options) : I
                 .AddRequirements(new PrivilegeRequirement(privileges))
                 .Build();
 
-            return Task.FromResult(policy);
+            return Task.FromResult<AuthorizationPolicy?>(policy);
         }
 
         return _fallback.GetPolicyAsync(policyName);

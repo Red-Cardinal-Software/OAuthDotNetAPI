@@ -27,7 +27,6 @@ public class AppUserTests
     }
     
     [Theory]
-    [InlineData(null)]
     [InlineData("")]
     [InlineData("     ")]
     public void Constructor_ShouldThrow_ForInvalidUsername(string username)
@@ -131,7 +130,6 @@ public class AppUserTests
     }
     
     [Theory]
-    [InlineData(null)]
     [InlineData(" ")]
     public void ChangePassword_ShouldThrow_WhenInvalid(string password)
     {

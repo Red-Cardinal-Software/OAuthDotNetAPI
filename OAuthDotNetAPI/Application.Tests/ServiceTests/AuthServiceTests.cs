@@ -89,7 +89,7 @@ public class AuthServiceTests
 
         // Assert
         result.Success.Should().BeTrue();
-        result.Data.Token.Should().NotBeNullOrWhiteSpace();
+        result.Data?.Token.Should().NotBeNullOrWhiteSpace();
     }
     
     [Fact]

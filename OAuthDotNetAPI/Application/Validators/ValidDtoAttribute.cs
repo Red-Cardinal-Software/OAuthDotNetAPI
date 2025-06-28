@@ -26,9 +26,9 @@ namespace Application.Validators;
 /// </example>
 public sealed class ValidDtoAttribute : ActionFilterAttribute
 {
-    private readonly string _ruleset;
+    private readonly string? _ruleset;
 
-    private static readonly MethodInfo ValidateWithRuleset = typeof(FluentExtensions).GetMethod("ValidateWithRuleset");
+    private static readonly MethodInfo ValidateWithRuleset = typeof(FluentExtensions).GetMethod("ValidateWithRuleset")!;
 
     public ValidDtoAttribute(string ruleset) => _ruleset = ruleset;
     
@@ -69,9 +69,9 @@ public sealed class ValidDtoAttribute : ActionFilterAttribute
 
             if (string.IsNullOrEmpty(_ruleset))
             {
-                validationResult = await (Task<ValidationResult>)validatorType.GetMethod("ValidateAsync").Invoke(
+                validationResult = await (Task<ValidationResult>)validatorType.GetMethod("ValidateAsync")!.Invoke(
                     validator,
-                    [arg.Value, default(CancellationToken)]);
+                    [arg.Value, CancellationToken.None])!;
             }
             else
             {

@@ -13,12 +13,12 @@ public class Privilege : IEquatable<Privilege>
     /// <summary>
     /// Gets the name of the privilege.
     /// </summary>
-    public string Name { get; private set; }
-    
+    public string Name { get; private set; } = null!;
+
     /// <summary>
     /// A friendly description to show in UI or audit logs.
     /// </summary>
-    public string Description { get; private set; }
+    public string Description { get; private set; } = null!;
     
     /// <summary>
     /// Indicates whether the privilege is a system-defined privilege that should not be editable or deletable by organizations
