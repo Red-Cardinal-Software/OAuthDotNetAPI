@@ -25,10 +25,7 @@
       <PackageReference Include="Microsoft.IdentityModel.Logging" Version="8.12.1" />
       <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.12.1" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Persistence\Migrations\" />
+      <EmbeddedResource Include="Security\BlacklistedPasswordSet.txt" />
     </ItemGroup>
 
 </Project>

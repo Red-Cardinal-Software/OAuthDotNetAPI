@@ -11,6 +11,8 @@ using Application.Common.Constants;
 using Domain.Entities.Identity;
 using FluentAssertions;
 using Application.Interfaces.Persistence;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using TestUtils.EntityBuilders;
 using TestUtils.Utilities;
@@ -23,6 +25,7 @@ namespace Application.Tests.ServiceTests
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
         private readonly Mock<IAppUserMapper> _mapperMock = new();
         private readonly Mock<ILogger<AppUserService>> _loggerMock = new();
+        private readonly Mock<IValidator<string> > _passwordValidatorMock = new();
         private readonly ClaimsPrincipal _claimsUser;
 
         private readonly AppUserService _service;
@@ -31,7 +34,7 @@ namespace Application.Tests.ServiceTests
         {
             var logger = new LogContextHelper<AppUserService>(_loggerMock.Object);
             _claimsUser = ClaimsPrincipalFactory.CreateClaim(TestConstants.Ids.OrganizationId, Guid.NewGuid());
-            _service = new AppUserService(_userRepoMock.Object, _unitOfWorkMock.Object, _mapperMock.Object, logger);
+            _service = new AppUserService(_userRepoMock.Object, _unitOfWorkMock.Object, _mapperMock.Object, _passwordValidatorMock.Object, logger);
         }
 
         [Fact]
@@ -90,7 +93,7 @@ namespace Application.Tests.ServiceTests
             {
                 FirstName = "test",
                 LastName = "User",
-                Password = "",
+                Password = "strongnewpassword",
                 Roles = [],
                 Username = "test"
             };
@@ -98,6 +101,7 @@ namespace Application.Tests.ServiceTests
             _mapperMock.Setup(m => m.MapForCreate(It.IsAny<CreateNewUserDto>(), It.IsAny<Guid>())).ReturnsAsync(user);
             _userRepoMock.Setup(r => r.CreateUserAsync(It.IsAny<AppUser>())).ReturnsAsync(user);
             _mapperMock.Setup(m => m.ToDto(It.IsAny<AppUser>())).Returns(new AppUserDto());
+            _passwordValidatorMock.Setup(p => p.ValidateAsync("strongnewpassword", CancellationToken.None)).ReturnsAsync(new ValidationResult());
 
             var result = await _service.AdminAddNewUserAsync(_claimsUser, dto);
 

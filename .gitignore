@@ -53,3 +53,5 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 OAuthDotNetAPI/.idea/
+
+OAuthDotNetAPI/OAuthDotNetAPI.sln.DotSettings.user

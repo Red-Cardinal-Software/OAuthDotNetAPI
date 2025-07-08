@@ -46,7 +46,7 @@ public static class RoleUtility
         foreach (var roleClaim in roleClaims)
         {
             var thisRole = roles.FirstOrDefault(r => r.Name.ToLowerInvariant() == roleClaim.Value.ToLowerInvariant());
-            if (thisRole != null)
+            if (thisRole is not null)
             {
                 result.Add(thisRole);
             }

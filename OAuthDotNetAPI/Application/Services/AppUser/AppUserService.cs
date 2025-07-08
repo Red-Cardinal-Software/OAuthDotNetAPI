@@ -10,6 +10,7 @@ using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Application.Logging;
 using Application.Models;
+using FluentValidation;
 
 namespace Application.Services.AppUser;
 
@@ -22,6 +23,7 @@ public class AppUserService(
     IAppUserRepository appUserRepository,
     IUnitOfWork unitOfWork,
     IAppUserMapper appUserMapper,
+    IValidator<string> passwordValidator,
     LogContextHelper<AppUserService> logger
     )
     : BaseAppService(unitOfWork), IAppUserService
@@ -96,7 +98,20 @@ public class AppUserService(
 
     public async Task<ServiceResponse<AppUserDto>> AdminAddNewUserAsync(ClaimsPrincipal user, CreateNewUserDto newUser) =>
         await RunWithCommitAsync(async () =>
-    {
+        {
+        var validPasswordResult = await passwordValidator.ValidateAsync(newUser.Password);
+
+        if (!validPasswordResult.IsValid)
+        {
+            logger.WarningWithContext(user, new StructuredLogBuilder()
+                .SetAction(AppUserActions.AddUser)
+                .SetStatus(LogStatuses.Failure)
+                .SetTarget(AppUserTargets.Org(RoleUtility.GetOrgIdFromClaims(user)))
+                .SetEntity(nameof(AppUser)));
+            
+            return ServiceResponseFactory.Error<AppUserDto>(string.Join(", ", validPasswordResult.Errors.Select(e => e.ErrorMessage)));
+        }
+        
         var requestingOrgId = RoleUtility.GetOrgIdFromClaims(user);
         var newUserEntity = await appUserMapper.MapForCreate(newUser, requestingOrgId);
 

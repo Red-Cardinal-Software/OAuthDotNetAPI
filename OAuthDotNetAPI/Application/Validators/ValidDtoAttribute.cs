@@ -48,7 +48,7 @@ public sealed class ValidDtoAttribute : ActionFilterAttribute
 
         foreach (var arg in args)
         {
-            if (arg.Value == null)
+            if (arg.Value is null)
             {
                 context.Result = new UnprocessableEntityObjectResult(new List<ValidationFailure>
                 {
@@ -60,7 +60,7 @@ public sealed class ValidDtoAttribute : ActionFilterAttribute
             var validatorType = typeof(IValidator<>).MakeGenericType(paramType);
             var validator = context.HttpContext.RequestServices.GetService(validatorType);
             
-            if (validator == null)
+            if (validator is null)
             {
                 throw new Exception($"No Validator of {paramType} is registered in Program startup");
             }

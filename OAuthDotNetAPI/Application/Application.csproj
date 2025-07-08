@@ -12,6 +12,7 @@
 
     <ItemGroup>
       <PackageReference Include="AutoMapper" Version="14.0.0" />
+      <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.1" />
       <PackageReference Include="FluentValidation" Version="12.0.0" />
       <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.17" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />

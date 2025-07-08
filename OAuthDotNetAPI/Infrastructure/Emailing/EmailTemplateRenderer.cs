@@ -49,7 +49,7 @@ public class EmailTemplateRenderer(IEmailTemplateRepository templateRepository) 
     /// </returns>
     private static string ReplaceTokens<TModel>(string text, TModel model)
     {
-        if (model == null) return text;
+        if (model is null) return text;
 
         var props = typeof(TModel).GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanRead)

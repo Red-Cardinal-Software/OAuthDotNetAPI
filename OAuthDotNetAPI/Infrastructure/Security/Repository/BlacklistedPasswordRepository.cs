@@ -1,3 +1,4 @@
+using Application.Common.Utilities;
 using Application.Interfaces.Security;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ public class BlacklistedPasswordRepository(AppDbContext context) : IBlacklistedP
 {
     public async Task<bool> IsPasswordBlacklistedAsync(string password)
     {
-        var hash = PasswordHashUtility.HashCommonPassword(password);
+        var hash = BlacklistedPasswordHasher.GenerateHashedPasswordStringForBlacklistCheck(password);
         return await context.BlacklistedPasswords.AnyAsync(p => p.HashedPassword == hash);
     }
 }

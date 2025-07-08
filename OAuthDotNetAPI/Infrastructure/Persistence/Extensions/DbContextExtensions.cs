@@ -82,6 +82,6 @@ public static class DbContextExtensions
                                assembly.Location.Contains("Infrastructure"))
             .SelectMany(x => x.GetTypes())
             .Where(type => type.IsClass && !type.IsAbstract && typeof(IEntitySeeder).IsAssignableFrom(type) &&
-                           type.GetCustomAttribute<DbDataSeederAttribute>() != null);
+                           type.GetCustomAttribute<DbDataSeederAttribute>() is not null);
     }
 }
