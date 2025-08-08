@@ -100,6 +100,7 @@ dotnet run --project WebApi
 - **Health check endpoints** – liveness/readiness with production-safe exposure  
 - **Account lockout after repeated failed logins** – exponential backoff and antifraud measures  
 - **Optional MFA** – TOTP and WebAuthn/passkeys with configurable policy
+- **Secure multi-tenant blob storage** – tenant-isolated file storage with access controls
 
 ## Contributing
 This template is designed to be forked, extended, or modified.  PRs are welcome if you'd like to contribute general purpose improvements
