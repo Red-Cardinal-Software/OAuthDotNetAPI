@@ -25,8 +25,10 @@ using Infrastructure.Security;
 using Infrastructure.Security.Repository;
 using Infrastructure.Web.Validation;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore.Diagnostics.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace DependencyInjectionConfiguration;
 
@@ -157,7 +159,7 @@ public static class ServiceCollectionExtensions
                 options.EnableSensitiveDataLogging();
             }
         });
-        
+
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped(typeof(ICrudOperator<>), typeof(CrudOperator<>));
 
@@ -176,8 +178,8 @@ public static class ServiceCollectionExtensions
         var automapperConfig = new MapperConfiguration(config =>
         {
             config.AddProfile(new BaseProfile());
-        });
-        
+        }, new LoggerFactory());
+
         services.AddScoped(provider => automapperConfig.CreateMapper());
 
         return services;
