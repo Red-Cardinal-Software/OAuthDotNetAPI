@@ -30,7 +30,7 @@ public class UserController(IAppUserService appUserService, ILogger<UserControll
     [HttpPost, RequirePrivilege(PredefinedPrivileges.UserManagement.Create), ValidDto]
     public async Task<IActionResult> AddNewUser(CreateNewUserDto newUserDto) =>
         await ResolveAsync(() => appUserService.AdminAddNewUserAsync(User, newUserDto));
-    
+
     [HttpPut, RequirePrivilege(PredefinedPrivileges.UserManagement.Update), ValidDto]
     public async Task<IActionResult> UpdateUser(AppUserDto userToUpdate) => await ResolveAsync(() => appUserService.UpdateUserAsync(User, userToUpdate));
 }

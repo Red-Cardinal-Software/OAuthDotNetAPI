@@ -18,13 +18,13 @@ public class RoleUtilityTests
             new("User"),
             new("SuperAdmin")
         };
-    
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.Role, "Admin"),
             new(ClaimTypes.Role, "SuperAdmin")
         };
-    
+
         var identity = new ClaimsIdentity(claims);
         var principal = new ClaimsPrincipal(identity);
 
@@ -36,7 +36,7 @@ public class RoleUtilityTests
         Assert.Contains(result, r => r.Name == "Admin");
         Assert.Contains(result, r => r.Name == "SuperAdmin");
     }
-    
+
     [Fact]
     public void GetRoleNamesFromClaims_WithUnmatchedClaims_ReturnsOnlyMatching()
     {
@@ -49,7 +49,7 @@ public class RoleUtilityTests
 
         Assert.Empty(result);
     }
-    
+
     [Fact]
     public void GetRoleNamesFromClaims_WithNoClaims_ReturnsEmpty()
     {
@@ -60,7 +60,7 @@ public class RoleUtilityTests
 
         Assert.Empty(result);
     }
-    
+
     [Fact]
     public void GetRoleNamesFromClaims_WithEmptyRoles_ReturnsEmpty()
     {
@@ -72,7 +72,7 @@ public class RoleUtilityTests
 
         Assert.Empty(result);
     }
-    
+
     [Fact]
     public void IsUserSuperAdmin_WithSuperAdminClaim_ReturnsTrue()
     {
@@ -87,7 +87,7 @@ public class RoleUtilityTests
         // Assert
         Assert.True(result);
     }
-    
+
     [Fact]
     public void IsUserSuperAdmin_WithoutSuperAdminClaim_ReturnsFalse()
     {
@@ -99,7 +99,7 @@ public class RoleUtilityTests
 
         Assert.False(result);
     }
-    
+
     [Fact]
     public void IsUserAdmin_WithAdminClaim_ReturnsTrue()
     {
@@ -111,7 +111,7 @@ public class RoleUtilityTests
 
         Assert.True(result);
     }
-    
+
     [Fact]
     public void IsUserAdmin_WithoutAdminClaim_ReturnsFalse()
     {
@@ -123,7 +123,7 @@ public class RoleUtilityTests
 
         Assert.False(result);
     }
-    
+
     [Fact]
     public void IsUserAdminOrSuperAdmin_WithAdmin_ReturnsTrue()
     {
@@ -133,7 +133,7 @@ public class RoleUtilityTests
 
         Assert.True(RoleUtility.IsUserAdminOrSuperAdmin(principal));
     }
-    
+
     [Fact]
     public void IsUserActive_ReturnsTrue_WhenClaimIsTrue()
     {

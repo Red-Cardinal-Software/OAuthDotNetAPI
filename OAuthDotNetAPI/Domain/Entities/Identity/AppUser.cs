@@ -77,7 +77,7 @@ public class AppUser
     {
         if (string.IsNullOrWhiteSpace(username))
             throw new InvalidUsernameException(username);
-        
+
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentNullException(nameof(firstName));
 
@@ -86,7 +86,7 @@ public class AppUser
 
         if (string.IsNullOrWhiteSpace(hashedPassword))
             throw new ArgumentNullException(nameof(hashedPassword));
-        
+
         Id = Guid.NewGuid();
         Username = username;
         Password = new HashedPassword(hashedPassword);
@@ -200,10 +200,10 @@ public class AppUser
     public void ChangeOrganization(Organization newOrg)
     {
         ArgumentNullException.ThrowIfNull(newOrg);
-        
+
         if (OrganizationId == newOrg.Id)
             return;
-        
+
         Organization = newOrg;
         OrganizationId = newOrg.Id;
     }

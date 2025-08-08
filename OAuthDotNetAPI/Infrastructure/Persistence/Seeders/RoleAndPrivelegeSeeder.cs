@@ -54,7 +54,7 @@ public class RoleAndPrivilegeSeeder : IEntitySeeder
             superAdmin.AddPrivilege(privilegesByName[priv]);
         }
     }
-    
+
     foreach (var def in PrivilegeDefinitions.All.Where(p => p.IsAdminDefault))
     {
         if (!admin.Privileges.Contains(privilegesByName[def.Name]))
@@ -62,7 +62,7 @@ public class RoleAndPrivilegeSeeder : IEntitySeeder
             admin.AddPrivilege(privilegesByName[def.Name]);
         }
     }
-    
+
     foreach (var def in PrivilegeDefinitions.All.Where(p => p.IsUserDefault))
     {
         if (!user.Privileges.Contains(privilegesByName[def.Name]))
@@ -70,7 +70,7 @@ public class RoleAndPrivilegeSeeder : IEntitySeeder
             user.AddPrivilege(privilegesByName[def.Name]);
         }
     }
-    
+
     return;
 
     // Helper for assigning

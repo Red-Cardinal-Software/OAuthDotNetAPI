@@ -48,7 +48,7 @@ public interface IAppUserRepository
     Task<bool> DoesUserExistWithEmailAsync(string email);
 
     public Task<AppUser> CreateUserAsync(AppUser user);
-    
+
     /// <summary>
     /// Checks if a user exists by username.
     /// </summary>

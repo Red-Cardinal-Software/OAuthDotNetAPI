@@ -9,7 +9,7 @@ public static class BlacklistedPasswordHasher
         var hashAlgorithm = new Org.BouncyCastle.Crypto.Digests.Sha3Digest(512);
 
         var passwordBytes = Encoding.UTF8.GetBytes(password);
-        
+
         hashAlgorithm.BlockUpdate(passwordBytes, 0, passwordBytes.Length);
 
         var hashOutput = new byte[64];

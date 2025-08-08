@@ -52,7 +52,7 @@ public static class DbContextExtensions
     public static async Task ApplySeedDataAsync(this DbContext context)
     {
         var seederTypes = GetSeederTypes();
-        
+
         foreach(var seeder in seederTypes)
         {
             if (Activator.CreateInstance(seeder) is IEntitySeeder entitySeeder)

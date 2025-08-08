@@ -24,7 +24,7 @@ public class AppUserRepository(
             .OrderByDescending(u => u.Active)
             .ToListAsync();
 
-    public Task<AppUser?> GetUserByIdAsync(Guid id) => 
+    public Task<AppUser?> GetUserByIdAsync(Guid id) =>
         GetAllUsersWithChildren()
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -45,10 +45,10 @@ public class AppUserRepository(
         GetAllUsersWithChildren()
             .FirstOrDefaultAsync(u => u.Username.ToLower() == email.ToLower() && u.Active);
 
-    public Task<bool> DoesUserExistWithEmailAsync(string email) => 
+    public Task<bool> DoesUserExistWithEmailAsync(string email) =>
         GetAllUsersWithChildren()
             .AnyAsync(u => u.Username.ToLower() == email.ToLower() && u.Active);
-    
+
     public async Task<AppUser> CreateUserAsync(AppUser user)
     {
         var newUser = await userCrudOperator.AddAsync(user);

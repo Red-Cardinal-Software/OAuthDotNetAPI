@@ -33,7 +33,7 @@ public class AppUserService(
         var users = await appUserRepository.GetUsersForOrganizationAsync(RoleUtility.GetOrgIdFromClaims(user));
 
         var usersDto = users.Select(appUserMapper.ToDto).ToList();
-        
+
         logger.InfoWithContext(
             user,
             new StructuredLogBuilder()
@@ -83,7 +83,7 @@ public class AppUserService(
         }
 
         userToDeactivate.Deactivate();
-        
+
         logger.InfoWithContext(
             user,
             new StructuredLogBuilder()
@@ -108,17 +108,17 @@ public class AppUserService(
                 .SetStatus(LogStatuses.Failure)
                 .SetTarget(AppUserTargets.Org(RoleUtility.GetOrgIdFromClaims(user)))
                 .SetEntity(nameof(AppUser)));
-            
+
             return ServiceResponseFactory.Error<AppUserDto>(string.Join(", ", validPasswordResult.Errors.Select(e => e.ErrorMessage)));
         }
-        
+
         var requestingOrgId = RoleUtility.GetOrgIdFromClaims(user);
         var newUserEntity = await appUserMapper.MapForCreate(newUser, requestingOrgId);
 
         var newUserSavedEntity = await appUserRepository.CreateUserAsync(newUserEntity);
-        
+
         var newUserDto = appUserMapper.ToDto(newUserSavedEntity);
-        
+
         logger.InfoWithContext(
             user,
             new StructuredLogBuilder()
@@ -164,7 +164,7 @@ public class AppUserService(
                 );
             return ServiceResponseFactory.Error<AppUserDto>(ServiceResponseConstants.UserUnauthorized);
         }
-            
+
         userToUpdate = await appUserMapper.MapForUpdate(userToUpdate, appUserDto);
 
         var updatedDto = appUserMapper.ToDto(userToUpdate);
@@ -176,7 +176,7 @@ public class AppUserService(
     {
         var users = await appUserRepository.GetUsersForOrganizationAsync(RoleUtility.GetOrgIdFromClaims(user));
         var basicUsersDto = users.Select(appUserMapper.ToBasicDto).ToList();
-        
+
         logger.InfoWithContext(user,
             new StructuredLogBuilder()
                 .SetAction(AppUserActions.GetUsers)

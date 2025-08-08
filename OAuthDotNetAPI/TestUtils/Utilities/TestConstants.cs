@@ -22,7 +22,7 @@ public class TestConstants
         public const string DefaultFirstName = "test";
         public const string DefaultLastName = "user";
     }
-    
+
     public static class Roles
     {
         public const string DefaultName = "DefaultRole";

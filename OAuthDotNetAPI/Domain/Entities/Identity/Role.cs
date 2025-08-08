@@ -16,12 +16,12 @@ public class Role : IEquatable<Role>
     /// Gets the name of the role.
     /// </summary>
     public string Name { get; private set; } = null!;
-    
+
     /// <summary>
     /// The ID of the Organization that carries this role
     /// </summary>
     public Guid? OrganizationId { get; private set; }
-    
+
     /// <summary>
     /// The Organization that carries this role
     /// </summary>
@@ -95,7 +95,7 @@ public class Role : IEquatable<Role>
 
         Privileges.Remove(privilege);
     }
-    
+
     /// <summary>
     /// Renames a role
     /// </summary>
@@ -108,7 +108,7 @@ public class Role : IEquatable<Role>
         Name = newName.Trim();
     }
 
-    
+
     /// <summary>
     /// Checks if the role is equal to another role.
     /// </summary>
@@ -118,7 +118,7 @@ public class Role : IEquatable<Role>
     {
         return other is not null && Name.Equals(other.Name, StringComparison.OrdinalIgnoreCase);
     }
-    
+
     /// <summary>
     /// Checks if the role is equal to another object.
     /// </summary>

@@ -24,7 +24,7 @@ public class LogContextHelper<T>(ILogger<T> logger)
             ["OrgId"] = RoleUtility.GetOrgIdFromClaims(user),
             ["Username"] = RoleUtility.GetUserNameFromClaim(user)
         };
-        
+
         return logger.BeginScope(context) ?? NullScope.Instance;
     }
 
@@ -69,7 +69,7 @@ public class LogContextHelper<T>(ILogger<T> logger)
     /// <param name="builder">The structured log builder to generate the message from.</param>
     public void DebugWithContext(ClaimsPrincipal user, StructuredLogBuilder builder) =>
         LogWithContext(user, builder, LogLevel.Debug);
-    
+
     /// <summary>
     /// Logs an informational message with structured context from the provided user claims as JSON.
     /// </summary>
@@ -110,21 +110,21 @@ public class LogContextHelper<T>(ILogger<T> logger)
     /// <param name="builder">The structured log builder to generate the message from.</param>
     public void DebugWithContextJson(ClaimsPrincipal user, StructuredLogBuilder builder) =>
         LogWithContext(user, builder, LogLevel.Debug, true);
-    
+
     /// <summary>
     /// Logs an informational message with structured context. Meant for areas not with an associated user.
     /// </summary>
     /// <param name="builder">The structured log builder to generate the message from.</param>
     public void Info(StructuredLogBuilder builder) =>
         LogWithContext(null, builder, LogLevel.Information);
-    
+
     /// <summary>
     /// Logs a warning message with structured context. Meant for areas not with an associated user.
     /// </summary>
     /// <param name="builder">The structured log builder to generate the message from.</param>
     public void Warning(StructuredLogBuilder builder) =>
         LogWithContext(null, builder, LogLevel.Warning);
-    
+
     /// <summary>
     /// Logs a critical message with structured context. Meant for areas not with an associated user.
     /// </summary>
@@ -183,7 +183,7 @@ public class LogContextHelper<T>(ILogger<T> logger)
     /// <param name="builder">The structured log builder to generate the message from.</param>
     public void DebugJson(StructuredLogBuilder builder) =>
         LogWithContext(null, builder, LogLevel.Debug, true);
-    
+
     /// <summary>
     /// Logs an informational message with structured context. Meant for quick logging.
     /// </summary>
@@ -192,7 +192,7 @@ public class LogContextHelper<T>(ILogger<T> logger)
     /// <param name="user">The user making the request, or null for system logs.</param>
     public void InfoSimple(string action, string target, ClaimsPrincipal? user = null) =>
         LogWithContext(user, new StructuredLogBuilder().SetAction(action).SetTarget(target).SetStatus("SUCCESS"), LogLevel.Information);
-    
+
     /// <summary>
     /// Logs an informational message with structured context as JSON. Meant for quick logging.
     /// </summary>
@@ -222,7 +222,7 @@ public class LogContextHelper<T>(ILogger<T> logger)
 
         var message = asJson ? builder.ToJson() : builder.Build();
         logger.Log(level, ex, message);
-        
+
         scope?.Dispose();
     }
 }

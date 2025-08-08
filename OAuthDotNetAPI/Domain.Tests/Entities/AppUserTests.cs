@@ -25,7 +25,7 @@ public class AppUserTests
         user.Active.Should().BeTrue();
         user.Roles.Should().BeEmpty();
     }
-    
+
     [Theory]
     [InlineData("")]
     [InlineData("     ")]
@@ -34,7 +34,7 @@ public class AppUserTests
         Action act = () => new AppUserBuilder().WithEmail(username).Build();
         act.Should().Throw<InvalidUsernameException>();
     }
-    
+
     [Fact]
     public void ChangeFirstName_ShouldUpdateName()
     {
@@ -128,7 +128,7 @@ public class AppUserTests
         user.ChangeOrganization(org);
         user.OrganizationId.Should().Be(org.Id);
     }
-    
+
     [Theory]
     [InlineData(" ")]
     public void ChangePassword_ShouldThrow_WhenInvalid(string password)
@@ -137,14 +137,14 @@ public class AppUserTests
         var act = () => user.ChangePassword(password);
         act.Should().Throw<ArgumentNullException>();
     }
-    
+
     [Fact]
     public void Constructor_ShouldInitializeWithEmptyRoles()
     {
         var user = new AppUserBuilder().Build();
         user.Roles.Should().BeEmpty();
     }
-    
+
     [Fact]
     public void AddRole_ShouldThrow_WhenRoleIsNull()
     {
@@ -152,7 +152,7 @@ public class AppUserTests
         var act = () => user.AddRole(null!);
         act.Should().Throw<ArgumentNullException>();
     }
-    
+
     [Fact]
     public void RemoveRole_ShouldThrow_WhenRoleIsNull()
     {
@@ -183,14 +183,14 @@ public class AppUserTests
         var act = () => new AppUserBuilder().WithFirstName("").Build();
         act.Should().Throw<ArgumentNullException>();
     }
-    
+
     [Fact]
     public void ConstructUser_WithBlankLastName_ShouldFail()
     {
         var act = () => new AppUserBuilder().WithLastName("").Build();
         act.Should().Throw<ArgumentNullException>();
     }
-    
+
     [Fact]
     public void ConstructUser_WithBlankHashedPassword_ShouldFail()
     {

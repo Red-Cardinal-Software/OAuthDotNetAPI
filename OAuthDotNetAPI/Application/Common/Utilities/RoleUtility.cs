@@ -6,9 +6,9 @@ namespace Application.Common.Utilities;
 
 public static class RoleUtility
 {
-    public static Guid GetOrgIdFromClaims(ClaimsPrincipal user) => 
+    public static Guid GetOrgIdFromClaims(ClaimsPrincipal user) =>
         Guid.Parse(user.Claims.AsQueryable().FirstOrDefault(uc => uc.Type.Equals("Organization"))!.Value);
-    
+
 
     public static bool IsUserSuperAdmin(ClaimsPrincipal user)
     {

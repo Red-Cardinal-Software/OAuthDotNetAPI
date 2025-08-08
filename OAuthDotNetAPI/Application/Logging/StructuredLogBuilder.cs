@@ -16,7 +16,7 @@ public class StructuredLogBuilder
     private string _entity = "UNKNOWN";
     private string _performedBy = "SYSTEM";
     private string _detail = "";
-    
+
     public StructuredLogBuilder SetType(string type)
     {
         _type = type;
@@ -44,7 +44,7 @@ public class StructuredLogBuilder
     public StructuredLogBuilder SetPerformedBy(string performedBy)
     {
         _performedBy = performedBy;
-        return this;   
+        return this;
     }
 
     public StructuredLogBuilder SetPerformedBy(ClaimsPrincipal user)
@@ -75,7 +75,7 @@ public class StructuredLogBuilder
         var detail = string.IsNullOrWhiteSpace(_detail) ? string.Empty : $" | Detail: {_detail}";
         return $"{_type} | Action: {_action} | Status: {_status} | Target: {_target} | Entity: {_entity} | PerformedBy: {_performedBy}{detail}";
     }
-    
+
     /// <summary>
     /// Support for JSON logging for SIEM's that can use it.
     /// </summary>

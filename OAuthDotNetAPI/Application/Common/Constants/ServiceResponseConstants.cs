@@ -34,7 +34,7 @@ public static class ServiceResponseConstants
     public const string EmployeeNotActive = "Employee is not active";
     public const string UserNotRequiredToResetPassword = "User is not required to reset password";
     public const string EmailNotValid = "Email for username is not valid";
-    
+
     // Auth
     public const string RefreshTokenExpired = "Refresh token expired";
     public const string UnableToGenerateRefreshToken = "Unable to generate refresh token";
@@ -43,7 +43,7 @@ public static class ServiceResponseConstants
     public const string InvalidPasswordResetToken = "Invalid password reset token";
     public const string RefreshTokenAlreadyClaimed = "Refresh token already claimed";
     public const string UserLoggedOut = "User Logged Out";
-    
+
 
     // Organization
     public const string YouAreNotPartOfThisOrganization = "You are not part of this Organization";

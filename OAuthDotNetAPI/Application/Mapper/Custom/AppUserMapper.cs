@@ -26,7 +26,7 @@ public class AppUserMapper(IMapper mapper, IPasswordHasher passwordHasher, IRole
             Roles = mapper.Map<List<RoleDto>>(user.Roles)
     };
 
-    public BasicAppUserDto ToBasicDto(AppUser user) => 
+    public BasicAppUserDto ToBasicDto(AppUser user) =>
     new()
     {
         Id = user.Id,
@@ -64,7 +64,7 @@ public class AppUserMapper(IMapper mapper, IPasswordHasher passwordHasher, IRole
         }
 
         var incomingRoleIds = userDto.Roles.Select(r => r.Id).ToList();
-        
+
         var requestedRoles = await roleRepository.GetRolesByIdsAsync(incomingRoleIds);
 
         SyncRoles(appUser, incomingRoleIds, requestedRoles);

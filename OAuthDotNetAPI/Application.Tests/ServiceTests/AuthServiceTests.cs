@@ -29,7 +29,7 @@ public class AuthServiceTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private readonly AuthService _authService;
-    
+
     public AuthServiceTests()
     {
         var logger = new LogContextHelper<AuthService>(_mockLogger.Object);
@@ -55,7 +55,7 @@ public class AuthServiceTests
             config
         );
     }
-    
+
     [Fact]
     public async Task Login_WithInvalidUser_ReturnsError()
     {
@@ -69,7 +69,7 @@ public class AuthServiceTests
         result.Success.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.UsernameOrPasswordIncorrect);
     }
-    
+
     [Fact]
     public async Task Login_WithValidUser_ReturnsSuccess()
     {
@@ -91,7 +91,7 @@ public class AuthServiceTests
         result.Success.Should().BeTrue();
         result.Data?.Token.Should().NotBeNullOrWhiteSpace();
     }
-    
+
     [Fact]
     public async Task Login_WithWrongPassword_ReturnsError()
     {
@@ -106,7 +106,7 @@ public class AuthServiceTests
         result.Success.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.UsernameOrPasswordIncorrect);
     }
-    
+
     [Fact]
     public async Task RequestPasswordReset_WithUnknownEmail_ReturnsSuccessWithNoLeak()
     {
@@ -122,7 +122,7 @@ public class AuthServiceTests
         result.Data.Should().BeTrue();
         result.Message.Should().Be(ServiceResponseConstants.EmailPasswordResetSent);
     }
-    
+
     [Fact]
     public async Task Logout_WithValidToken_RevokesFamily()
     {
@@ -144,7 +144,7 @@ public class AuthServiceTests
         result.Success.Should().BeTrue();
         result.Data.Should().BeTrue();
     }
-    
+
     [Fact]
     public async Task Logout_WithInvalidUser_ReturnsUnauthorized()
     {
@@ -158,7 +158,7 @@ public class AuthServiceTests
         result.Success.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.UserUnauthorized);
     }
-    
+
     [Fact]
     public async Task Logout_WithInvalidToken_ReturnsUnauthorized()
     {
@@ -175,7 +175,7 @@ public class AuthServiceTests
         result.Success.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.UserUnauthorized);
     }
-    
+
     [Fact]
     public async Task Refresh_WithReusedToken_RevokesFamilyAndFails()
     {

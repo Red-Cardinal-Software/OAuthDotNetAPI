@@ -157,7 +157,7 @@ namespace Application.Tests.ServiceTests
                 LastName = users[0].LastName,
                 Username = users[0].Username
             };
-            
+
             _userRepoMock.Setup(r => r.GetUsersForOrganizationAsync(It.IsAny<Guid>())).ReturnsAsync(users);
             _mapperMock.Setup(m => m.ToBasicDto(It.IsAny<AppUser>())).Returns(userDto);
 

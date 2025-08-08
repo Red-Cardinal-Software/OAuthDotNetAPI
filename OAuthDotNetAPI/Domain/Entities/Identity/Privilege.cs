@@ -19,7 +19,7 @@ public class Privilege : IEquatable<Privilege>
     /// A friendly description to show in UI or audit logs.
     /// </summary>
     public string Description { get; private set; } = null!;
-    
+
     /// <summary>
     /// Indicates whether the privilege is a system-defined privilege that should not be editable or deletable by organizations
     /// </summary>
@@ -48,7 +48,7 @@ public class Privilege : IEquatable<Privilege>
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentNullException(nameof(name));
-        
+
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentNullException(nameof(description));
 

@@ -69,10 +69,10 @@ public class EmailTemplate
     {
         if(string.IsNullOrWhiteSpace(key))
             throw new ArgumentNullException(nameof(key), "Email template key cannot be null or whitespace.");
-        
+
         if(string.IsNullOrWhiteSpace(subject))
             throw new ArgumentNullException(nameof(subject), "Subject cannot be null or whitespace.");
-        
+
         if(string.IsNullOrWhiteSpace(body))
             throw new ArgumentNullException(nameof(body), "Body cannot be null or whitespace.");
 
@@ -94,7 +94,7 @@ public class EmailTemplate
             throw new ArgumentNullException(nameof(subject), "Subject cannot be null or whitespace.");
         if(string.IsNullOrWhiteSpace(body))
             throw new ArgumentNullException(nameof(body), "Body cannot be null or whitespace.");
-        
+
         Subject = subject;
         Body = body;
     }

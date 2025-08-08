@@ -16,12 +16,12 @@ public class Organization
     /// Gets the name of the organization.
     /// </summary>
     public string Name { get; private set; } = null!;
-    
+
     /// <summary>
     /// Gets a value indicating whether the organization is currently active.
     /// </summary>
     public bool Active { get; private set; }
-    
+
     /// <summary>
     /// Gets the collection of users associated with this organization.
     /// </summary>
@@ -29,7 +29,7 @@ public class Organization
 
     public ICollection<Role> Roles { get; private set; }
 
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Organization"/> class with the specified name.
     /// </summary>
@@ -64,7 +64,7 @@ public class Organization
     {
         if (!Active)
             throw new InvalidStateTransitionException("Organization is already deactivated.");
-        
+
         Active = false;
     }
 
@@ -76,10 +76,10 @@ public class Organization
     {
         if (Active)
             throw new InvalidStateTransitionException("Organization is already active.");
-        
-        Active = true;   
+
+        Active = true;
     }
-    
+
     /// <summary>
     /// Adds a user to the organization.
     /// </summary>
@@ -89,10 +89,10 @@ public class Organization
     public void AddUser(AppUser user)
     {
         ArgumentNullException.ThrowIfNull(user);
-        
+
         if (Users.Contains(user))
             throw new DuplicateUserException(user.Username);
-        
+
         Users.Add(user);
     }
 
@@ -105,13 +105,13 @@ public class Organization
     public void RemoveUser(AppUser user)
     {
         ArgumentNullException.ThrowIfNull(user);
-        
+
         if (!Users.Contains(user))
             throw new InvalidStateTransitionException("User is not a member of this organization.");
-        
+
         Users.Remove(user);
     }
-    
+
     /// <summary>
     /// Renames the organization.
     /// </summary>

@@ -31,7 +31,7 @@ public sealed class ValidDtoAttribute : ActionFilterAttribute
     private static readonly MethodInfo ValidateWithRuleset = typeof(FluentExtensions).GetMethod("ValidateWithRuleset")!;
 
     public ValidDtoAttribute(string ruleset) => _ruleset = ruleset;
-    
+
     public ValidDtoAttribute() { }
 
     public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -43,7 +43,7 @@ public sealed class ValidDtoAttribute : ActionFilterAttribute
         }
 
         var validationFactory = context.HttpContext.RequestServices.GetRequiredService<IValidationResponseFactory>();
-        
+
         var args = context.ActionArguments.Where(arg => arg.Value is IValidatableDto);
 
         foreach (var arg in args)
@@ -59,7 +59,7 @@ public sealed class ValidDtoAttribute : ActionFilterAttribute
             var paramType = context.ActionDescriptor.Parameters.First(x => x.Name == arg.Key).ParameterType;
             var validatorType = typeof(IValidator<>).MakeGenericType(paramType);
             var validator = context.HttpContext.RequestServices.GetService(validatorType);
-            
+
             if (validator is null)
             {
                 throw new Exception($"No Validator of {paramType} is registered in Program startup");

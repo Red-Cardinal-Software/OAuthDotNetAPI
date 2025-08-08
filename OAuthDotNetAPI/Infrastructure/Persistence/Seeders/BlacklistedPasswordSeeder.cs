@@ -20,19 +20,19 @@ public class BlacklistedPasswordSeeder : IEntitySeeder
         var resourceName = "Infrastructure.Security.InitialBlacklistedPasswordSet.txt";
 
         await using var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new FileNotFoundException("Embedded blacklist file not found");
-        
+
         var blacklistedHashes = dbContext.Set<BlacklistedPassword>();
         var existingHashes = new HashSet<string>(await blacklistedHashes.Select(x => x.HashedPassword).ToListAsync());
-        
+
         var newEntries = new List<BlacklistedPassword>();
-        
+
         using var reader = new StreamReader(stream, Encoding.UTF8);
 
         string? line;
         while ((line = await reader.ReadLineAsync()) is not null)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
-            
+
             var hash = BlacklistedPasswordHasher.GenerateHashedPasswordStringForBlacklistCheck(line);
 
             if (!existingHashes.Contains(hash))

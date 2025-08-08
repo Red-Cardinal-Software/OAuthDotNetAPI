@@ -19,7 +19,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace Application.Services.Auth;
 
 /// <summary>
-/// Handles authentication workflows such as login, logout, password reset, etc.  It also handles the JWT token generation and validation. 
+/// Handles authentication workflows such as login, logout, password reset, etc.  It also handles the JWT token generation and validation.
 /// </summary>
 public class AuthService(
     IAppUserRepository appUserRepository,
@@ -34,7 +34,7 @@ public class AuthService(
     IConfiguration configuration)
     : BaseAppService(unitOfWork), IAuthService
 {
-    
+
     /// <summary>
     /// Performs login flow for a user
     /// </summary>
@@ -79,14 +79,14 @@ public class AuthService(
             return ServiceResponseFactory.Error<JwtResponseDto>(
                 ServiceResponseConstants.UsernameOrPasswordIncorrect);
         }
-        
+
         user.LoggedIn();
 
         var refreshTokenExpirationTime = GetRefreshTokenExpirationTime(configuration);
 
         var refreshTokenEntity = new RefreshToken(user, DateTime.UtcNow.AddHours(refreshTokenExpirationTime), ipAddress);
         await refreshTokenRepository.SaveRefreshTokenAsync(refreshTokenEntity);
-        
+
         logger.Info(new StructuredLogBuilder()
             .SetAction(AuthActions.Login)
             .SetStatus(LogStatuses.Success)
@@ -135,7 +135,7 @@ public class AuthService(
                 .SetDetail(ServiceResponseConstants.UserNotFound));
             return ServiceResponseFactory.Error<JwtResponseDto>(ServiceResponseConstants.UserUnauthorized);
         }
-    
+
         var thisToken = await refreshTokenRepository.GetRefreshTokenAsync(Guid.Parse(token), user.Id);
 
         if (thisToken is null)
@@ -178,7 +178,7 @@ public class AuthService(
         var refreshToken = Guid.NewGuid();
         var refreshTokenEntity = new RefreshToken(user, DateTime.UtcNow.AddHours(GetRefreshTokenExpirationTime(configuration)), ipAddress, thisToken.TokenFamily);
         await refreshTokenRepository.SaveRefreshTokenAsync(refreshTokenEntity);
-    
+
         thisToken.MarkReplaced(refreshToken.ToString());
 
         if (!thisToken.IsValid())
@@ -195,7 +195,7 @@ public class AuthService(
                 Token = await CreateToken(user)
             });
         }
-        
+
         logger.Info(new StructuredLogBuilder()
             .SetAction(AuthActions.RefreshJwtToken)
             .SetStatus(LogStatuses.Failure)
@@ -239,7 +239,7 @@ public class AuthService(
                 .SetDetail(ServiceResponseConstants.TokenNotFound));
             return ServiceResponseFactory.Error<bool>(ServiceResponseConstants.UserUnauthorized);
         }
-        
+
         logger.Info(new StructuredLogBuilder()
             .SetAction(AuthActions.Logout)
             .SetStatus(LogStatuses.Success)
@@ -325,16 +325,16 @@ public class AuthService(
     public async Task<JwtResponseDto> GenerateJwtToken(ClaimsPrincipal user)
     {
         var appUser = await appUserRepository.GetUserByUsernameAsync(RoleUtility.GetUserNameFromClaim(user));
-        
+
         var refreshToken = Guid.NewGuid();
-        
+
         return new JwtResponseDto
         {
             RefreshToken = refreshToken.ToString(),
             Token = await CreateToken(appUser!)
         };
     }
-    
+
     /// <summary>
     /// General check if the user actually exists in the system
     /// </summary>
@@ -356,10 +356,10 @@ public class AuthService(
         {
             refreshTokenExpirationTime = SystemDefaults.DefaultRefreshTokenExpirationTimeInHours;
         }
-        
+
         return refreshTokenExpirationTime;
     }
-    
+
     /// <summary>
     /// Logic to construct the JWT Token
     /// </summary>
@@ -374,7 +374,7 @@ public class AuthService(
             new (ClaimTypes.Name, user.Username),
             new ("Organization", user.OrganizationId.ToString())
         };
-        
+
         // Add privileges as individual claims
         var privilegeNames = user.Roles
             .SelectMany(r => r.Privileges)

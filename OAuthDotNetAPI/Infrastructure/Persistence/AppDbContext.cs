@@ -16,11 +16,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
     public DbSet<Privilege> Privileges { get; set; }
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     public DbSet<BlacklistedPassword> BlacklistedPasswords { get; set; }
-    
+
     // Configuration Tables
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
-    
-    
+
+
     // App Tables
     public DbSet<Organization> Organizations { get; set; }
 
@@ -33,7 +33,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         base.OnConfiguring(options);
-        
+
         // Use any database for connection, this example is using SqlServer
         // The configuration path shown makes it easy to set up config in Azure if it is hosted there
         options.UseSqlServer(configuration["ConnectionStrings-DefaultConnection"])
@@ -47,20 +47,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
                 await context.ApplySeedDataAsync();
                 await context.SaveChangesAsync(cancellationToken);
             });
-        
+
         // If you want to use other databases, here are some examples
-        
+
         //PostgreSQL
         // options.UseNpgsql(connectionString);
-        
+
         //MySql
         // options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-        
+
         //Sqlite - Note: Change "yourdbfile.db" to whatever file you are using
         // options.UseSqlite("Data Source=yourdbfile.db");
-        
+
         //Oracle
         // options.UseOracle(connectionString);
     }
-    
+
 }

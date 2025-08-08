@@ -33,7 +33,7 @@ public class EmailTemplateRenderer(IEmailTemplateRepository templateRepository) 
     private async Task<EmailTemplate> GetTemplateAsync(string templateKey)
     {
         var template = await templateRepository.GetEmailTemplateByKeyAsync(templateKey);
-        
+
         return template ?? throw new Exception($"Template with key {templateKey} not found");
     }
 

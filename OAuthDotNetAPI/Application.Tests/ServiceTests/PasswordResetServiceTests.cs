@@ -44,7 +44,7 @@ public class PasswordResetServiceTests
             _passwordValidator.Object
         );
     }
-    
+
     [Fact]
     public async Task ApplyPasswordReset_WithValidToken_ChangesPassword()
     {
@@ -54,7 +54,7 @@ public class PasswordResetServiceTests
         var token = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
 
         var newPassword = "newpassword12345";
-        
+
         var positiveValidationResult = new ValidationResult
         {
             Errors = []
@@ -70,7 +70,7 @@ public class PasswordResetServiceTests
 
         _passwordResetTokenRepository.Setup(x => x.GetAllUnclaimedResetTokensForUserAsync(It.IsAny<Guid>()))
             .ReturnsAsync([]);
-        
+
         _passwordValidator.Setup(x => x.ValidateAsync(newPassword, CancellationToken.None)).ReturnsAsync(positiveValidationResult);
 
         // Act
@@ -81,7 +81,7 @@ public class PasswordResetServiceTests
         result.Success.Should().BeTrue();
         result.Data.Should().BeTrue();
     }
-    
+
     [Fact]
     public async Task ApplyPasswordReset_WithValidToken_WithUnclaimedTokens_ChangesPassword()
     {
@@ -90,7 +90,7 @@ public class PasswordResetServiceTests
         var updatedAppUser = new AppUserBuilder().WithPasswordHash("newhash").Build();
         var token = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
         var unclaimedToken = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
-        
+
         var positiveValidationResult = new ValidationResult
         {
             Errors = []
@@ -104,7 +104,7 @@ public class PasswordResetServiceTests
 
         _passwordResetTokenRepository.Setup(x => x.GetAllUnclaimedResetTokensForUserAsync(It.IsAny<Guid>()))
             .ReturnsAsync([unclaimedToken]);
-        
+
         _passwordValidator.Setup(x => x.ValidateAsync(It.IsAny<string>(), CancellationToken.None)).ReturnsAsync(positiveValidationResult);
 
         // Act
@@ -115,7 +115,7 @@ public class PasswordResetServiceTests
         result.Success.Should().BeTrue();
         result.Data.Should().BeTrue();
     }
-    
+
     [Fact]
     public async Task ApplyPasswordReset_WithInvalidToken_DoesNotChangePassword()
     {
@@ -135,7 +135,7 @@ public class PasswordResetServiceTests
         result.Data.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.InvalidPasswordResetToken);
     }
-    
+
     [Fact]
     public async Task ApplyPasswordReset_WithValidToken_WithBlankPassword_DoesNotChangePassword()
     {
@@ -144,7 +144,7 @@ public class PasswordResetServiceTests
         var token = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
 
         _passwordResetTokenRepository.Setup(x => x.GetPasswordResetTokenAsync(It.IsAny<Guid>())).ReturnsAsync(token);
-        
+
         var invalidResult = new ValidationResult
         {
             Errors = [
@@ -154,7 +154,7 @@ public class PasswordResetServiceTests
 
         _passwordResetTokenRepository.Setup(x => x.GetPasswordResetTokenAsync(It.IsAny<Guid>()))
             .ReturnsAsync(token);
-        
+
         _passwordValidator.Setup(x => x.ValidateAsync("", CancellationToken.None)).ReturnsAsync(invalidResult);
 
         // Act
@@ -166,7 +166,7 @@ public class PasswordResetServiceTests
         result.Data.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.PasswordMustNotBeEmpty);
     }
-    
+
     [Fact]
     public async Task ForcePasswordReset_WithSamePassword_Fails()
     {
@@ -175,12 +175,12 @@ public class PasswordResetServiceTests
         var claims = new ClaimsPrincipal(new ClaimsIdentity([
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
         ]));
-        
+
         var positiveValidationResult = new ValidationResult
         {
             Errors = []
         };
-        
+
         _appUserRepository.Setup(x => x.GetUserByIdAsync(user.Id)).ReturnsAsync(user);
         _passwordHasher.Setup(x => x.Verify(TestConstants.Passwords.Default, user.Password)).Returns(true);
         _passwordValidator.Setup(x => x.ValidateAsync(It.IsAny<string>(), CancellationToken.None)).ReturnsAsync(positiveValidationResult);

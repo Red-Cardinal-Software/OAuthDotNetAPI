@@ -36,7 +36,7 @@ public class PasswordValidator : AbstractValidator<string>
             .MustAsync(async (password, _) => !await blacklistedPasswordRepository.IsPasswordBlacklistedAsync(password))
             .WithMessage(ServiceResponseConstants.PasswordIsBlacklisted);
     }
-    
+
     private static int GetMinimumPasswordLength(IConfiguration configuration)
     {
         if (!int.TryParse(configuration["PasswordMinimumLength"], out var passwordMinimumLength))
@@ -46,7 +46,7 @@ public class PasswordValidator : AbstractValidator<string>
 
         return passwordMinimumLength;
     }
-    
+
     private static int GetMaximumPasswordLength(IConfiguration configuration)
     {
         if (!int.TryParse(configuration["PasswordMaximumLength"], out var passwordMaximumLength))

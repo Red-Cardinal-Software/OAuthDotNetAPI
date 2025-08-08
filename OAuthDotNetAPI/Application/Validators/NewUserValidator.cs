@@ -28,7 +28,7 @@ public class NewUserValidator : AbstractValidator<CreateNewUserDto>
             .MustAsync(async (username, _) =>
             !await userRepository.DoesUserExistForOrgAsync(username, userContext.GetOrganizationId()))
             .WithMessage(ServiceResponseConstants.UserAlreadyExists);
-        
+
         // Password Validation is done in the service
     }
 }

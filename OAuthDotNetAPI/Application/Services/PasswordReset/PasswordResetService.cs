@@ -30,7 +30,7 @@ public class PasswordResetService(
                 .SetDetail(ServiceResponseConstants.TokenNotFound));
             return ServiceResponseFactory.Error<bool>(ServiceResponseConstants.TokenNotFound);
         }
-        
+
         var tokenEntity = await passwordResetTokenRepository.GetPasswordResetTokenAsync(parsedTokenId.Value);
         if (tokenEntity is null)
         {
@@ -41,7 +41,7 @@ public class PasswordResetService(
                 .SetDetail(ServiceResponseConstants.InvalidPasswordResetToken));
             return ServiceResponseFactory.Error<bool>(ServiceResponseConstants.InvalidPasswordResetToken);
         }
-        
+
         if (tokenEntity.IsClaimed())
         {
             logger.Critical(new StructuredLogBuilder()
@@ -52,7 +52,7 @@ public class PasswordResetService(
                 .SetDetail(ServiceResponseConstants.EmailPasswordResetSent));
             return ServiceResponseFactory.Error<bool>(ServiceResponseConstants.InvalidPasswordResetToken);
         }
-        
+
         var validationResult = await passwordValidator.ValidateAsync(password);
         if (!validationResult.IsValid)
         {
@@ -63,7 +63,7 @@ public class PasswordResetService(
                 .SetDetail(validationResult.Errors.First().ErrorMessage));
             return ServiceResponseFactory.Error<bool>(validationResult.Errors.First().ErrorMessage);
         }
-        
+
         tokenEntity.Claim(passwordHasher.Hash(password), claimedByIpAddress);
         var unclaimedTokens = await passwordResetTokenRepository.GetAllUnclaimedResetTokensForUserAsync(tokenEntity.AppUserId);
 
@@ -131,7 +131,7 @@ public class PasswordResetService(
         var hashedPassword = new HashedPassword(passwordHasher.Hash(newPassword));
 
         thisUser.ChangePassword(hashedPassword);
-        
+
         logger.Info(new StructuredLogBuilder()
             .SetAction(PasswordResetActions.ResetPassword)
             .SetStatus(LogStatuses.Success)

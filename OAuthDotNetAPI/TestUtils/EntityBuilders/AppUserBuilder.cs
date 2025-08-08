@@ -38,7 +38,7 @@ public class AppUserBuilder
         _firstName = firstName;
         return this;
     }
-    
+
     public AppUserBuilder WithLastName(string lastName)
     {
         _lastName = lastName;
