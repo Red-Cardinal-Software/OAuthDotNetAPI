@@ -3,6 +3,7 @@ using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace OAuthDotNetAPI.Controllers;
 
@@ -11,6 +12,7 @@ namespace OAuthDotNetAPI.Controllers;
 public class AuthController(IAuthService authService, ILogger<AuthController> logger) : BaseAppController(logger)
 {
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login(UserLoginDto userLoginDto) => await ResolveAsync(() =>
         authService.Login(userLoginDto.Username, userLoginDto.Password,
             HttpContext.Features.Get<IHttpConnectionFeature>()?.RemoteIpAddress?.ToString() ?? ""));
@@ -20,16 +22,19 @@ public class AuthController(IAuthService authService, ILogger<AuthController> lo
         await ResolveAsync(() => authService.Logout(request.Username, request.RefreshToken));
 
     [HttpPost("refresh")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Refresh(UserRefreshTokenDto request) => await ResolveAsync(() =>
         authService.Refresh(request.Username, request.RefreshToken,
             HttpContext.Features.Get<IHttpConnectionFeature>()?.RemoteIpAddress?.ToString() ?? ""));
 
     [HttpPost("ResetPassword/{emailAddress}")]
+    [EnableRateLimiting("password-reset")]
     public async Task<IActionResult> RequestResetPassword(string emailAddress) => await ResolveAsync(() =>
         authService.RequestPasswordReset(emailAddress,
             HttpContext.Features.Get<IHttpConnectionFeature>()?.RemoteIpAddress?.ToString() ?? ""));
 
     [HttpPost("ResetUserPassword")]
+    [EnableRateLimiting("password-reset")]
     public async Task<IActionResult> ApplyResetPassword(PasswordResetSubmissionDto token) =>
         await ResolveAsync(() => authService.ApplyPasswordReset(
                 token,
@@ -39,6 +44,7 @@ public class AuthController(IAuthService authService, ILogger<AuthController> lo
 
     [HttpPost("ForcePasswordReset")]
     [Authorize]
+    [EnableRateLimiting("api")]
     public async Task<IActionResult> ForceResetPassword([FromBody] string newPassword) =>
         await ResolveAsync(() => authService.ForcePasswordReset(User, newPassword));
 }
