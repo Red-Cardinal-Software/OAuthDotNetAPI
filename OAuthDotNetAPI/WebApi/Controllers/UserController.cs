@@ -5,6 +5,7 @@ using Application.Validators;
 using Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace OAuthDotNetAPI.Controllers;
 
@@ -12,6 +13,7 @@ namespace OAuthDotNetAPI.Controllers;
 [ApiController]
 [Authorize]
 [RequireActiveUser]
+[EnableRateLimiting("api")]
 public class UserController(IAppUserService appUserService, ILogger<UserController> logger) : BaseAppController(logger)
 {
     [HttpGet("GetAllUsers"), RequirePrivilege(PredefinedPrivileges.UserManagement.View)]
