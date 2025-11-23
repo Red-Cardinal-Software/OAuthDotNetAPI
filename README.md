@@ -31,6 +31,7 @@ It can also serve as a reference for security and design practices.
 - **Clean Architecture** (Domain, Application, Infrastructure, API)
 - **Secure Auth Layer** with refresh tokens and short-lived access tokens
 - **Comprehensive Rate Limiting** with IP-based throttling and configurable policies
+- **Production Health Check Endpoints** with privilege-based access controls
 - **Validation with FluentValidation**, including async + injected validators
 - **Well-commented for learning** and onboarding new developers
 - **Built for Azure or Cloud Hosting**
@@ -92,6 +93,7 @@ This template includes comprehensive rate limiting to protect against brute forc
 |--------|-----------|-------|--------|---------|
 | **auth** | Login, Refresh Token | 5 requests | 1 minute | Prevents brute force authentication attacks |
 | **password-reset** | Password Reset Request/Submit | 3 requests | 5 minutes | Prevents email spam and abuse |
+| **health** | Health Check Endpoints | 30 requests | 1 minute | Prevents health check endpoint abuse |
 | **api** | General authenticated endpoints | 100 requests | 1 minute | General API protection |
 | **global** | All endpoints (automatic) | 200 requests | 1 minute | Baseline protection per IP address |
 
@@ -218,6 +220,198 @@ done
 
 Expected: First 5 requests process normally, 6th returns HTTP 429.
 
+## Health Check Endpoints
+
+This template includes production-ready health check endpoints for monitoring application health, readiness, and liveness. The health checks are designed with security in mind, providing different levels of information based on access privileges.
+
+### Available Endpoints
+
+| Endpoint | Access Level | Purpose | Rate Limited |
+|----------|-------------|---------|--------------|
+| `/api/health` | Public | Basic health status | ✅ (30/min) |
+| `/api/health/detailed` | Public | Safe detailed status without sensitive data | ✅ (30/min) |
+| `/api/health/live` | Public | Liveness probe for orchestrators | ✅ (30/min) |
+| `/api/health/ready` | Public | Readiness probe with database connectivity | ✅ (30/min) |
+| `/api/health/system` | Privileged | Complete system metrics (requires `SystemAdministration.Metrics` privilege) | ✅ (30/min) |
+
+### Health Check Configuration
+
+Health checks are configurable via `appsettings.json`:
+
+```json
+{
+  "HealthChecks": {
+    "MemoryThresholdMB": 1024,
+    "IncludeMemoryCheck": false
+  },
+  "RateLimiting-Health-PermitLimit": "30",
+  "RateLimiting-Health-WindowMinutes": "1"
+}
+```
+
+**Security Configuration:**
+- `IncludeMemoryCheck: false` – Memory monitoring disabled by default for security
+- Memory checks are tagged as "privileged" and only available via `/api/health/system`
+- Public endpoints exclude sensitive system information
+
+### Response Examples
+
+**Basic Health Check (`/api/health`):**
+```json
+{
+  "status": "Healthy",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+**Detailed Health Check (`/api/health/detailed`):**
+```json
+{
+  "status": "Healthy",
+  "totalDuration": 45.2,
+  "checks": [
+    {
+      "name": "database",
+      "status": "Healthy",
+      "duration": 42.1,
+      "description": "Service operational"
+    }
+  ],
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+**System Health Check (`/api/health/system` - Privileged):**
+```json
+{
+  "status": "Healthy",
+  "totalDuration": 67.8,
+  "checks": [
+    {
+      "name": "database",
+      "status": "Healthy",
+      "duration": 42.1,
+      "description": "Service operational",
+      "data": {}
+    },
+    {
+      "name": "memory",
+      "status": "Healthy",
+      "duration": 1.2,
+      "description": "Service operational",
+      "data": {
+        "memoryUsageMB": 512,
+        "thresholdMB": 1024
+      }
+    }
+  ],
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+### Health Check Status Codes
+
+- **200 OK** – All health checks passed
+- **503 Service Unavailable** – One or more health checks failed
+- **429 Too Many Requests** – Rate limit exceeded
+
+### Kubernetes Integration
+
+The health check endpoints are designed for container orchestration:
+
+**Kubernetes Deployment Example:**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth-api
+spec:
+  template:
+    spec:
+      containers:
+      - name: oauth-api
+        image: your-api:latest
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /api/health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+```
+
+### Adding Custom Health Checks
+
+To add a new health check:
+
+1. **Create the health check class:**
+```csharp
+public class CustomHealthCheck : IHealthCheck
+{
+    public Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        // Your health check logic
+        return Task.FromResult(HealthCheckResult.Healthy("Custom service operational"));
+    }
+}
+```
+
+2. **Register in `ServiceCollectionExtensions.cs`:**
+```csharp
+private static IServiceCollection AddAppHealthChecks(this IServiceCollection services)
+{
+    services.AddScoped<CustomHealthCheck>();
+    
+    services.AddHealthChecks()
+        .AddCheck<CustomHealthCheck>("custom", 
+            failureStatus: HealthStatus.Unhealthy,
+            tags: ["external", "ready"]); // Add appropriate tags
+    
+    return services;
+}
+```
+
+### Built-in Health Checks
+
+**Database Health Check:**
+- Tests database connectivity using `IDbContextFactory`
+- 5-second timeout protection
+- Performance monitoring (warns if >1000ms)
+- Never exposes connection strings or sensitive data
+- Tagged for readiness probes
+
+**Memory Health Check (Optional):**
+- Monitors managed memory usage via `GC.GetTotalMemory()`
+- Configurable threshold (default: 1024MB)
+- Tagged as "privileged" for security
+- Only available via `/api/health/system` endpoint
+
+### Monitoring and Alerting
+
+**Production Monitoring:**
+```bash
+# Check basic health
+curl -f http://your-api.com/api/health
+
+# Check readiness for load balancer
+curl -f http://your-api.com/api/health/ready
+
+# Check detailed status (authenticated)
+curl -f -H "Authorization: Bearer $TOKEN" http://your-api.com/api/health/system
+```
+
+**Azure Application Insights Integration:**
+The health check responses include timing information that integrates well with Application Insights for monitoring and alerting.
+
 ## Technologies Used
 - ASP.NET Core 8
 - Entity Framework Core 9
@@ -241,7 +435,6 @@ Expected: First 5 requests process normally, 6th returns HTTP 429.
 - This was built with experience of many previous Cloud Based Projects
 
 ## Planned Future Additions
-- **Health check endpoints** – liveness/readiness with production-safe exposure
 - **Account lockout after repeated failed logins** – exponential backoff and antifraud measures
 - **Optional MFA** – TOTP and WebAuthn/passkeys with configurable policy
 - **Secure multi-tenant blob storage** – tenant-isolated file storage with access controls

@@ -19,6 +19,7 @@ using Application.Validators;
 using AutoMapper;
 using FluentValidation;
 using Infrastructure.Emailing;
+using Infrastructure.HealthChecks;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
@@ -27,6 +28,8 @@ using Infrastructure.Web.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore.Diagnostics.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -45,6 +48,7 @@ public class AppDependencyOptions
     public bool IncludeValidation { get; set; } = true;
     public bool IncludeAuthorization { get; set; } = true;
     public bool IncludeAutoMapper { get; set; } = true;
+    public bool IncludeHealthChecks { get; set; } = true;
 }
 
 /// <summary>
@@ -79,6 +83,7 @@ public static class ServiceCollectionExtensions
         if (options.IncludeServices) services.AddServices();
         if (options.IncludeAuthorization) services.AddAuthorizationPolicies();
         if (options.IncludeValidation) services.AddValidation();
+        if (options.IncludeHealthChecks) services.AddAppHealthChecks();
 
         return services;
     }
@@ -159,6 +164,16 @@ public static class ServiceCollectionExtensions
                 options.EnableSensitiveDataLogging();
             }
         });
+        
+        // Add DbContextFactory for health checks and other scenarios requiring short-lived contexts
+        services.AddDbContextFactory<AppDbContext>((sp, options) =>
+        {
+            // Only allow sensitive data logging when in development
+            if (environment.IsDevelopment())
+            {
+                options.EnableSensitiveDataLogging();
+            }
+        });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped(typeof(ICrudOperator<>), typeof(CrudOperator<>));
@@ -228,4 +243,35 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection AddTypedValidation<TAbstractValidator, TDto>(this IServiceCollection services)
         where TAbstractValidator : AbstractValidator<TDto> => services.AddScoped<TAbstractValidator>()
         .AddScoped<IValidator<TDto>, TAbstractValidator>(x => x.GetService<TAbstractValidator>() ?? throw new InvalidOperationException());
+
+    /// <summary>
+    /// Configures health checks for monitoring application health and readiness.
+    /// Includes database connectivity checks and optional memory monitoring for privileged access.
+    /// </summary>
+    /// <param name="services">The IServiceCollection instance to which health checks will be added.</param>
+    /// <returns>The modified IServiceCollection instance.</returns>
+    private static IServiceCollection AddAppHealthChecks(this IServiceCollection services)
+    {
+        services.AddScoped<DatabaseHealthCheck>();
+        
+        var healthChecksBuilder = services.AddHealthChecks()
+            .AddCheck<DatabaseHealthCheck>("database", 
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["db", "sql", "ready"]);
+
+        // Add memory health check only if enabled in configuration
+        var serviceProvider = services.BuildServiceProvider();
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var includeMemoryCheck = configuration.GetValue("HealthChecks:IncludeMemoryCheck", false);
+        
+        if (includeMemoryCheck)
+        {
+            services.AddScoped<MemoryHealthCheck>();
+            healthChecksBuilder.AddCheck<MemoryHealthCheck>("memory",
+                failureStatus: HealthStatus.Degraded,
+                tags: ["memory", "privileged"]); // Tag as privileged for security
+        }
+
+        return services;
+    }
 }
