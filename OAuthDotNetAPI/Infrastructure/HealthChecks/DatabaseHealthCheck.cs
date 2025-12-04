@@ -2,11 +2,12 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 
 namespace Infrastructure.HealthChecks
 {
-    public class DatabaseHealthCheck(IDbContextFactory<AppDbContext> dbContextFactory, ILogger<DatabaseHealthCheck> logger) : IHealthCheck
+    public class DatabaseHealthCheck(IServiceProvider serviceProvider, ILogger<DatabaseHealthCheck> logger) : IHealthCheck
     {
         private const int WarningThresholdMs = 1000;
         private const int TimeoutSeconds = 5;
@@ -22,7 +23,9 @@ namespace Infrastructure.HealthChecks
                 using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 timeoutCts.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
 
-                await using var dbContext = await dbContextFactory.CreateDbContextAsync(timeoutCts.Token);
+                // Create a new scope to get a scoped DbContext
+                using var scope = serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 
                 // Use a simple query with timeout
                 var canConnect = await dbContext.Database
@@ -36,8 +39,7 @@ namespace Infrastructure.HealthChecks
 
                 // Optional: Run a lightweight query to verify read capability
                 await dbContext.Database
-                    .SqlQueryRaw<int>("SELECT 1")
-                    .FirstOrDefaultAsync(timeoutCts.Token);
+                    .ExecuteSqlRawAsync("SELECT 1", timeoutCts.Token);
 
                 stopwatch.Stop();
 

@@ -17,7 +17,7 @@ public class BlacklistedPasswordSeeder : IEntitySeeder
     public async Task PerformSeedingAsync(DbContext dbContext)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        var resourceName = "Infrastructure.Security.InitialBlacklistedPasswordSet.txt";
+        var resourceName = "Infrastructure.Security.BlacklistedPasswordSet.txt";
 
         await using var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new FileNotFoundException("Embedded blacklist file not found");
 

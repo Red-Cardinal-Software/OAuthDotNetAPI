@@ -26,7 +26,7 @@ using Infrastructure.Security;
 using Infrastructure.Security.Repository;
 using Infrastructure.Web.Validation;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore.Diagnostics.Internal;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -158,16 +158,9 @@ public static class ServiceCollectionExtensions
     {
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
-            // Only allow sensitive data logging when in development
-            if (environment.IsDevelopment())
-            {
-                options.EnableSensitiveDataLogging();
-            }
-        });
-        
-        // Add DbContextFactory for health checks and other scenarios requiring short-lived contexts
-        services.AddDbContextFactory<AppDbContext>((sp, options) =>
-        {
+            var configuration = sp.GetRequiredService<IConfiguration>();
+            options.UseSqlServer(configuration["ConnectionStrings-DefaultConnection"]);
+            
             // Only allow sensitive data logging when in development
             if (environment.IsDevelopment())
             {
