@@ -12,6 +12,7 @@ using Application.Mapper.Base;
 using Application.Mapper.Custom;
 using Application.Security;
 using Application.Services.AppUser;
+using Application.Services.AccountLockout;
 using Application.Services.Auth;
 using Application.Services.Email;
 using Application.Services.PasswordReset;
@@ -104,6 +105,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
         services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+        services.AddScoped<IAccountLockoutRepository, AccountLockoutRepository>();
+        services.AddScoped<ILoginAttemptRepository, LoginAttemptRepository>();
 
         return services;
     }
@@ -124,6 +127,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<IAppUserService, AppUserService>();
         services.AddScoped<IEmailService, NotImplementedEmailService>(); // Replace it with your own implementation
+        services.AddScoped<IAccountLockoutService, AccountLockoutService>();
 
         return services;
     }

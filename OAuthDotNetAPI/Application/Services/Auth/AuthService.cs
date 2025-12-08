@@ -30,6 +30,7 @@ public class AuthService(
     IRefreshTokenRepository refreshTokenRepository,
     IRoleRepository roleRepository,
     IPasswordResetTokenRepository passwordResetTokenRepository,
+    IAccountLockoutService accountLockoutService,
     LogContextHelper<AuthService> logger,
     IConfiguration configuration)
     : BaseAppService(unitOfWork), IAuthService
@@ -46,6 +47,14 @@ public class AuthService(
     {
         if (!await UserExists(username))
         {
+            // Record failed attempt for non-existent user
+            await accountLockoutService.RecordFailedAttemptAsync(
+                Guid.Empty, 
+                username, 
+                ipAddress, 
+                null, 
+                ServiceResponseConstants.UserDoesNotExist);
+
             logger.Critical(new StructuredLogBuilder()
                 .SetAction(AuthActions.Login)
                 .SetStatus(LogStatuses.Failure)
@@ -59,6 +68,14 @@ public class AuthService(
 
         if (user is null)
         {
+            // Record failed attempt for null user (should not happen if UserExists worked correctly)
+            await accountLockoutService.RecordFailedAttemptAsync(
+                Guid.Empty, 
+                username, 
+                ipAddress, 
+                null, 
+                ServiceResponseConstants.UserNotFoundInDatabase);
+
             logger.Critical(new StructuredLogBuilder()
                 .SetAction(AuthActions.Login)
                 .SetStatus(LogStatuses.Failure)
@@ -68,17 +85,51 @@ public class AuthService(
                 ServiceResponseConstants.UsernameOrPasswordIncorrect);
         }
 
+        // Check if account is locked before proceeding with authentication
+        var lockout = await accountLockoutService.GetAccountLockoutAsync(user.Id);
+        if (lockout is not null && lockout.IsLockedOut)
+        {
+            var remainingTime = lockout.GetRemainingLockoutDuration();
+            var lockoutMessage = remainingTime.HasValue 
+                ? ServiceResponseConstants.AccountTemporarilyLocked 
+                : ServiceResponseConstants.AccountLocked;
+
+            logger.Warning(new StructuredLogBuilder()
+                .SetAction(AuthActions.Login)
+                .SetStatus(LogStatuses.Failure)
+                .SetTarget(AuthTargets.User(username))
+                .SetEntity(nameof(Domain.Entities.Identity.AppUser))
+                .SetDetail(string.Format(ServiceResponseConstants.AccountLockedDetailTemplate, remainingTime)));
+
+            return ServiceResponseFactory.Error<JwtResponseDto>(lockoutMessage);
+        }
+
         if (string.IsNullOrWhiteSpace(user.Password) || !passwordHasher.Verify(password, user.Password))
         {
+            // Record failed login attempt
+            var wasLocked = await accountLockoutService.RecordFailedAttemptAsync(
+                user.Id, 
+                username, 
+                ipAddress, 
+                null, 
+                ServiceResponseConstants.InvalidCredentials);
+
+            var errorMessage = wasLocked 
+                ? ServiceResponseConstants.AccountTemporarilyLocked 
+                : ServiceResponseConstants.UsernameOrPasswordIncorrect;
+
             logger.Critical(new StructuredLogBuilder()
                 .SetAction(AuthActions.Login)
                 .SetStatus(LogStatuses.Failure)
                 .SetTarget(AuthTargets.User(username))
                 .SetEntity(nameof(Domain.Entities.Identity.AppUser))
-                .SetDetail(ServiceResponseConstants.UsernameOrPasswordIncorrect));
-            return ServiceResponseFactory.Error<JwtResponseDto>(
-                ServiceResponseConstants.UsernameOrPasswordIncorrect);
+                .SetDetail(string.Format(ServiceResponseConstants.InvalidCredentialsDetailTemplate, wasLocked)));
+
+            return ServiceResponseFactory.Error<JwtResponseDto>(errorMessage);
         }
+
+        // Record successful login attempt
+        await accountLockoutService.RecordSuccessfulLoginAsync(user.Id, username, ipAddress, null);
 
         user.LoggedIn();
 

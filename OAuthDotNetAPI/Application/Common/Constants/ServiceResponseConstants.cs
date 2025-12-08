@@ -43,7 +43,17 @@ public static class ServiceResponseConstants
     public const string InvalidPasswordResetToken = "Invalid password reset token";
     public const string RefreshTokenAlreadyClaimed = "Refresh token already claimed";
     public const string UserLoggedOut = "User Logged Out";
+    public const string AccountTemporarilyLocked = "Account is temporarily locked due to too many failed login attempts. Please try again later.";
+    public const string AccountLocked = "Account is locked. Please contact an administrator.";
 
+    // Login Attempt Failure Reasons (for internal logging/tracking)
+    public const string UserDoesNotExist = "User does not exist";
+    public const string UserNotFoundInDatabase = "User not found in database";
+    public const string InvalidCredentials = "Invalid credentials";
+
+    // Log Detail Templates (for internal logging)
+    public const string AccountLockedDetailTemplate = "Account locked. Remaining time: {0}";
+    public const string InvalidCredentialsDetailTemplate = "Invalid credentials. Account locked: {0}";
 
     // Organization
     public const string YouAreNotPartOfThisOrganization = "You are not part of this Organization";
