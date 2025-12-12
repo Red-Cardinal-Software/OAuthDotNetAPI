@@ -18,7 +18,7 @@ namespace OAuthDotNetAPI.Controllers
         public async Task<IActionResult> GetHealth()
         {
             var report = await healthCheckService.CheckHealthAsync();
-            
+
             return report.Status == HealthStatus.Healthy
                 ? Ok(new { status = "Healthy", timestamp = DateTime.UtcNow })
                 : StatusCode(503, new { status = report.Status.ToString(), timestamp = DateTime.UtcNow });

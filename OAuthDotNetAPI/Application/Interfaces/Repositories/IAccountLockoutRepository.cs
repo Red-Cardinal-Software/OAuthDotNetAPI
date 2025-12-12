@@ -24,13 +24,6 @@ public interface IAccountLockoutRepository
     Task AddAsync(AccountLockout accountLockout, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Updates an existing account lockout record.
-    /// </summary>
-    /// <param name="accountLockout">The account lockout record to update</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    Task UpdateAsync(AccountLockout accountLockout, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Gets or creates an account lockout record for the specified user.
     /// If no record exists, a new one will be created.
     /// </summary>
@@ -40,27 +33,35 @@ public interface IAccountLockoutRepository
     Task<AccountLockout> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all accounts that are currently locked out.
+    /// Gets accounts that are currently locked out with pagination.
     /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Number of records per page (max 1000)</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of currently locked accounts</returns>
-    Task<IReadOnlyList<AccountLockout>> GetActiveLockedAccountsAsync(CancellationToken cancellationToken = default);
+    /// <returns>Paginated list of currently locked accounts</returns>
+    Task<IReadOnlyList<AccountLockout>> GetActiveLockedAccountsAsync(int pageNumber = 1, int pageSize = 100, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets accounts whose lockout has expired and can be automatically unlocked.
+    /// Gets accounts whose lockout has expired and can be automatically unlocked with pagination.
     /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Number of records per page (max 1000)</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of accounts with expired lockouts</returns>
-    Task<IReadOnlyList<AccountLockout>> GetExpiredLockoutsAsync(CancellationToken cancellationToken = default);
+    /// <returns>Paginated list of accounts with expired lockouts</returns>
+    Task<IReadOnlyList<AccountLockout>> GetExpiredLockoutsAsync(int pageNumber = 1, int pageSize = 100, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets accounts that were manually locked by a specific administrator.
+    /// Gets accounts that were manually locked by a specific administrator with pagination.
     /// </summary>
     /// <param name="lockedByUserId">The ID of the user who performed the lockouts</param>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Number of records per page (max 1000)</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of accounts locked by the specified user</returns>
+    /// <returns>Paginated list of accounts locked by the specified user</returns>
     Task<IReadOnlyList<AccountLockout>> GetAccountsLockedByUserAsync(
         Guid lockedByUserId,
+        int pageNumber = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default);
 
     /// <summary>

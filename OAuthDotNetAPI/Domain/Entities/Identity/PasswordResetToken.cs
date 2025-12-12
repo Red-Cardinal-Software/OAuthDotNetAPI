@@ -74,7 +74,7 @@ public class PasswordResetToken
     public void Claim(string newHashedPassword, string claimedByIp)
     {
         ArgumentNullException.ThrowIfNull(claimedByIp);
-        if(IsClaimed())
+        if (IsClaimed())
             throw new InvalidOperationException("Token already claimed.");
         AppUser.ChangePassword(newHashedPassword);
         ClaimedDate = DateTime.UtcNow;
@@ -90,7 +90,7 @@ public class PasswordResetToken
     public void ClaimRedundantToken(string claimedByIp)
     {
         ArgumentNullException.ThrowIfNull(claimedByIp);
-        if(IsClaimed())
+        if (IsClaimed())
             throw new InvalidOperationException("Token already claimed.");
         ClaimedDate = DateTime.UtcNow;
         ClaimedByIp = claimedByIp;

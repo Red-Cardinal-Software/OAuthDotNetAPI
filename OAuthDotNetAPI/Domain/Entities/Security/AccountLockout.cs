@@ -125,7 +125,7 @@ public class AccountLockout
         ValidateLockoutParameters(lockoutThreshold, baseLockoutDuration, maxLockoutDuration, resetWindow);
 
         var now = DateTimeOffset.UtcNow;
-        
+
         // If the account is currently locked and hasn't expired, don't increment
         if (IsLockedOut && (LockoutExpiresAt == null || LockoutExpiresAt > now))
         {

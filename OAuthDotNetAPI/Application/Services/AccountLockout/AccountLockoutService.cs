@@ -1,9 +1,10 @@
+using Application.Common.Configuration;
 using Application.Common.Services;
 using Application.Interfaces.Persistence;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities.Security;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Application.Services.AccountLockout;
 
@@ -16,7 +17,7 @@ public class AccountLockoutService(
     IAccountLockoutRepository accountLockoutRepository,
     ILoginAttemptRepository loginAttemptRepository,
     IUnitOfWork unitOfWork,
-    IConfiguration configuration)
+    IOptions<AccountLockoutOptions> accountLockoutOptions)
     : BaseAppService(unitOfWork), IAccountLockoutService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
@@ -35,12 +36,12 @@ public class AccountLockoutService(
     {
         // Record the failed attempt
         var failedAttempt = LoginAttempt.CreateFailed(
-            userId, 
-            username, 
-            failureReason, 
-            ipAddress, 
+            userId,
+            username,
+            failureReason,
+            ipAddress,
             userAgent);
-        
+
         await loginAttemptRepository.AddAsync(failedAttempt, cancellationToken);
 
         // Only proceed with lockout logic if the attempt should count towards lockout
@@ -49,8 +50,8 @@ public class AccountLockoutService(
             return false;
         }
 
-        // Get lockout configuration
-        var lockoutConfig = GetLockoutConfiguration();
+        // Get lockout configuration from strongly typed options
+        var lockoutConfig = accountLockoutOptions.Value;
 
         // Skip lockout if disabled
         if (!lockoutConfig.EnableAccountLockout)
@@ -58,18 +59,15 @@ public class AccountLockoutService(
             return false;
         }
 
-        // Get or create lockout record
+        // Get or create a lockout record
         var lockout = await accountLockoutRepository.GetOrCreateAsync(userId, cancellationToken);
 
-        // Record the failed attempt and check if account should be locked
+        // Record the failed attempt and check if an account should be locked
         var wasLocked = lockout.RecordFailedAttempt(
             lockoutConfig.FailedAttemptThreshold,
             lockoutConfig.BaseLockoutDuration,
             lockoutConfig.MaxLockoutDuration,
             lockoutConfig.AttemptResetWindow);
-
-        // Update the lockout record
-        await accountLockoutRepository.UpdateAsync(lockout, cancellationToken);
 
         return wasLocked;
     });
@@ -87,25 +85,24 @@ public class AccountLockoutService(
         CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         // Record the successful attempt if tracking is enabled
-        var lockoutConfig = GetLockoutConfiguration();
+        var lockoutConfig = accountLockoutOptions.Value;
         if (lockoutConfig.TrackLoginAttempts)
         {
             var successfulAttempt = LoginAttempt.CreateSuccessful(
-                userId, 
-                username, 
-                ipAddress, 
+                userId,
+                username,
+                ipAddress,
                 userAgent);
-            
+
             await loginAttemptRepository.AddAsync(successfulAttempt, cancellationToken);
         }
 
-        // Get existing lockout record if it exists
+        // Get an existing lockout record if it exists
         var lockout = await accountLockoutRepository.GetByUserIdAsync(userId, cancellationToken);
         if (lockout is not null)
         {
             // Reset failed attempts and unlock if locked due to failed attempts
             lockout.RecordSuccessfulLogin();
-            await accountLockoutRepository.UpdateAsync(lockout, cancellationToken);
         }
     });
 
@@ -117,8 +114,8 @@ public class AccountLockoutService(
         CancellationToken cancellationToken = default)
     {
         var lockout = await accountLockoutRepository.GetByUserIdAsync(userId, cancellationToken);
-        
-        // If no lockout record exists, user is not locked
+
+        // If no lockout record exists, the user is not locked
         if (lockout == null)
             return null;
 
@@ -126,7 +123,6 @@ public class AccountLockoutService(
         if (lockout.HasLockoutExpired() && lockout.IsLockedOut)
         {
             lockout.UnlockAccount(resetFailedAttempts: false);
-            await accountLockoutRepository.UpdateAsync(lockout, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
             return null;
         }
@@ -157,10 +153,8 @@ public class AccountLockoutService(
         CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         var lockout = await accountLockoutRepository.GetOrCreateAsync(userId, cancellationToken);
-        
+
         lockout.LockAccount(duration, reason, lockedByUserId);
-        
-        await accountLockoutRepository.UpdateAsync(lockout, cancellationToken);
     });
 
     /// <summary>
@@ -173,11 +167,7 @@ public class AccountLockoutService(
         CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         var lockout = await accountLockoutRepository.GetByUserIdAsync(userId, cancellationToken);
-        if (lockout is not null)
-        {
-            lockout.UnlockAccount(resetFailedAttempts);
-            await accountLockoutRepository.UpdateAsync(lockout, cancellationToken);
-        }
+        lockout?.UnlockAccount(resetFailedAttempts);
     });
 
     /// <summary>
@@ -220,46 +210,36 @@ public class AccountLockoutService(
     /// <summary>
     /// Automatically unlocks accounts whose lockout period has expired.
     /// This should be called periodically to process automatic unlocks.
+    /// Processes lockouts in batches to prevent memory issues.
     /// </summary>
     public async Task<int> ProcessExpiredLockoutsAsync(CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
-        var expiredLockouts = await accountLockoutRepository.GetExpiredLockoutsAsync(cancellationToken);
-        
-        foreach (var lockout in expiredLockouts)
+        var totalProcessed = 0;
+        const int batchSize = 100;
+        var currentPage = 1;
+
+        // Process expired lockouts in batches to prevent memory issues
+        while (true)
         {
-            lockout.UnlockAccount(resetFailedAttempts: false);
-            await accountLockoutRepository.UpdateAsync(lockout, cancellationToken);
+            var expiredLockouts = await accountLockoutRepository.GetExpiredLockoutsAsync(currentPage, batchSize, cancellationToken);
+
+            if (!expiredLockouts.Any())
+                break;
+
+            foreach (var lockout in expiredLockouts)
+            {
+                lockout.UnlockAccount(resetFailedAttempts: false);
+            }
+
+            totalProcessed += expiredLockouts.Count;
+            currentPage++;
+
+            // If we got fewer results than batch size, we've processed all
+            if (expiredLockouts.Count < batchSize)
+                break;
         }
 
-        return expiredLockouts.Count;
+        return totalProcessed;
     });
 
-    /// <summary>
-    /// Gets account lockout configuration from application settings.
-    /// </summary>
-    private AccountLockoutConfiguration GetLockoutConfiguration()
-    {
-        return new AccountLockoutConfiguration
-        {
-            FailedAttemptThreshold = int.TryParse(configuration["AccountLockout:FailedAttemptThreshold"], out var threshold) ? threshold : 5,
-            BaseLockoutDuration = TimeSpan.FromMinutes(int.TryParse(configuration["AccountLockout:BaseLockoutDurationMinutes"], out var baseDuration) ? baseDuration : 5),
-            MaxLockoutDuration = TimeSpan.FromMinutes(int.TryParse(configuration["AccountLockout:MaxLockoutDurationMinutes"], out var maxDuration) ? maxDuration : 60),
-            AttemptResetWindow = TimeSpan.FromMinutes(int.TryParse(configuration["AccountLockout:AttemptResetWindowMinutes"], out var resetWindow) ? resetWindow : 15),
-            EnableAccountLockout = !bool.TryParse(configuration["AccountLockout:EnableAccountLockout"], out var enableLockout) || enableLockout,
-            TrackLoginAttempts = !bool.TryParse(configuration["AccountLockout:TrackLoginAttempts"], out var trackAttempts) || trackAttempts
-        };
-    }
-
-    /// <summary>
-    /// Configuration class for account lockout settings.
-    /// </summary>
-    private class AccountLockoutConfiguration
-    {
-        public int FailedAttemptThreshold { get; init; }
-        public TimeSpan BaseLockoutDuration { get; init; }
-        public TimeSpan MaxLockoutDuration { get; init; }
-        public TimeSpan AttemptResetWindow { get; init; }
-        public bool EnableAccountLockout { get; init; }
-        public bool TrackLoginAttempts { get; init; }
-    }
 }

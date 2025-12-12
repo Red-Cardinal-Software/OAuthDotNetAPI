@@ -376,6 +376,342 @@ namespace Infrastructure.Migrations
                     b.ToTable("LoginAttempts", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Security.MfaChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("ChallengeToken")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsCompleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsInvalid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Metadata")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("MfaMethodId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChallengeToken")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MfaChallenges_ChallengeToken");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_MfaChallenges_CreatedAt");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_MfaChallenges_ExpiresAt");
+
+                    b.HasIndex("MfaMethodId");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_MfaChallenges_UserId");
+
+                    b.HasIndex("UserId", "IsCompleted")
+                        .HasDatabaseName("IX_MfaChallenges_UserId_IsCompleted");
+
+                    b.ToTable("MfaChallenges", "Security");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.MfaEmailCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("EmailAddress")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("HashedCode")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid>("MfaChallengeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_MfaEmailCodes_ExpiresAt")
+                        .HasFilter("[IsUsed] = 0");
+
+                    b.HasIndex("MfaChallengeId")
+                        .HasDatabaseName("IX_MfaEmailCodes_ChallengeId");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_MfaEmailCodes_UserId");
+
+                    b.HasIndex("UserId", "IsUsed", "ExpiresAt")
+                        .HasDatabaseName("IX_MfaEmailCodes_User_Status");
+
+                    b.ToTable("MfaEmailCodes", "Security");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.MfaMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Metadata")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Secret")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("VerifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_MfaMethods_UserId");
+
+                    b.HasIndex("UserId", "IsDefault")
+                        .HasDatabaseName("IX_MfaMethods_UserId_IsDefault")
+                        .HasFilter("[IsDefault] = 1");
+
+                    b.HasIndex("UserId", "IsEnabled")
+                        .HasDatabaseName("IX_MfaMethods_UserId_IsEnabled");
+
+                    b.HasIndex("UserId", "Type")
+                        .HasDatabaseName("IX_MfaMethods_UserId_Type");
+
+                    b.ToTable("MfaMethods", "Security");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.MfaRecoveryCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("HashedCode")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("IsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid>("MfaMethodId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HashedCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MfaRecoveryCodes_HashedCode");
+
+                    b.HasIndex("MfaMethodId")
+                        .HasDatabaseName("IX_MfaRecoveryCodes_MfaMethodId");
+
+                    b.HasIndex("MfaMethodId", "IsUsed")
+                        .HasDatabaseName("IX_MfaRecoveryCodes_MfaMethodId_IsUsed");
+
+                    b.ToTable("MfaRecoveryCodes", "Security");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.WebAuthnCredential", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Aaguid")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<string>("AttestationType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("AuthenticatorType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CredentialId")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("MfaMethodId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PublicKey")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("RegistrationIpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("RegistrationUserAgent")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<long>("SignCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
+                    b.Property<bool>("SupportsUserVerification")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Transports")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CredentialId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_WebAuthnCredentials_CredentialId");
+
+                    b.HasIndex("LastUsedAt")
+                        .HasDatabaseName("IX_WebAuthnCredentials_LastUsed")
+                        .HasFilter("[LastUsedAt] IS NOT NULL");
+
+                    b.HasIndex("MfaMethodId")
+                        .HasDatabaseName("IX_WebAuthnCredentials_MfaMethodId");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_WebAuthnCredentials_UserId");
+
+                    b.HasIndex("UserId", "IsActive")
+                        .HasDatabaseName("IX_WebAuthnCredentials_User_Active");
+
+                    b.ToTable("WebAuthnCredentials", "Security");
+                });
+
             modelBuilder.Entity("Infrastructure.Security.Entities.BlacklistedPassword", b =>
                 {
                     b.Property<int>("Id")
@@ -478,6 +814,76 @@ namespace Infrastructure.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Security.MfaChallenge", b =>
+                {
+                    b.HasOne("Domain.Entities.Security.MfaMethod", null)
+                        .WithMany()
+                        .HasForeignKey("MfaMethodId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Domain.Entities.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.MfaEmailCode", b =>
+                {
+                    b.HasOne("Domain.Entities.Security.MfaChallenge", "Challenge")
+                        .WithMany()
+                        .HasForeignKey("MfaChallengeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Challenge");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.MfaMethod", b =>
+                {
+                    b.HasOne("Domain.Entities.Identity.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.MfaRecoveryCode", b =>
+                {
+                    b.HasOne("Domain.Entities.Security.MfaMethod", "MfaMethod")
+                        .WithMany("RecoveryCodes")
+                        .HasForeignKey("MfaMethodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MfaMethod");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.WebAuthnCredential", b =>
+                {
+                    b.HasOne("Domain.Entities.Security.MfaMethod", "MfaMethod")
+                        .WithMany()
+                        .HasForeignKey("MfaMethodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("MfaMethod");
+                });
+
             modelBuilder.Entity("Domain.Entities.Identity.Organization", b =>
                 {
                     b.Navigation("Roles");
@@ -488,6 +894,11 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Identity.Role", b =>
                 {
                     b.Navigation("Privileges");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Security.MfaMethod", b =>
+                {
+                    b.Navigation("RecoveryCodes");
                 });
 #pragma warning restore 612, 618
         }

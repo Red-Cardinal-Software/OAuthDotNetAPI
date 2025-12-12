@@ -62,6 +62,13 @@ public class AppUserRepository(
     public async Task<AppUser?> GetUserByUsernameAsync(string username) =>
         await userCrudOperator.GetAll().FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
 
+    public async Task<int> GetTotalUserCountAsync() =>
+        await userCrudOperator.GetAll().CountAsync();
+
+    public async Task<int> GetTotalUserCountForOrganizationAsync(Guid organizationId) =>
+        await userCrudOperator.GetAll()
+            .CountAsync(u => u.OrganizationId == organizationId);
+
     /// <summary>
     /// Retrieves a queryable collection of all users, including their associated roles, privileges, and organization details.
     /// </summary>

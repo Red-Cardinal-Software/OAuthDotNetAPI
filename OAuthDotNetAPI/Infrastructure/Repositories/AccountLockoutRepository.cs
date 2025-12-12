@@ -30,18 +30,8 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
     }
 
     /// <summary>
-    /// Updates an existing account lockout record.
-    /// The entity changes will be tracked and saved when the unit of work commits.
-    /// </summary>
-    public Task UpdateAsync(AccountLockout accountLockout, CancellationToken cancellationToken = default)
-    {
-        // Entity Framework tracks changes automatically when entities are modified
-        // Changes will be persisted when the unit of work commits
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
     /// Gets the account lockout record for a user, or creates a new one if it doesn't exist.
+    /// Handles concurrent access safely by leveraging the unique constraint on UserId.
     /// </summary>
     public async Task<AccountLockout> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken = default)
     {
@@ -51,50 +41,112 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
             return existing;
         }
 
-        var newLockout = AccountLockout.CreateForUser(userId);
-        await AddAsync(newLockout, cancellationToken);
-        return newLockout;
+        try
+        {
+            // Attempt to create a new lockout record
+            var newLockout = AccountLockout.CreateForUser(userId);
+            await AddAsync(newLockout, cancellationToken);
+            return newLockout;
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Another thread created the record between our check and insert
+            // Return the existing record that was created by the other thread
+            var existingRecord = await GetByUserIdAsync(userId, cancellationToken);
+
+            // This should never be null at this point, but defensive programming
+            return existingRecord ?? throw new InvalidOperationException(
+                $"Failed to create or retrieve AccountLockout for UserId {userId}. " +
+                "Unique constraint violation occurred but no existing record found.");
+        }
     }
 
     /// <summary>
-    /// Gets all accounts that are currently locked out (active lockouts).
+    /// Determines if a DbUpdateException was caused by a unique constraint violation.
     /// </summary>
-    public async Task<IReadOnlyList<AccountLockout>> GetActiveLockedAccountsAsync(CancellationToken cancellationToken = default)
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
     {
+        // Check for SQL Server unique constraint violation
+        // Error 2627: Violation of UNIQUE KEY constraint
+        // Error 2601: Cannot insert duplicate key row
+        return ex.InnerException?.Message?.Contains("UX_AccountLockouts_UserId") == true ||
+               ex.InnerException?.Message?.Contains("duplicate key") == true ||
+               (ex.InnerException as Microsoft.Data.SqlClient.SqlException)?.Number is 2627 or 2601;
+    }
+
+    /// <summary>
+    /// Gets accounts that are currently locked out (active lockouts) with pagination.
+    /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Number of records per page (max 1000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated list of active locked accounts</returns>
+    public async Task<IReadOnlyList<AccountLockout>> GetActiveLockedAccountsAsync(int pageNumber = 1, int pageSize = 100, CancellationToken cancellationToken = default)
+    {
+        // SECURITY: Enforce maximum page size to prevent DoS
+        if (pageSize > 1000) pageSize = 1000;
+        if (pageSize < 1) pageSize = 1;
+        if (pageNumber < 1) pageNumber = 1;
+
         var now = DateTimeOffset.UtcNow;
         var results = await accountLockoutCrudOperator.GetAll()
-            .Where(al => al.IsLockedOut && 
+            .Where(al => al.IsLockedOut &&
                         (al.LockoutExpiresAt == null || al.LockoutExpiresAt > now))
             .OrderByDescending(al => al.LockedOutAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         return results.AsReadOnly();
     }
 
     /// <summary>
-    /// Gets account lockouts that have expired and can be automatically unlocked.
+    /// Gets account lockouts that have expired and can be automatically unlocked with pagination.
     /// </summary>
-    public async Task<IReadOnlyList<AccountLockout>> GetExpiredLockoutsAsync(CancellationToken cancellationToken = default)
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Number of records per page (max 1000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated list of expired lockouts</returns>
+    public async Task<IReadOnlyList<AccountLockout>> GetExpiredLockoutsAsync(int pageNumber = 1, int pageSize = 100, CancellationToken cancellationToken = default)
     {
+        // SECURITY: Enforce maximum page size to prevent DoS
+        if (pageSize > 1000) pageSize = 1000;
+        if (pageSize < 1) pageSize = 1;
+        if (pageNumber < 1) pageNumber = 1;
+
         var now = DateTimeOffset.UtcNow;
         var results = await accountLockoutCrudOperator.GetAll()
-            .Where(al => al.IsLockedOut && 
-                        al.LockoutExpiresAt != null && 
+            .Where(al => al.IsLockedOut &&
+                        al.LockoutExpiresAt != null &&
                         al.LockoutExpiresAt <= now)
             .OrderBy(al => al.LockoutExpiresAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         return results.AsReadOnly();
     }
 
     /// <summary>
-    /// Gets all accounts that were manually locked by a specific user.
+    /// Gets accounts that were manually locked by a specific user with pagination.
     /// </summary>
-    public async Task<IReadOnlyList<AccountLockout>> GetAccountsLockedByUserAsync(Guid lockedByUserId, CancellationToken cancellationToken = default)
+    /// <param name="lockedByUserId">ID of the user who locked the accounts</param>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Number of records per page (max 1000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated list of accounts locked by the specified user</returns>
+    public async Task<IReadOnlyList<AccountLockout>> GetAccountsLockedByUserAsync(Guid lockedByUserId, int pageNumber = 1, int pageSize = 100, CancellationToken cancellationToken = default)
     {
+        // SECURITY: Enforce maximum page size to prevent DoS
+        if (pageSize > 1000) pageSize = 1000;
+        if (pageSize < 1) pageSize = 1;
+        if (pageNumber < 1) pageNumber = 1;
+
         var results = await accountLockoutCrudOperator.GetAll()
             .Where(al => al.LockedByUserId == lockedByUserId)
             .OrderByDescending(al => al.LockedOutAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         return results.AsReadOnly();
@@ -112,9 +164,9 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
 
         // Basic counts
         var totalLockouts = await query.CountAsync(cancellationToken);
-        var currentlyLocked = await query.CountAsync(al => al.IsLockedOut && 
+        var currentlyLocked = await query.CountAsync(al => al.IsLockedOut &&
             (al.LockoutExpiresAt == null || al.LockoutExpiresAt > now), cancellationToken);
-        var expiredLockouts = await query.CountAsync(al => al.IsLockedOut && 
+        var expiredLockouts = await query.CountAsync(al => al.IsLockedOut &&
             al.LockoutExpiresAt != null && al.LockoutExpiresAt <= now, cancellationToken);
         var manualLockouts = await query.CountAsync(al => al.LockedByUserId != null, cancellationToken);
         var automaticLockouts = totalLockouts - manualLockouts;
@@ -128,7 +180,8 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
         var hourlyStats = await query
             .Where(al => al.CreatedAt >= DateTimeOffset.UtcNow.AddHours(-24))
             .GroupBy(al => new { al.CreatedAt.Hour, al.CreatedAt.Date })
-            .Select(g => new {
+            .Select(g => new
+            {
                 Hour = g.Key.Hour,
                 Date = g.Key.Date,
                 Count = g.Count(),

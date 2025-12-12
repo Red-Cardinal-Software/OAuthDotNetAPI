@@ -30,6 +30,7 @@ It can also serve as a reference for security and design practices.
 
 - **Clean Architecture** (Domain, Application, Infrastructure, API)
 - **Secure Auth Layer** with refresh tokens and short-lived access tokens
+- **Multi-Factor Authentication (MFA)** with TOTP, WebAuthn/FIDO2, Email MFA, and recovery codes
 - **Account Lockout Protection** with exponential backoff and configurable policies
 - **Comprehensive Rate Limiting** with IP-based throttling and configurable policies
 - **Production Health Check Endpoints** with privilege-based access controls
@@ -632,8 +633,341 @@ Expected: First 5 attempts return 401, 6th attempt returns 401 with lockout mess
 - There are unused methods but were left in as they are likely to be used in general practice at some point
 - This was built with experience of many previous Cloud Based Projects
 
+## Multi-Factor Authentication (MFA)
+
+This template includes a comprehensive MFA system that integrates seamlessly with the existing authentication flow. The MFA implementation follows security best practices and provides a flexible foundation for various authentication methods.
+
+### Supported MFA Methods
+
+**Currently Implemented:**
+- ✅ **TOTP (Time-based One-Time Password)** – Compatible with Google Authenticator, Microsoft Authenticator, Authy, and other RFC 6238-compliant apps
+- ✅ **Recovery Codes** – Backup codes for account recovery when primary MFA is unavailable
+- ✅ **WebAuthn/FIDO2** – Production-ready passkeys and hardware security keys using Fido2.NetLib
+- ✅ **Email-based MFA** – One-time codes sent via email as backup method
+
+**Planned Implementations:**
+- 🚧 **SMS-based MFA** – Text message codes (backup only, with security warnings)
+
+### MFA Configuration
+
+MFA settings are configurable via `appsettings.json`:
+
+```json
+{
+  "MfaSettings": {
+    "MaxActiveChallenges": 3,
+    "MaxChallengesPerWindow": 5,
+    "RateLimitWindowMinutes": 5,
+    "ChallengeExpiryMinutes": 5,
+    "PromptSetup": true
+  },
+  "AppName": "YourApp"
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **MaxActiveChallenges** | 3 | Maximum simultaneous active MFA challenges per user |
+| **MaxChallengesPerWindow** | 5 | Maximum challenges created within rate limit window |
+| **RateLimitWindowMinutes** | 5 | Time window for challenge rate limiting |
+| **ChallengeExpiryMinutes** | 5 | How long MFA challenges remain valid |
+| **PromptSetup** | true | Whether to prompt users to set up MFA after login |
+
+### TOTP Setup Flow
+
+**1. QR Code Generation:**
+```csharp
+// Generate secret and QR code for user
+var setupDto = await mfaConfigurationService.StartTotpSetupAsync(
+    userId, "user@example.com");
+
+// Returns:
+// - Base32 secret for manual entry
+// - QR code image (Base64-encoded PNG)
+// - otpauth:// URI
+// - Setup instructions
+```
+
+**2. Code Verification:**
+```csharp
+// User scans QR code and enters verification code
+var result = await mfaConfigurationService.VerifyTotpSetupAsync(
+    userId, new VerifyMfaSetupDto 
+    { 
+        Code = "123456",
+        Name = "My Phone" 
+    });
+
+// Returns recovery codes for backup access
+```
+
+**3. Authentication Flow:**
+```csharp
+// During login, if user has MFA enabled
+var requiresMfa = await mfaAuthenticationService.RequiresMfaAsync(userId);
+
+if (requiresMfa)
+{
+    // Create MFA challenge instead of completing login
+    var challenge = await mfaAuthenticationService.CreateChallengeAsync(
+        userId, ipAddress, userAgent);
+    
+    // User enters code from authenticator app
+    var verification = await mfaAuthenticationService.VerifyMfaAsync(
+        new CompleteMfaDto 
+        { 
+            ChallengeToken = challenge.ChallengeToken,
+            Code = "654321" 
+        });
+}
+```
+
+### Security Features
+
+**Challenge Security:**
+- Challenges expire after 5 minutes by default
+- Rate limiting prevents brute force attacks
+- Failed attempts are tracked and limited
+- Automatic invalidation of other challenges on success
+
+**Recovery Codes:**
+- Generated during MFA setup
+- One-time use only
+- Securely hashed in database
+- Can be regenerated when needed
+
+**Multiple Methods:**
+- Users can have multiple MFA methods (future: TOTP + WebAuthn)
+- Default method selection for convenience
+- Fallback to other methods if primary fails
+
+**Administrative Controls:**
+- System-wide and organization-scoped MFA statistics
+- Cleanup of expired challenges and unverified setups
+- Privilege-based access to MFA management
+
+### API Endpoints
+
+**User MFA Management:**
+- `POST /api/mfa/setup/totp` – Initiate TOTP setup
+- `POST /api/mfa/verify-setup` – Complete TOTP verification
+- `GET /api/mfa/overview` – Get user's MFA methods
+- `POST /api/mfa/regenerate-recovery` – Generate new recovery codes
+
+**Authentication Integration:**
+- `POST /api/auth/mfa/challenge` – Create MFA challenge during login
+- `POST /api/auth/mfa/verify` – Verify MFA code to complete login
+
+**Administrative Endpoints:**
+- `GET /api/admin/mfa/statistics/system` – System-wide MFA adoption metrics
+- `GET /api/admin/mfa/statistics/organization/{id}` – Organization MFA metrics
+- `DELETE /api/admin/mfa/cleanup/unverified` – Clean up old unverified setups
+
+### Database Schema
+
+**MfaMethod Table:**
+- Stores user's configured MFA methods
+- Includes TOTP secrets, method names, enabled status
+- Tracks usage statistics and verification status
+
+**MfaChallenge Table:**
+- Temporary challenges during authentication
+- Challenge tokens, expiration, attempt tracking
+- Automatic cleanup of expired challenges
+
+**MfaRecoveryCode Table:**
+- One-time recovery codes per MFA method
+- Securely hashed, usage tracking
+- Linked to parent MFA method
+
+### Integration with Existing Security
+
+**Works with Account Lockout:**
+- Failed MFA attempts can trigger account lockout
+- Lockout policies apply to MFA verification
+- Coordinated with existing rate limiting
+
+**Privilege-Based Access:**
+- MFA statistics require `SystemAdministration.Metrics` privilege
+- Organization admins can view their org's metrics only
+- Follows existing authorization patterns
+
+**Audit Trail:**
+- All MFA operations are logged with structured logging
+- Integration with existing security monitoring
+- Failed attempts tracked for analysis
+
+### Common Scenarios
+
+**Enforce MFA for all users:**
+```json
+{
+  "MfaSettings": {
+    "PromptSetup": true
+  }
+}
+```
+
+**Stricter MFA security (shorter timeouts, fewer attempts):**
+```json
+{
+  "MfaSettings": {
+    "MaxActiveChallenges": 1,
+    "MaxChallengesPerWindow": 3,
+    "ChallengeExpiryMinutes": 2
+  }
+}
+```
+
+**Development-friendly settings:**
+```json
+{
+  "MfaSettings": {
+    "ChallengeExpiryMinutes": 10,
+    "PromptSetup": false
+  }
+}
+```
+
+### Testing MFA
+
+**Test TOTP setup:**
+```bash
+# Start setup
+curl -X POST http://localhost:5000/api/mfa/setup/totp \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"accountName": "test@example.com"}'
+
+# Use authenticator app with QR code, then verify
+curl -X POST http://localhost:5000/api/mfa/verify-setup \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "123456", "name": "Test Device"}'
+```
+
+### WebAuthn/FIDO2 Implementation
+
+The template includes production-ready WebAuthn support using the Fido2.NetLib library:
+
+**Supported Authenticators:**
+- **Platform authenticators**: TouchID, FaceID, Windows Hello, Android biometrics
+- **Cross-platform authenticators**: YubiKey, Titan Security Key, SoloKey
+- **Passkeys**: iCloud Keychain, Google Password Manager, 1Password
+
+**WebAuthn Configuration:**
+```json
+{
+  "WebAuthn": {
+    "Origins": ["https://yourdomain.com", "https://localhost:5000"],
+    "RelyingPartyName": "Your App Name",
+    "RelyingPartyId": "yourdomain.com",
+    "TimestampDriftTolerance": 300000
+  }
+}
+```
+
+**Registration Flow:**
+```csharp
+// Start registration
+var registrationOptions = await webAuthnService.StartRegistrationAsync(
+    userId, mfaMethodId, userName, displayName);
+
+// Complete registration with attestation from authenticator
+var registrationResult = await webAuthnService.CompleteRegistrationAsync(
+    userId, mfaMethodId, challenge, attestationResponse, credentialName, ipAddress, userAgent);
+```
+
+**Authentication Flow:**
+```csharp
+// Start authentication
+var authenticationOptions = await webAuthnService.StartAuthenticationAsync(userId);
+
+// Complete authentication with assertion
+var authenticationResult = await webAuthnService.CompleteAuthenticationAsync(
+    credentialId, challenge, assertionResponse);
+```
+
+**Security Features:**
+- FIDO2-compliant cryptographic verification
+- Clone detection via sign count tracking
+- Hardware attestation validation
+- Credential management and lifecycle
+
+**API Endpoints:**
+- `POST /api/mfa/webauthn/register/start` – Begin credential registration
+- `POST /api/mfa/webauthn/register/complete` – Complete registration
+- `POST /api/mfa/webauthn/authenticate/start` – Begin authentication
+- `POST /api/mfa/webauthn/authenticate/complete` – Complete authentication
+- `GET /api/mfa/webauthn/credentials` – List user's credentials
+- `DELETE /api/mfa/webauthn/credentials/{id}` – Remove credential
+
+### Email-based MFA Implementation
+
+Provides a backup MFA method with configurable security warnings:
+
+**Email MFA Configuration:**
+```json
+{
+  "EmailMfaSettings": {
+    "MaxCodesPerWindow": 3,
+    "RateLimitWindowMinutes": 15,
+    "CodeExpiryMinutes": 5,
+    "CleanupAgeHours": 24,
+    "AppName": "Your App Name",
+    "EnableSecurityWarnings": true
+  }
+}
+```
+
+**Security Features:**
+- Cryptographically secure 8-digit codes
+- Rate limiting (3 codes per 15-minute window)
+- Short expiration times (5 minutes)
+- Secure code hashing in database
+- Email address masking for privacy
+- Automatic cleanup of expired codes
+
+**Flow:**
+```csharp
+// Send email code
+var sendResult = await emailMfaService.SendCodeAsync(
+    challengeId, userId, emailAddress, ipAddress);
+
+// Verify code
+var verifyResult = await emailMfaService.VerifyCodeAsync(
+    challengeId, code);
+```
+
+**API Endpoints:**
+- `POST /api/mfa/email/send` – Send verification code
+- `POST /api/mfa/email/verify` – Verify code
+- `GET /api/mfa/email/rate-limit` – Check rate limit status
+
+**Security Warnings:**
+Email MFA includes built-in security education:
+- Warning about email being less secure than other methods
+- Recommendation to use as backup only
+- Guidance on email account security
+
+### Future Enhancements
+
+The MFA system is designed for extensibility:
+
+1. **Conditional MFA** – Risk-based authentication (new device, location)
+2. **SSO Integration** – External MFA providers (Azure MFA, Duo)
+
+### Security Best Practices
+
+1. **Enable MFA for Privileged Accounts** – Require MFA for admin users
+2. **Monitor MFA Bypass Attempts** – Alert on recovery code usage
+3. **Regular Cleanup** – Remove old unverified MFA setups
+4. **User Education** – Provide clear setup instructions and backup procedures
+5. **Recovery Planning** – Ensure admin recovery procedures for locked-out users
+
 ## Planned Future Additions
-- **Optional MFA** – TOTP and WebAuthn/passkeys with configurable policy
+- **Conditional MFA** – Risk-based authentication (new device, location)
+- **SSO Integration** – External MFA providers (Azure MFA, Duo)
 - **Secure multi-tenant blob storage** – tenant-isolated file storage with access controls
 
 ## Contributing

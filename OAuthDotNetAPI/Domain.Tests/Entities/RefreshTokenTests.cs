@@ -74,13 +74,13 @@ public class RefreshTokenTests
     }
 
     [Fact]
-    public void IsValid_ShouldReturnTrue_WhenNotExpiredAndReplaced()
+    public void IsValid_ShouldReturnFalse_WhenNotExpiredButReplaced()
     {
         var user = new AppUserBuilder().Build();
         var token = new RefreshToken(user, DateTime.UtcNow.AddMinutes(5), "ip");
         token.MarkReplaced("new-token-id");
 
-        token.IsValid().Should().BeTrue();
+        token.IsValid().Should().BeFalse();
     }
 
     [Fact]
@@ -94,12 +94,12 @@ public class RefreshTokenTests
     }
 
     [Fact]
-    public void IsValid_ShouldReturnFalse_WhenNotReplaced()
+    public void IsValid_ShouldReturnTrue_WhenNotExpiredAndNotReplaced()
     {
         var user = new AppUserBuilder().Build();
         var token = new RefreshToken(user, DateTime.UtcNow.AddMinutes(10), "ip");
 
-        token.IsValid().Should().BeFalse();
+        token.IsValid().Should().BeTrue();
     }
 
     [Fact]

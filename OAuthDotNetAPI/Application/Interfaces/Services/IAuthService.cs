@@ -68,4 +68,12 @@ public interface IAuthService
     /// <param name="user">The claims principal representing the user for whom the token is being generated.</param>
     /// <returns>An instance of <see cref="JwtResponseDto"/> containing the generated JWT token and a new refresh token.</returns>
     public Task<JwtResponseDto> GenerateJwtToken(ClaimsPrincipal user);
+
+    /// <summary>
+    /// Completes the MFA verification process and issues authentication tokens.
+    /// </summary>
+    /// <param name="completeMfaDto">The MFA completion information including challenge token and verification code.</param>
+    /// <param name="ipAddress">The IP address of the device completing MFA verification.</param>
+    /// <returns>A service response containing JWT tokens upon successful MFA verification.</returns>
+    public Task<ServiceResponse<JwtResponseDto>> CompleteMfaAuthentication(CompleteMfaDto completeMfaDto, string ipAddress);
 }

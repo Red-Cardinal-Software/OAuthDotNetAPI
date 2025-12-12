@@ -99,36 +99,36 @@ public class AppUserService(
     public async Task<ServiceResponse<AppUserDto>> AdminAddNewUserAsync(ClaimsPrincipal user, CreateNewUserDto newUser) =>
         await RunWithCommitAsync(async () =>
         {
-        var validPasswordResult = await passwordValidator.ValidateAsync(newUser.Password);
+            var validPasswordResult = await passwordValidator.ValidateAsync(newUser.Password);
 
-        if (!validPasswordResult.IsValid)
-        {
-            logger.WarningWithContext(user, new StructuredLogBuilder()
-                .SetAction(AppUserActions.AddUser)
-                .SetStatus(LogStatuses.Failure)
-                .SetTarget(AppUserTargets.Org(RoleUtility.GetOrgIdFromClaims(user)))
-                .SetEntity(nameof(AppUser)));
+            if (!validPasswordResult.IsValid)
+            {
+                logger.WarningWithContext(user, new StructuredLogBuilder()
+                    .SetAction(AppUserActions.AddUser)
+                    .SetStatus(LogStatuses.Failure)
+                    .SetTarget(AppUserTargets.Org(RoleUtility.GetOrgIdFromClaims(user)))
+                    .SetEntity(nameof(AppUser)));
 
-            return ServiceResponseFactory.Error<AppUserDto>(string.Join(", ", validPasswordResult.Errors.Select(e => e.ErrorMessage)));
-        }
+                return ServiceResponseFactory.Error<AppUserDto>(string.Join(", ", validPasswordResult.Errors.Select(e => e.ErrorMessage)));
+            }
 
-        var requestingOrgId = RoleUtility.GetOrgIdFromClaims(user);
-        var newUserEntity = await appUserMapper.MapForCreate(newUser, requestingOrgId);
+            var requestingOrgId = RoleUtility.GetOrgIdFromClaims(user);
+            var newUserEntity = await appUserMapper.MapForCreate(newUser, requestingOrgId);
 
-        var newUserSavedEntity = await appUserRepository.CreateUserAsync(newUserEntity);
+            var newUserSavedEntity = await appUserRepository.CreateUserAsync(newUserEntity);
 
-        var newUserDto = appUserMapper.ToDto(newUserSavedEntity);
+            var newUserDto = appUserMapper.ToDto(newUserSavedEntity);
 
-        logger.InfoWithContext(
-            user,
-            new StructuredLogBuilder()
-                .SetAction(AppUserActions.AddUser)
-                .SetTarget(AppUserTargets.Org(requestingOrgId))
-                .SetEntity(nameof(AppUser))
-            );
+            logger.InfoWithContext(
+                user,
+                new StructuredLogBuilder()
+                    .SetAction(AppUserActions.AddUser)
+                    .SetTarget(AppUserTargets.Org(requestingOrgId))
+                    .SetEntity(nameof(AppUser))
+                );
 
-        return ServiceResponseFactory.Success(newUserDto);
-    });
+            return ServiceResponseFactory.Success(newUserDto);
+        });
 
     public async Task<ServiceResponse<AppUserDto>> UpdateUserAsync(ClaimsPrincipal user, AppUserDto appUserDto) => await RunWithCommitAsync(async () =>
     {

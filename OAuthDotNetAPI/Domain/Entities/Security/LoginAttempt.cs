@@ -159,8 +159,8 @@ public class LoginAttempt
     /// <returns>True if this failure should count towards lockout</returns>
     public bool ShouldCountTowardsLockout()
     {
-        return !IsSuccessful && 
-               UserId != Guid.Empty && 
+        return !IsSuccessful &&
+               UserId != Guid.Empty &&
                FailureReason?.Contains("Invalid credentials", StringComparison.OrdinalIgnoreCase) == true;
     }
 
