@@ -25,6 +25,7 @@ public class AuthServiceTests
     private readonly Mock<IRefreshTokenRepository> _refreshTokenRepository = new();
     private readonly Mock<IRoleRepository> _roleRepository = new();
     private readonly Mock<IPasswordResetTokenRepository> _passwordResetTokenRepository = new();
+    private readonly Mock<IAccountLockoutService> _accountLockoutService = new();
     private readonly Mock<ILogger<AuthService>> _mockLogger = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
@@ -51,6 +52,7 @@ public class AuthServiceTests
             _refreshTokenRepository.Object,
             _roleRepository.Object,
             _passwordResetTokenRepository.Object,
+            _accountLockoutService.Object,
             logger,
             config
         );
@@ -61,6 +63,9 @@ public class AuthServiceTests
     {
         // Arrange
         _userRepo.Setup(x => x.UserExistsAsync("fakeuser")).ReturnsAsync(false);
+        _accountLockoutService.Setup(x => x.RecordFailedAttemptAsync(
+            Guid.Empty, "fakeuser", "127.0.0.1", null, ServiceResponseConstants.UserDoesNotExist, 
+            It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _authService.Login("fakeuser", "wrongpassword", "127.0.0.1");
@@ -81,8 +86,14 @@ public class AuthServiceTests
         _userRepo.Setup(x => x.GetUserByUsernameAsync("testuser")).ReturnsAsync(user);
         _passwordHasher.Setup(x => x.Verify(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
         _refreshTokenRepository.Setup(x =>
-            x.SaveRefreshTokenAsync(refreshToken)
+            x.SaveRefreshTokenAsync(It.IsAny<RefreshToken>())
         ).ReturnsAsync(refreshToken);
+        
+        // Account lockout service mocks
+        _accountLockoutService.Setup(x => x.GetAccountLockoutAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Domain.Entities.Security.AccountLockout?)null);
+        _accountLockoutService.Setup(x => x.RecordSuccessfulLoginAsync(
+            user.Id, "testuser", "127.0.0.1", null, It.IsAny<CancellationToken>()));
 
         // Act
         var result = await _authService.Login("testuser", TestConstants.Passwords.Default, "127.0.0.1");
@@ -95,14 +106,24 @@ public class AuthServiceTests
     [Fact]
     public async Task Login_WithWrongPassword_ReturnsError()
     {
+        // Arrange
         var user = new AppUserBuilder().Build();
 
         _userRepo.Setup(x => x.UserExistsAsync("testuser")).ReturnsAsync(true);
         _userRepo.Setup(x => x.GetUserByUsernameAsync("testuser")).ReturnsAsync(user);
         _passwordHasher.Setup(x => x.Verify("wrongpass", "hashedpass")).Returns(false);
+        
+        // Account lockout service mocks
+        _accountLockoutService.Setup(x => x.GetAccountLockoutAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Domain.Entities.Security.AccountLockout?)null);
+        _accountLockoutService.Setup(x => x.RecordFailedAttemptAsync(
+            user.Id, "testuser", "127.0.0.1", null, ServiceResponseConstants.InvalidCredentials, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
+        // Act
         var result = await _authService.Login("testuser", "wrongpass", "127.0.0.1");
 
+        // Assert
         result.Success.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.UsernameOrPasswordIncorrect);
     }
@@ -196,6 +217,54 @@ public class AuthServiceTests
         // Assert
         result.Success.Should().BeFalse();
         result.Message.Should().Be(ServiceResponseConstants.UserUnauthorized);
+    }
+
+    [Fact]
+    public async Task Login_WithLockedAccount_ReturnsAccountLocked()
+    {
+        // Arrange
+        var user = new AppUserBuilder().Build();
+        var lockedAccount = Domain.Entities.Security.AccountLockout.CreateForUser(user.Id);
+        
+        // Manually lock the account to simulate a locked state
+        lockedAccount.LockAccount(TimeSpan.FromMinutes(30), "Too many failed attempts", null);
+
+        _userRepo.Setup(x => x.UserExistsAsync("testuser")).ReturnsAsync(true);
+        _userRepo.Setup(x => x.GetUserByUsernameAsync("testuser")).ReturnsAsync(user);
+        _accountLockoutService.Setup(x => x.GetAccountLockoutAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lockedAccount);
+
+        // Act
+        var result = await _authService.Login("testuser", "validpassword", "127.0.0.1");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be(ServiceResponseConstants.AccountTemporarilyLocked);
+    }
+
+    [Fact]
+    public async Task Login_WrongPasswordTriggersLockout_ReturnsAccountLocked()
+    {
+        // Arrange
+        var user = new AppUserBuilder().Build();
+
+        _userRepo.Setup(x => x.UserExistsAsync("testuser")).ReturnsAsync(true);
+        _userRepo.Setup(x => x.GetUserByUsernameAsync("testuser")).ReturnsAsync(user);
+        _passwordHasher.Setup(x => x.Verify("wrongpass", It.IsAny<string>())).Returns(false);
+        
+        // Account lockout service mocks
+        _accountLockoutService.Setup(x => x.GetAccountLockoutAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Domain.Entities.Security.AccountLockout?)null);
+        _accountLockoutService.Setup(x => x.RecordFailedAttemptAsync(
+            user.Id, "testuser", "127.0.0.1", null, ServiceResponseConstants.InvalidCredentials, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true); // This attempt triggers lockout
+
+        // Act
+        var result = await _authService.Login("testuser", "wrongpass", "127.0.0.1");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be(ServiceResponseConstants.AccountTemporarilyLocked);
     }
 
 }

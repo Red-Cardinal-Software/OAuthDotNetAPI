@@ -1,5 +1,6 @@
 using Domain.Entities.Configuration;
 using Domain.Entities.Identity;
+using Domain.Entities.Security;
 using Infrastructure.Persistence.Extensions;
 using Infrastructure.Security.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
     // Configuration Tables
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
 
+    // Security Tables
+    public DbSet<LoginAttempt> LoginAttempts { get; set; }
+    public DbSet<AccountLockout> AccountLockouts { get; set; }
 
     // App Tables
     public DbSet<Organization> Organizations { get; set; }
