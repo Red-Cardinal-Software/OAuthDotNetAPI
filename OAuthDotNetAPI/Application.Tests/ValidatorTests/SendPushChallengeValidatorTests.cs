@@ -43,7 +43,9 @@ public class SendPushChallengeValidatorTests
 
     [Theory]
     [InlineData("")]
+#pragma warning disable xUnit1012
     [InlineData(null)]
+#pragma warning restore xUnit1012
     [InlineData("   ")]
     public void Should_Have_Error_When_SessionId_Is_Empty_Or_Whitespace(string? sessionId)
     {
@@ -51,7 +53,9 @@ public class SendPushChallengeValidatorTests
         var dto = new SendPushChallengeDto
         {
             DeviceId = Guid.NewGuid(),
+#pragma warning disable CS8601
             SessionId = sessionId
+#pragma warning restore CS8601
         };
 
         // Act & Assert
@@ -137,7 +141,9 @@ public class SendPushChallengeValidatorTests
     }
 
     [Theory]
+#pragma warning disable xUnit1012
     [InlineData(null)]
+#pragma warning restore xUnit1012
     [InlineData("")]
     [InlineData("New York")]
     [InlineData("San Francisco, CA")]
@@ -148,7 +154,9 @@ public class SendPushChallengeValidatorTests
         {
             DeviceId = Guid.NewGuid(),
             SessionId = "valid-session-123",
+#pragma warning disable CS8601
             Location = location
+#pragma warning restore CS8601
         };
 
         // Act & Assert

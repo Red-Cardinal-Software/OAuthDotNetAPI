@@ -6,14 +6,9 @@ namespace Application.Services.Mfa;
 /// <summary>
 /// Service for secure handling of MFA recovery codes with proper password hashing.
 /// </summary>
-public class MfaRecoveryCodeService
+public class MfaRecoveryCodeService(IPasswordHasher passwordHasher)
 {
-    private readonly IPasswordHasher _passwordHasher;
-
-    public MfaRecoveryCodeService(IPasswordHasher passwordHasher)
-    {
-        _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
-    }
+    private readonly IPasswordHasher _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
 
     /// <summary>
     /// Generates a new recovery code with secure hashing.

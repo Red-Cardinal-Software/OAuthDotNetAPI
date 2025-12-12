@@ -43,7 +43,9 @@ public class VerifyEmailCodeValidatorTests
 
     [Theory]
     [InlineData("")]
+#pragma warning disable xUnit1012
     [InlineData(null)]
+#pragma warning restore xUnit1012
     [InlineData("   ")]
     public void Should_Have_Error_When_Code_Is_Empty_Or_Whitespace(string? code)
     {
@@ -51,7 +53,9 @@ public class VerifyEmailCodeValidatorTests
         var dto = new VerifyEmailCodeDto
         {
             ChallengeId = Guid.NewGuid(),
+#pragma warning disable CS8601
             Code = code
+#pragma warning restore CS8601
         };
 
         // Act & Assert

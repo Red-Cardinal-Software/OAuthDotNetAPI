@@ -12,13 +12,17 @@ public class UpdateCredentialNameValidatorTests
 
     [Theory]
     [InlineData("")]
+#pragma warning disable xUnit1012
     [InlineData(null)]
+#pragma warning restore xUnit1012
     [InlineData("   ")]
     [InlineData("\t")]
     public void Should_Have_Error_When_Name_Is_Empty_Or_Whitespace(string? name)
     {
         // Arrange
+#pragma warning disable CS8601
         var dto = new UpdateCredentialNameDto { Name = name };
+#pragma warning restore CS8601
 
         // Act & Assert
         var result = _validator.TestValidate(dto);

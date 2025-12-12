@@ -47,14 +47,18 @@ public class SendEmailCodeValidatorTests
 
     [Theory]
     [InlineData("")]
+#pragma warning disable xUnit1012
     [InlineData(null)]
+#pragma warning restore xUnit1012
     public void Should_Not_Have_Error_When_EmailAddress_Is_Null_Or_Empty(string? emailAddress)
     {
         // Arrange
         var dto = new SendEmailCodeDto
         {
             ChallengeId = Guid.NewGuid(),
+#pragma warning disable CS8601
             EmailAddress = emailAddress
+#pragma warning restore CS8601
         };
 
         // Act & Assert

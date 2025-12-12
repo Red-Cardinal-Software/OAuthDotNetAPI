@@ -12,12 +12,16 @@ public class UpdatePushTokenValidatorTests
 
     [Theory]
     [InlineData("")]
+#pragma warning disable xUnit1012
     [InlineData(null)]
+#pragma warning restore xUnit1012
     [InlineData("   ")]
     public void Should_Have_Error_When_NewToken_Is_Empty_Or_Whitespace(string? token)
     {
         // Arrange
+#pragma warning disable CS8601
         var dto = new UpdatePushTokenDto { NewToken = token };
+#pragma warning restore CS8601
 
         // Act & Assert
         var result = _validator.TestValidate(dto);
