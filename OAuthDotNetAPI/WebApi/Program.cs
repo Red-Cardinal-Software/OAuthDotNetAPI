@@ -1,5 +1,6 @@
 using Azure.Identity;
 using DependencyInjectionConfiguration;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +59,18 @@ if (builder.Environment.IsProduction())
     }
 }
 */
+
+var loggerConfig = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext();
+
+// Only write to console in development - production should use configured sinks
+if (builder.Environment.IsDevelopment())
+{
+    loggerConfig.WriteTo.Console();
+}
+
+Log.Logger = loggerConfig.CreateLogger();
 
 builder.Services.AddAppDependencies(builder.Environment, builder.Configuration);
 builder.Services.AddControllers();

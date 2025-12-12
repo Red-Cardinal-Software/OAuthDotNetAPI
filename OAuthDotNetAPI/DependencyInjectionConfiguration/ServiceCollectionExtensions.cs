@@ -44,6 +44,8 @@ using System.Text;
 using Application.Interfaces.Providers;
 using Fido2NetLib;
 using Infrastructure.Providers;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace DependencyInjectionConfiguration;
 
@@ -96,6 +98,7 @@ public static class ServiceCollectionExtensions
         if (options.IncludeAutoMapper) services.AddAutoMapper();
         services.AddCoreInfrastructure(); // assumed to always be needed
         services.AddAppOptions(); // Add this before services so options are available
+        services.AddOpenTelemetryObservability(environment); // assumed to always need logging
         if (options.IncludeRepositories) services.AddRepositories();
         if (options.IncludeServices) services.AddServices();
         if (options.IncludeAuthentication) services.AddSecureJwtAuthentication(configuration);
@@ -452,6 +455,29 @@ public static class ServiceCollectionExtensions
                 RequireExpirationTime = true
             };
         });
+
+        return services;
+    }
+
+    private static IServiceCollection AddOpenTelemetryObservability(this IServiceCollection services, IHostEnvironment environment)
+    {
+        services.AddOpenTelemetry()
+            .WithTracing(tracing =>
+            {
+                tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddSqlClientInstrumentation()
+                    .AddSource("StarbaseTemplateAPI")
+                    .AddOtlpExporter();
+
+                if (environment.IsDevelopment())
+                {
+                    tracing.AddConsoleExporter();
+                }
+            })
+            .WithMetrics(metrics => metrics
+                .AddAspNetCoreInstrumentation());
 
         return services;
     }

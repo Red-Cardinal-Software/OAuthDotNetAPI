@@ -20,6 +20,12 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.11" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.11" />
       <PackageReference Include="Microsoft.Extensions.Primitives" Version="9.0.11" />
+      <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.14.0" />
+      <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
+      <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+      <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
+      <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
+      <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.14.0-beta.1" />
       <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
     </ItemGroup>
 
