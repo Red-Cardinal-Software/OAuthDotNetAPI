@@ -14,12 +14,12 @@ internal class MfaPushChallengeConfiguration : EntityTypeConfiguration<MfaPushCh
     {
         // Table configuration
         builder.ToTable("MfaPushChallenges", "Security");
-        
+
         // Primary Key
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id)
             .ValueGeneratedNever();
-        
+
         // Properties
         builder.Property(c => c.UserId)
             .IsRequired();
@@ -102,7 +102,7 @@ internal class MfaPushChallengeConfiguration : EntityTypeConfiguration<MfaPushCh
             .WithMany()
             .HasForeignKey(c => c.DeviceId)
             .OnDelete(DeleteBehavior.Cascade);
-            
+
         // User relationship without cascade to avoid circular paths
         builder.HasOne<Domain.Entities.Identity.AppUser>()
             .WithMany()

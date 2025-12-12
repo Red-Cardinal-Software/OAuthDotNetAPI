@@ -39,9 +39,9 @@ public class MfaEmailService(
             var rateLimitResult = await CheckRateLimitAsync(userId, cancellationToken);
             if (!rateLimitResult.IsAllowed)
             {
-                logger.LogWarning("Email MFA rate limit exceeded for user {UserId}. Used: {Used}/{Max}", 
+                logger.LogWarning("Email MFA rate limit exceeded for user {UserId}. Used: {Used}/{Max}",
                     userId, rateLimitResult.CodesUsed, rateLimitResult.MaxCodesAllowed);
-                
+
                 return MfaEmailSendResult.Failed(
                     $"Too many email codes requested. Try again after {rateLimitResult.WindowResetTime:HH:mm}");
             }
@@ -56,7 +56,7 @@ public class MfaEmailService(
             var emailSent = await SendCodeEmailAsync(emailAddress, plainCode, cancellationToken);
             if (!emailSent)
             {
-                logger.LogError("Failed to send email MFA code to {Email} for user {UserId}", 
+                logger.LogError("Failed to send email MFA code to {Email} for user {UserId}",
                     emailAddress, userId);
                 return MfaEmailSendResult.Failed("Failed to send verification email. Please try again.");
             }
@@ -108,11 +108,11 @@ public class MfaEmailService(
                 return MfaEmailVerificationResult.Successful();
             }
 
-            logger.LogWarning("Invalid email MFA code attempt for challenge {ChallengeId}. Attempts: {Attempts}", 
+            logger.LogWarning("Invalid email MFA code attempt for challenge {ChallengeId}. Attempts: {Attempts}",
                 challengeId, emailCode.AttemptCount);
 
             var remainingAttempts = emailCode.GetRemainingAttempts();
-            var errorMessage = remainingAttempts > 0 
+            var errorMessage = remainingAttempts > 0
                 ? $"Invalid verification code. {remainingAttempts} attempt(s) remaining."
                 : "Invalid verification code. Maximum attempts exceeded.";
 
@@ -131,7 +131,7 @@ public class MfaEmailService(
         CancellationToken cancellationToken = default)
     {
         var windowStart = DateTimeOffset.UtcNow.AddMinutes(-_options.RateLimitWindowMinutes);
-        
+
         var codesInWindow = await emailCodeRepository.GetCodeCountSinceAsync(userId, windowStart, cancellationToken);
         var resetTime = windowStart.AddMinutes(_options.RateLimitWindowMinutes);
 
@@ -147,9 +147,9 @@ public class MfaEmailService(
     public async Task<int> CleanupExpiredCodesAsync(CancellationToken cancellationToken = default)
     {
         var expiredBefore = DateTimeOffset.UtcNow.AddHours(-_options.CleanupAgeHours);
-        
+
         var deletedCount = await emailCodeRepository.DeleteExpiredCodesAsync(expiredBefore, cancellationToken);
-        
+
         if (deletedCount > 0)
         {
             logger.LogInformation("Cleaned up {Count} expired email MFA codes", deletedCount);
@@ -200,11 +200,11 @@ public class MfaEmailService(
         using var rng = RandomNumberGenerator.Create();
         var bytes = new byte[4];
         rng.GetBytes(bytes);
-        
+
         // Convert to uint and take modulo to get 8-digit number
         var value = BinaryPrimitives.ReadUInt32BigEndian(bytes);
         var code = (value % 90000000) + 10000000; // Ensures 8 digits
-        
+
         return code.ToString();
     }
 }

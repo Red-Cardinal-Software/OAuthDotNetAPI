@@ -53,7 +53,7 @@ public static class DbContextExtensions
     {
         var seederTypes = GetSeederTypes();
 
-        foreach(var seeder in seederTypes)
+        foreach (var seeder in seederTypes)
         {
             if (Activator.CreateInstance(seeder) is IEntitySeeder entitySeeder)
             {

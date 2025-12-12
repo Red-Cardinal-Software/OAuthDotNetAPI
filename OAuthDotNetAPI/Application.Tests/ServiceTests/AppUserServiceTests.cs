@@ -25,7 +25,7 @@ namespace Application.Tests.ServiceTests
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
         private readonly Mock<IAppUserMapper> _mapperMock = new();
         private readonly Mock<ILogger<AppUserService>> _loggerMock = new();
-        private readonly Mock<IValidator<string> > _passwordValidatorMock = new();
+        private readonly Mock<IValidator<string>> _passwordValidatorMock = new();
         private readonly ClaimsPrincipal _claimsUser;
 
         private readonly AppUserService _service;
@@ -66,7 +66,7 @@ namespace Application.Tests.ServiceTests
         {
             var otherOrgId = Guid.NewGuid();
             _userRepoMock.Setup(r => r.GetUserByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync( new AppUserBuilder().WithOrganizationId(otherOrgId).Build() );
+                .ReturnsAsync(new AppUserBuilder().WithOrganizationId(otherOrgId).Build());
 
             var result = await _service.AdminDeactivateUserAsync(_claimsUser, Guid.NewGuid());
 

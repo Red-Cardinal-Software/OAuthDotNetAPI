@@ -116,7 +116,7 @@ public class PasswordResetServiceTests
         var token = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
 
         _passwordResetTokenRepository.Setup(x => x.GetPasswordResetTokenAsync(It.IsAny<Guid>()))
-            .ReturnsAsync((PasswordResetToken) null!);
+            .ReturnsAsync((PasswordResetToken)null!);
 
         // Act
         var result = await _passwordResetService.ResetPasswordWithTokenAsync(

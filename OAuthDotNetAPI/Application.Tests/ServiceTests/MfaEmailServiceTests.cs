@@ -32,7 +32,7 @@ public class MfaEmailServiceTests
         _emailService = new Mock<IEmailService>();
         _passwordHasher = new Mock<IPasswordHasher>();
         _logger = new Mock<ILogger<MfaEmailService>>();
-        
+
         var options = new EmailMfaOptions
         {
             MaxCodesPerWindow = 3,
@@ -43,7 +43,7 @@ public class MfaEmailServiceTests
             EnableSecurityWarnings = true
         };
         _emailMfaOptions = Options.Create(options);
-        
+
         _service = new MfaEmailService(
             _emailCodeRepository.Object,
             _emailService.Object,
@@ -61,10 +61,10 @@ public class MfaEmailServiceTests
         var challengeId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var email = "test@example.com";
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(3); // Equal to MaxCodesPerWindow
 
@@ -86,16 +86,16 @@ public class MfaEmailServiceTests
         var userId = Guid.NewGuid();
         var email = "test@example.com";
         var ipAddress = "192.168.1.1";
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1); // Below limit
-        
+
         _passwordHasher.Setup(x => x.Hash(It.IsAny<string>()))
             .Returns("hashed_code");
-        
+
         _emailService.Setup(x => x.SendEmailAsync(email, It.IsAny<RenderedEmail>()))
             .ThrowsAsync(new Exception("Email service error"));
 
@@ -116,16 +116,16 @@ public class MfaEmailServiceTests
         var userId = Guid.NewGuid();
         var email = "test@example.com";
         var ipAddress = "192.168.1.1";
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
-        
+
         _passwordHasher.Setup(x => x.Hash(It.IsAny<string>()))
             .Returns("hashed_code");
-        
+
         _emailService.Setup(x => x.SendEmailAsync(email, It.IsAny<RenderedEmail>()))
             .Returns(Task.CompletedTask);
 
@@ -137,9 +137,9 @@ public class MfaEmailServiceTests
         result.ErrorMessage.Should().BeNull();
         result.ExpiresAt.Should().BeCloseTo(DateTimeOffset.UtcNow.AddMinutes(5), TimeSpan.FromSeconds(1));
         result.RemainingAttempts.Should().Be(3); // MaxAttempts from domain entity
-        
+
         _emailCodeRepository.Verify(x => x.AddAsync(
-            It.Is<MfaEmailCode>(code => 
+            It.Is<MfaEmailCode>(code =>
                 code.MfaChallengeId == challengeId &&
                 code.UserId == userId &&
                 code.EmailAddress == email &&
@@ -156,17 +156,17 @@ public class MfaEmailServiceTests
         var userId = Guid.NewGuid();
         var email = "test@example.com";
         string capturedPlainCode = null!;
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
-        
+
         _passwordHasher.Setup(x => x.Hash(It.IsAny<string>()))
             .Callback<string>(code => capturedPlainCode = code)
             .Returns("hashed_code");
-        
+
         _emailService.Setup(x => x.SendEmailAsync(email, It.IsAny<RenderedEmail>()))
             .Returns(Task.CompletedTask);
 
@@ -187,10 +187,10 @@ public class MfaEmailServiceTests
         var challengeId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var email = "test@example.com";
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
@@ -228,9 +228,9 @@ public class MfaEmailServiceTests
         // Arrange
         var challengeId = Guid.NewGuid();
         var code = "12345678";
-        
+
         _emailCodeRepository.Setup(x => x.GetValidCodeByChallengeIdAsync(
-                challengeId, 
+                challengeId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((MfaEmailCode?)null);
 
@@ -250,15 +250,15 @@ public class MfaEmailServiceTests
         var challengeId = Guid.NewGuid();
         var code = "12345678";
         var (emailCode, _) = MfaEmailCode.Create(challengeId, Guid.NewGuid(), "test@example.com", "hashed");
-        
+
         // Simulate max attempts reached (MaxAttempts = 3)
         for (int i = 0; i < 3; i++)
         {
             emailCode.RecordAttempt();
         }
-        
+
         _emailCodeRepository.Setup(x => x.GetValidCodeByChallengeIdAsync(
-                challengeId, 
+                challengeId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(emailCode);
 
@@ -279,12 +279,12 @@ public class MfaEmailServiceTests
         var challengeId = Guid.NewGuid();
         var code = "12345678";
         var (emailCode, _) = MfaEmailCode.Create(challengeId, Guid.NewGuid(), "test@example.com", "hashed");
-        
+
         _emailCodeRepository.Setup(x => x.GetValidCodeByChallengeIdAsync(
-                challengeId, 
+                challengeId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(emailCode);
-        
+
         _passwordHasher.Setup(x => x.Verify(code, "hashed"))
             .Returns(false);
 
@@ -305,12 +305,12 @@ public class MfaEmailServiceTests
         var challengeId = Guid.NewGuid();
         var code = "12345678";
         var (emailCode, _) = MfaEmailCode.Create(challengeId, Guid.NewGuid(), "test@example.com", "hashed");
-        
+
         _emailCodeRepository.Setup(x => x.GetValidCodeByChallengeIdAsync(
-                challengeId, 
+                challengeId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(emailCode);
-        
+
         _passwordHasher.Setup(x => x.Verify(code, "hashed"))
             .Returns(true);
 
@@ -330,9 +330,9 @@ public class MfaEmailServiceTests
         // Arrange
         var challengeId = Guid.NewGuid();
         var code = "12345678";
-        
+
         _emailCodeRepository.Setup(x => x.GetValidCodeByChallengeIdAsync(
-                challengeId, 
+                challengeId,
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
@@ -354,10 +354,10 @@ public class MfaEmailServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(2); // Under limit of 3
 
@@ -369,7 +369,7 @@ public class MfaEmailServiceTests
         result.CodesUsed.Should().Be(2);
         result.MaxCodesAllowed.Should().Be(3);
         result.WindowResetTime.Should().BeCloseTo(
-            DateTimeOffset.UtcNow.AddMinutes(-15).AddMinutes(15), 
+            DateTimeOffset.UtcNow.AddMinutes(-15).AddMinutes(15),
             TimeSpan.FromSeconds(1));
     }
 
@@ -378,10 +378,10 @@ public class MfaEmailServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(3); // At limit
 
@@ -400,10 +400,10 @@ public class MfaEmailServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         DateTimeOffset capturedWindowStart = default;
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .Callback<Guid, DateTimeOffset, CancellationToken>((_, windowStart, _) => capturedWindowStart = windowStart)
             .ReturnsAsync(1);
@@ -426,9 +426,9 @@ public class MfaEmailServiceTests
     {
         // Arrange
         DateTimeOffset capturedExpiredBefore = default;
-        
+
         _emailCodeRepository.Setup(x => x.DeleteExpiredCodesAsync(
-                It.IsAny<DateTimeOffset>(), 
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .Callback<DateTimeOffset, CancellationToken>((expiredBefore, _) => capturedExpiredBefore = expiredBefore)
             .ReturnsAsync(10);
@@ -448,7 +448,7 @@ public class MfaEmailServiceTests
     {
         // Arrange
         _emailCodeRepository.Setup(x => x.DeleteExpiredCodesAsync(
-                It.IsAny<DateTimeOffset>(), 
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
@@ -472,17 +472,17 @@ public class MfaEmailServiceTests
         var email = "test@example.com";
         RenderedEmail capturedEmail = null!;
         string capturedCode = null!;
-        
+
         _emailCodeRepository.Setup(x => x.GetCodeCountSinceAsync(
-                userId, 
-                It.IsAny<DateTimeOffset>(), 
+                userId,
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
-        
+
         _passwordHasher.Setup(x => x.Hash(It.IsAny<string>()))
             .Callback<string>(code => capturedCode = code)
             .Returns("hashed_code");
-        
+
         _emailService.Setup(x => x.SendEmailAsync(email, It.IsAny<RenderedEmail>()))
             .Callback<string, RenderedEmail>((_, renderedEmail) => capturedEmail = renderedEmail)
             .Returns(Task.CompletedTask);

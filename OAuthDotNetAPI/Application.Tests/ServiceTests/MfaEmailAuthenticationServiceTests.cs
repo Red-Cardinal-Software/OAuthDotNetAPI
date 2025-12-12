@@ -36,9 +36,9 @@ public class MfaEmailAuthenticationServiceTests
             new Claim(ClaimTypes.Name, "testuser")
             // No email claim
         }));
-        
-        var request = new SendEmailCodeDto 
-        { 
+
+        var request = new SendEmailCodeDto
+        {
             ChallengeId = challengeId,
             EmailAddress = null
         };
@@ -46,7 +46,7 @@ public class MfaEmailAuthenticationServiceTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => _service.SendCodeAsync(user, request, null));
-        
+
         exception.Message.Should().Be("No email address provided and no email found in user profile");
     }
 
@@ -57,16 +57,16 @@ public class MfaEmailAuthenticationServiceTests
         var userId = Guid.NewGuid();
         var challengeId = Guid.NewGuid();
         var email = "user@domain.com";
-        
+
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Name, "testuser"),
             new Claim(ClaimTypes.Email, email)
         }));
-        
-        var request = new SendEmailCodeDto 
-        { 
+
+        var request = new SendEmailCodeDto
+        {
             ChallengeId = challengeId,
             EmailAddress = null // No email in request
         };
@@ -95,18 +95,18 @@ public class MfaEmailAuthenticationServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var challengeId = Guid.NewGuid();
-        
+
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Name, "testuser"),
             new Claim(ClaimTypes.Email, email)
         }));
-        
-        var request = new SendEmailCodeDto 
-        { 
+
+        var request = new SendEmailCodeDto
+        {
             ChallengeId = challengeId,
-            EmailAddress = email 
+            EmailAddress = email
         };
 
         // Mock the service to return success
@@ -126,10 +126,10 @@ public class MfaEmailAuthenticationServiceTests
     {
         // Arrange
         var challengeId = Guid.NewGuid();
-        var request = new VerifyEmailCodeDto 
-        { 
+        var request = new VerifyEmailCodeDto
+        {
             ChallengeId = challengeId,
-            Code = "12345678" 
+            Code = "12345678"
         };
 
         // Mock the service to return success
@@ -158,12 +158,12 @@ public class MfaEmailAuthenticationServiceTests
         }));
 
         // Mock the service to return success
-        var mockResult = new MfaRateLimitResult 
-        { 
-            IsAllowed = true, 
-            CodesUsed = 2, 
-            MaxCodesAllowed = 5, 
-            WindowResetTime = DateTime.UtcNow.AddMinutes(30) 
+        var mockResult = new MfaRateLimitResult
+        {
+            IsAllowed = true,
+            CodesUsed = 2,
+            MaxCodesAllowed = 5,
+            WindowResetTime = DateTime.UtcNow.AddMinutes(30)
         };
         _emailMfaService.Setup(x => x.CheckRateLimitAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockResult);
@@ -174,13 +174,13 @@ public class MfaEmailAuthenticationServiceTests
         // Assert
         _emailMfaService.Verify(x => x.CheckRateLimitAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
         result.Should().NotBeNull();
-        
+
         // Cast to anonymous type via reflection since we know the structure
         var resultType = result.GetType();
         var isAllowed = (bool)resultType.GetProperty("isAllowed")!.GetValue(result)!;
         var codesUsed = (int)resultType.GetProperty("codesUsed")!.GetValue(result)!;
         var maxCodes = (int)resultType.GetProperty("maxCodes")!.GetValue(result)!;
-        
+
         Assert.True(isAllowed);
         Assert.Equal(2, codesUsed);
         Assert.Equal(5, maxCodes);

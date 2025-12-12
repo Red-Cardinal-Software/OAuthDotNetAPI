@@ -36,12 +36,12 @@ public class AccountLockoutService(
     {
         // Record the failed attempt
         var failedAttempt = LoginAttempt.CreateFailed(
-            userId, 
-            username, 
-            failureReason, 
-            ipAddress, 
+            userId,
+            username,
+            failureReason,
+            ipAddress,
             userAgent);
-        
+
         await loginAttemptRepository.AddAsync(failedAttempt, cancellationToken);
 
         // Only proceed with lockout logic if the attempt should count towards lockout
@@ -89,11 +89,11 @@ public class AccountLockoutService(
         if (lockoutConfig.TrackLoginAttempts)
         {
             var successfulAttempt = LoginAttempt.CreateSuccessful(
-                userId, 
-                username, 
-                ipAddress, 
+                userId,
+                username,
+                ipAddress,
                 userAgent);
-            
+
             await loginAttemptRepository.AddAsync(successfulAttempt, cancellationToken);
         }
 
@@ -114,7 +114,7 @@ public class AccountLockoutService(
         CancellationToken cancellationToken = default)
     {
         var lockout = await accountLockoutRepository.GetByUserIdAsync(userId, cancellationToken);
-        
+
         // If no lockout record exists, the user is not locked
         if (lockout == null)
             return null;
@@ -153,7 +153,7 @@ public class AccountLockoutService(
         CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         var lockout = await accountLockoutRepository.GetOrCreateAsync(userId, cancellationToken);
-        
+
         lockout.LockAccount(duration, reason, lockedByUserId);
     });
 
@@ -217,23 +217,23 @@ public class AccountLockoutService(
         var totalProcessed = 0;
         const int batchSize = 100;
         var currentPage = 1;
-        
+
         // Process expired lockouts in batches to prevent memory issues
         while (true)
         {
             var expiredLockouts = await accountLockoutRepository.GetExpiredLockoutsAsync(currentPage, batchSize, cancellationToken);
-            
+
             if (!expiredLockouts.Any())
                 break;
-                
+
             foreach (var lockout in expiredLockouts)
             {
                 lockout.UnlockAccount(resetFailedAttempts: false);
             }
-            
+
             totalProcessed += expiredLockouts.Count;
             currentPage++;
-            
+
             // If we got fewer results than batch size, we've processed all
             if (expiredLockouts.Count < batchSize)
                 break;

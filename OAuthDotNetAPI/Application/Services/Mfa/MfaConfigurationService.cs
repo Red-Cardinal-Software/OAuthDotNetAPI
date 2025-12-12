@@ -29,7 +29,7 @@ public class MfaConfigurationService(
     IOptions<AppOptions> appOptions,
     IOptions<MfaOptions> mfaOptions,
     IEmailService emailService,
-    ILogger<MfaConfigurationService> logger) 
+    ILogger<MfaConfigurationService> logger)
     : BaseAppService(unitOfWork), IMfaConfigurationService
 {
 
@@ -59,7 +59,7 @@ public class MfaConfigurationService(
         // Generate new secret and create unverified method
         var secret = totpProvider.GenerateSecret();
         var issuerName = appOptions.Value.AppName;
-        
+
         var mfaMethod = MfaMethod.CreateTotp(userId, secret);
         await mfaMethodRepository.AddAsync(mfaMethod, cancellationToken);
 
@@ -122,7 +122,7 @@ public class MfaConfigurationService(
         // If this is the user's first MFA method, make it default
         var existingMethodCount = await mfaMethodRepository.GetEnabledCountByUserIdAsync(userId, cancellationToken);
         var isFirstMethod = existingMethodCount == 0;
-        
+
         if (isFirstMethod)
         {
             mfaMethod.SetAsDefault();
@@ -134,7 +134,7 @@ public class MfaConfigurationService(
         // Get the recovery codes that were just generated
         var recoveryCodes = mfaMethod.GetNewRecoveryCodes();
 
-        logger.LogInformation("TOTP setup completed for user {UserId}, method {MethodId}", 
+        logger.LogInformation("TOTP setup completed for user {UserId}, method {MethodId}",
             userId, mfaMethod.Id);
 
         return new MfaSetupCompleteDto
@@ -177,26 +177,26 @@ public class MfaConfigurationService(
         var emailMethod = MfaMethod.CreateEmail(userId, emailAddress);
         await mfaMethodRepository.AddAsync(emailMethod, cancellationToken);
 
-        logger.LogInformation("Email MFA setup initiated for user {UserId}, method {MethodId}", 
+        logger.LogInformation("Email MFA setup initiated for user {UserId}, method {MethodId}",
             userId, emailMethod.Id);
 
         // Generate and send verification code
         var codeSent = false;
         string message;
-        
+
         try
         {
             // Generate a secure code
             var plainCode = GenerateSecureVerificationCode();
             var hashedCode = passwordHasher.Hash(plainCode);
             var codeExpiry = DateTimeOffset.UtcNow.AddMinutes(mfaOptions.Value.ChallengeExpiryMinutes);
-            
+
             // Store the hashed code in the MFA method metadata
             emailMethod.StoreSetupVerificationCode(hashedCode, codeExpiry);
-            
+
             // Send the verification email
             var emailSent = await SendSetupVerificationEmailAsync(emailAddress, plainCode, cancellationToken);
-            
+
             if (emailSent)
             {
                 codeSent = true;
@@ -277,7 +277,7 @@ public class MfaConfigurationService(
         // If this is the user's first MFA method, make it default
         var existingMethodCount = await mfaMethodRepository.GetEnabledCountByUserIdAsync(userId, cancellationToken);
         var isFirstMethod = existingMethodCount == 0;
-        
+
         if (isFirstMethod)
         {
             mfaMethod.SetAsDefault();
@@ -289,7 +289,7 @@ public class MfaConfigurationService(
         // Get the recovery codes that were just generated
         var recoveryCodes = mfaMethod.GetNewRecoveryCodes();
 
-        logger.LogInformation("Email MFA setup completed for user {UserId}, method {MethodId}", 
+        logger.LogInformation("Email MFA setup completed for user {UserId}, method {MethodId}",
             userId, mfaMethod.Id);
 
         return new MfaSetupCompleteDto
@@ -312,7 +312,7 @@ public class MfaConfigurationService(
             return false;
 
         mfaMethodRepository.Remove(mfaMethod);
-        
+
         logger.LogInformation("MFA setup cancelled for user {UserId}, type {MfaType}", userId, mfaType);
         return true;
     });
@@ -330,7 +330,7 @@ public class MfaConfigurationService(
         var enabledMethods = methods.Where(m => m.IsEnabled).ToList();
 
         var methodDtos = methods.Select(MapToDto).ToArray();
-        
+
         // Determine available types (types not already set up)
         var existingTypes = methods.Where(m => m.IsEnabled).Select(m => m.Type).ToHashSet();
         var availableTypes = Enum.GetValues<MfaType>()
@@ -393,7 +393,7 @@ public class MfaConfigurationService(
                 {
                     logger.LogWarning("Last MFA method disabled for user {UserId}", userId);
                 }
-                
+
                 method.Disable();
             }
         }
@@ -407,9 +407,9 @@ public class MfaConfigurationService(
         {
             method.RemoveDefault();
         }
-        
+
         logger.LogInformation("MFA method {MethodId} updated for user {UserId}", methodId, userId);
-        
+
         return MapToDto(method);
     });
 
@@ -427,7 +427,7 @@ public class MfaConfigurationService(
 
         // Set new default
         method.SetAsDefault();
-        
+
         logger.LogInformation("MFA method {MethodId} set as default for user {UserId}", methodId, userId);
     });
 
@@ -455,7 +455,7 @@ public class MfaConfigurationService(
             throw new InvalidOperationException("MFA method cannot be safely removed");
 
         mfaMethodRepository.Remove(method);
-        
+
         logger.LogInformation("MFA method {MethodId} removed for user {UserId}", methodId, userId);
         return true;
     });
@@ -475,15 +475,15 @@ public class MfaConfigurationService(
 
         // Generate new recovery codes using the secure service
         var newRecoveryCodes = mfaRecoveryCodeService.GenerateRecoveryCodes(methodId, 8);
-        
+
         // Set the new codes on the method (this replaces unused codes)
         method.SetRecoveryCodes(newRecoveryCodes);
-        
+
         // Get the plain text codes for return
         var plainTextCodes = method.GetNewRecoveryCodes();
-        
+
         logger.LogInformation("Recovery codes regenerated for user {UserId}, method {MethodId}", userId, methodId);
-        
+
         return plainTextCodes.ToArray();
     });
 
@@ -524,7 +524,7 @@ public class MfaConfigurationService(
 
         var enabledCount = await mfaMethodRepository.GetEnabledCountByUserIdAsync(userId, cancellationToken);
         var remainingCount = method.IsEnabled ? enabledCount - 1 : enabledCount;
-        
+
         var warnings = new List<string>();
         var willDisableMfa = remainingCount == 0;
 
@@ -572,13 +572,13 @@ public class MfaConfigurationService(
     public async Task<MfaStatisticsDto> GetMfaStatisticsAsync(Guid? organizationId = null, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
-        
+
         // Gather statistics from repositories based on scope
         int totalUsers;
-        int usersWithMfa; 
+        int usersWithMfa;
         Dictionary<MfaType, int> methodsByType;
         int unverifiedSetups;
-        
+
         if (organizationId.HasValue)
         {
             // Organization-scoped statistics
@@ -595,14 +595,14 @@ public class MfaConfigurationService(
             methodsByType = await mfaMethodRepository.GetMethodCountByTypeAsync(cancellationToken);
             unverifiedSetups = await mfaMethodRepository.GetUnverifiedMethodCountAsync(cancellationToken);
         }
-        
+
         // Calculate adoption rate
         var adoptionRate = totalUsers > 0 ? (decimal)usersWithMfa / totalUsers * 100 : 0;
-        
+
         var scopeDescription = organizationId.HasValue ? $"organization {organizationId.Value}" : "system-wide";
-        logger.LogInformation("MFA statistics generated ({Scope}): {UsersWithMfa}/{TotalUsers} users have MFA enabled ({AdoptionRate:F1}%)", 
+        logger.LogInformation("MFA statistics generated ({Scope}): {UsersWithMfa}/{TotalUsers} users have MFA enabled ({AdoptionRate:F1}%)",
             scopeDescription, usersWithMfa, totalUsers, adoptionRate);
-        
+
         return new MfaStatisticsDto
         {
             TotalUsers = totalUsers,
@@ -621,15 +621,15 @@ public class MfaConfigurationService(
     {
         var cutoffTime = DateTimeOffset.UtcNow.Subtract(maxAge);
         var unverifiedMethods = await mfaMethodRepository.GetUnverifiedOlderThanAsync(cutoffTime, cancellationToken);
-        
+
         foreach (var method in unverifiedMethods)
         {
             mfaMethodRepository.Remove(method);
         }
 
-        logger.LogInformation("Cleaned up {Count} unverified MFA methods older than {MaxAge}", 
+        logger.LogInformation("Cleaned up {Count} unverified MFA methods older than {MaxAge}",
             unverifiedMethods.Count, maxAge);
-        
+
         return unverifiedMethods.Count;
     });
 
@@ -674,7 +674,7 @@ public class MfaConfigurationService(
     {
         if (string.IsNullOrWhiteSpace(metadata))
             return null;
-            
+
         try
         {
             var json = System.Text.Json.JsonDocument.Parse(metadata);
@@ -734,11 +734,11 @@ public class MfaConfigurationService(
         using var rng = RandomNumberGenerator.Create();
         var bytes = new byte[4];
         rng.GetBytes(bytes);
-        
+
         // Convert to uint and take modulo to get 8-digit number
         var value = BinaryPrimitives.ReadUInt32BigEndian(bytes);
         var code = (value % 90000000) + 10000000; // Ensures 8 digits
-        
+
         return code.ToString();
     }
 
@@ -751,14 +751,14 @@ public class MfaConfigurationService(
         {
             var emailOptions = mfaOptions.Value;
             var appName = appOptions.Value.AppName;
-            
+
             await emailService.SendMfaSetupVerificationCodeAsync(
-                emailAddress, 
-                code, 
-                emailOptions.ChallengeExpiryMinutes, 
-                appName, 
+                emailAddress,
+                code,
+                emailOptions.ChallengeExpiryMinutes,
+                appName,
                 cancellationToken);
-            
+
             return true;
         }
         catch (Exception ex)

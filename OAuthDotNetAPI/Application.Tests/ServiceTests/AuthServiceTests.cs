@@ -36,7 +36,7 @@ public class AuthServiceTests
     public AuthServiceTests()
     {
         var logger = new LogContextHelper<AuthService>(_mockLogger.Object);
-        
+
         // Create AppOptions for the test
         var appOptions = new AppOptions
         {
@@ -50,7 +50,7 @@ public class AuthServiceTests
             PasswordMinimumLength = 8,
             PasswordMaximumLength = 64
         };
-        
+
         var mockAppOptions = new Mock<IOptions<AppOptions>>();
         mockAppOptions.Setup(x => x.Value).Returns(appOptions);
 
@@ -76,7 +76,7 @@ public class AuthServiceTests
         // Arrange
         _userRepo.Setup(x => x.UserExistsAsync("fakeuser")).ReturnsAsync(false);
         _accountLockoutService.Setup(x => x.RecordFailedAttemptAsync(
-            Guid.Empty, "fakeuser", "127.0.0.1", null, ServiceResponseConstants.UserDoesNotExist, 
+            Guid.Empty, "fakeuser", "127.0.0.1", null, ServiceResponseConstants.UserDoesNotExist,
             It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
@@ -100,13 +100,13 @@ public class AuthServiceTests
         _refreshTokenRepository.Setup(x =>
             x.SaveRefreshTokenAsync(It.IsAny<RefreshToken>())
         ).ReturnsAsync(refreshToken);
-        
+
         // Account lockout service mocks
         _accountLockoutService.Setup(x => x.GetAccountLockoutAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Domain.Entities.Security.AccountLockout?)null);
         _accountLockoutService.Setup(x => x.RecordSuccessfulLoginAsync(
             user.Id, "testuser", "127.0.0.1", null, It.IsAny<CancellationToken>()));
-        
+
         // MFA service mocks
         _mfaAuthenticationService.Setup(x => x.RequiresMfaAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -128,7 +128,7 @@ public class AuthServiceTests
         _userRepo.Setup(x => x.UserExistsAsync("testuser")).ReturnsAsync(true);
         _userRepo.Setup(x => x.GetUserByUsernameAsync("testuser")).ReturnsAsync(user);
         _passwordHasher.Setup(x => x.Verify("wrongpass", "hashedpass")).Returns(false);
-        
+
         // Account lockout service mocks
         _accountLockoutService.Setup(x => x.GetAccountLockoutAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Domain.Entities.Security.AccountLockout?)null);
@@ -241,7 +241,7 @@ public class AuthServiceTests
         // Arrange
         var user = new AppUserBuilder().Build();
         var lockedAccount = Domain.Entities.Security.AccountLockout.CreateForUser(user.Id);
-        
+
         // Manually lock the account to simulate a locked state
         lockedAccount.LockAccount(TimeSpan.FromMinutes(30), "Too many failed attempts", null);
 
@@ -267,7 +267,7 @@ public class AuthServiceTests
         _userRepo.Setup(x => x.UserExistsAsync("testuser")).ReturnsAsync(true);
         _userRepo.Setup(x => x.GetUserByUsernameAsync("testuser")).ReturnsAsync(user);
         _passwordHasher.Setup(x => x.Verify("wrongpass", It.IsAny<string>())).Returns(false);
-        
+
         // Account lockout service mocks
         _accountLockoutService.Setup(x => x.GetAccountLockoutAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Domain.Entities.Security.AccountLockout?)null);

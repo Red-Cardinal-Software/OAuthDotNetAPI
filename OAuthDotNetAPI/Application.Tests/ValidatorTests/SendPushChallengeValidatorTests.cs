@@ -14,8 +14,8 @@ public class SendPushChallengeValidatorTests
     public void Should_Have_Error_When_DeviceId_Is_Empty()
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.Empty,
             SessionId = "valid-session-123"
         };
@@ -30,8 +30,8 @@ public class SendPushChallengeValidatorTests
     public void Should_Not_Have_Error_When_DeviceId_Is_Valid()
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = "valid-session-123"
         };
@@ -45,11 +45,11 @@ public class SendPushChallengeValidatorTests
     [InlineData("")]
     [InlineData(null)]
     [InlineData("   ")]
-    public void Should_Have_Error_When_SessionId_Is_Empty_Or_Whitespace(string sessionId)
+    public void Should_Have_Error_When_SessionId_Is_Empty_Or_Whitespace(string? sessionId)
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = sessionId
         };
@@ -66,8 +66,8 @@ public class SendPushChallengeValidatorTests
     public void Should_Have_Error_When_SessionId_Is_Too_Short(string sessionId)
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = sessionId
         };
@@ -83,8 +83,8 @@ public class SendPushChallengeValidatorTests
     {
         // Arrange
         var longSessionId = new string('a', 129); // 129 characters - too long
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = longSessionId
         };
@@ -103,8 +103,8 @@ public class SendPushChallengeValidatorTests
     public void Should_Have_Error_When_SessionId_Contains_Invalid_Characters(string sessionId)
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = sessionId
         };
@@ -125,8 +125,8 @@ public class SendPushChallengeValidatorTests
     public void Should_Not_Have_Error_When_SessionId_Is_Valid(string sessionId)
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = sessionId
         };
@@ -141,11 +141,11 @@ public class SendPushChallengeValidatorTests
     [InlineData("")]
     [InlineData("New York")]
     [InlineData("San Francisco, CA")]
-    public void Should_Not_Have_Error_When_Location_Is_Valid_Or_Empty(string location)
+    public void Should_Not_Have_Error_When_Location_Is_Valid_Or_Empty(string? location)
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = "valid-session-123",
             Location = location
@@ -161,8 +161,8 @@ public class SendPushChallengeValidatorTests
     {
         // Arrange
         var longLocation = new string('a', 101); // 101 characters - too long
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = "valid-session-123",
             Location = longLocation
@@ -184,8 +184,8 @@ public class SendPushChallengeValidatorTests
     public void Should_Have_Error_When_Location_Contains_Invalid_Characters(string location)
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = "valid-session-123",
             Location = location
@@ -201,8 +201,8 @@ public class SendPushChallengeValidatorTests
     public void Should_Pass_Validation_When_All_Fields_Are_Valid()
     {
         // Arrange
-        var dto = new SendPushChallengeDto 
-        { 
+        var dto = new SendPushChallengeDto
+        {
             DeviceId = Guid.NewGuid(),
             SessionId = "valid-session-123",
             Location = "New York, NY"

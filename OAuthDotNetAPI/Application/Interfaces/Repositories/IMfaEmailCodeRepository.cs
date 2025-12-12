@@ -33,8 +33,8 @@ public interface IMfaEmailCodeRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Collection of recent email codes</returns>
     Task<IReadOnlyList<MfaEmailCode>> GetRecentCodesByUserIdAsync(
-        Guid userId, 
-        DateTimeOffset since, 
+        Guid userId,
+        DateTimeOffset since,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -61,7 +61,7 @@ public interface IMfaEmailCodeRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Collection of expired codes</returns>
     Task<IReadOnlyList<MfaEmailCode>> GetExpiredCodesAsync(
-        DateTimeOffset expiredBefore, 
+        DateTimeOffset expiredBefore,
         CancellationToken cancellationToken = default);
 
     /// <summary>

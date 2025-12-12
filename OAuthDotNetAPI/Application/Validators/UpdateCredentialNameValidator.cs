@@ -9,7 +9,7 @@ namespace Application.Validators;
 /// </summary>
 public class UpdateCredentialNameValidator : AbstractValidator<UpdateCredentialNameDto>
 {
-    private static readonly string[] ForbiddenNames = 
+    private static readonly string[] ForbiddenNames =
     {
         "admin", "administrator", "system", "test", "default", "null", "undefined",
         "password", "secret", "key", "token", "credential"

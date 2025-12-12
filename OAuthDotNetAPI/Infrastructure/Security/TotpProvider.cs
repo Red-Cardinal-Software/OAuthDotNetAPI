@@ -27,7 +27,7 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
         var bytes = new byte[length];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(bytes);
-        
+
         return ToBase32(bytes);
     }
 
@@ -38,23 +38,23 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
     {
         if (string.IsNullOrWhiteSpace(accountName))
             throw new ArgumentException("Account name cannot be empty", nameof(accountName));
-        
+
         if (string.IsNullOrWhiteSpace(secret))
             throw new ArgumentException("Secret cannot be empty", nameof(secret));
 
         issuer ??= _defaultIssuer;
-        
+
         var encodedIssuer = Uri.EscapeDataString(issuer);
         var encodedAccount = Uri.EscapeDataString(accountName);
-        
+
         var uri = $"otpauth://totp/{encodedIssuer}:{encodedAccount}?secret={secret}&issuer={encodedIssuer}";
-        
+
         if (digits != 6)
             uri += $"&digits={digits}";
-            
+
         if (period != 30)
             uri += $"&period={period}";
-            
+
         return uri;
     }
 
@@ -71,7 +71,7 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
             using var qrGenerator = new QRCodeGenerator();
             using var qrCodeData = qrGenerator.CreateQrCode(uri, QRCodeGenerator.ECCLevel.Q);
             using var qrCode = new PngByteQRCode(qrCodeData);
-            
+
             var qrCodeBytes = qrCode.GetGraphic(size / 25); // Roughly 25 pixels per module
             return Convert.ToBase64String(qrCodeBytes);
         });
@@ -84,13 +84,13 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
     {
         if (string.IsNullOrWhiteSpace(secret))
             return false;
-            
+
         if (string.IsNullOrWhiteSpace(code) || code.Length != digits)
             return false;
 
         // Remove any spaces or formatting from the code
         var cleanCode = code.Replace(" ", "").Replace("-", "");
-        
+
         if (!int.TryParse(cleanCode, out _))
             return false;
 
@@ -98,21 +98,21 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
         {
             var secretBytes = FromBase32(secret);
             var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            
+
             // Check the current time window and adjacent windows
             for (int i = -window; i <= window; i++)
             {
                 var timeCounter = (currentTime / period) + i;
                 var expectedCode = GenerateCodeForTimeCounter(secretBytes, timeCounter, digits);
-                
+
                 // Use constant-time comparison to prevent timing attacks
                 var cleanCodeBytes = Encoding.UTF8.GetBytes(cleanCode);
                 var expectedCodeBytes = Encoding.UTF8.GetBytes(expectedCode);
-                
+
                 if (CryptographicOperations.FixedTimeEquals(cleanCodeBytes, expectedCodeBytes))
                     return true;
             }
-            
+
             return false;
         }
         catch
@@ -132,7 +132,7 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
         var secretBytes = FromBase32(secret);
         var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var timeCounter = currentTime / period;
-        
+
         return GenerateCodeForTimeCounter(secretBytes, timeCounter, digits);
     }
 
@@ -152,7 +152,7 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
                 result.Append(' ');
             result.Append(secret[i]);
         }
-        
+
         return result.ToString();
     }
 
@@ -178,14 +178,14 @@ public class TotpProvider(IOptions<AppOptions> appOptions) : ITotpProvider
         // HMAC-SHA1
         using var hmac = new HMACSHA1(secret);
         var hash = hmac.ComputeHash(counterBytes);
-        
+
         // Dynamic truncation
         var offset = hash[^1] & 0x0F;
         var truncatedHash = ((hash[offset] & 0x7F) << 24) |
                            ((hash[offset + 1] & 0xFF) << 16) |
                            ((hash[offset + 2] & 0xFF) << 8) |
                            (hash[offset + 3] & 0xFF);
-        
+
         // Generate code
         var code = truncatedHash % (int)Math.Pow(10, digits);
         return code.ToString().PadLeft(digits, '0');

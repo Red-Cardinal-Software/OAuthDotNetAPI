@@ -48,13 +48,13 @@ public class SendEmailCodeValidatorTests
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public void Should_Not_Have_Error_When_EmailAddress_Is_Null_Or_Empty(string emailAddress)
+    public void Should_Not_Have_Error_When_EmailAddress_Is_Null_Or_Empty(string? emailAddress)
     {
         // Arrange
-        var dto = new SendEmailCodeDto 
-        { 
+        var dto = new SendEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
-            EmailAddress = emailAddress 
+            EmailAddress = emailAddress
         };
 
         // Act & Assert
@@ -66,10 +66,10 @@ public class SendEmailCodeValidatorTests
     public void Should_Have_Error_When_EmailAddress_Is_Invalid_Format()
     {
         // Arrange
-        var dto = new SendEmailCodeDto 
-        { 
+        var dto = new SendEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
-            EmailAddress = "invalid-email" 
+            EmailAddress = "invalid-email"
         };
 
         // Act & Assert
@@ -82,8 +82,8 @@ public class SendEmailCodeValidatorTests
     public void Should_Have_Error_When_EmailAddress_Is_Too_Short()
     {
         // Arrange
-        var dto = new SendEmailCodeDto 
-        { 
+        var dto = new SendEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             EmailAddress = "a@b" // 3 characters, below minimum 5
         };
@@ -99,8 +99,8 @@ public class SendEmailCodeValidatorTests
     {
         // Arrange
         var longEmail = new string('a', 250) + "@test.com"; // Over 254 characters
-        var dto = new SendEmailCodeDto 
-        { 
+        var dto = new SendEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             EmailAddress = longEmail
         };
@@ -118,10 +118,10 @@ public class SendEmailCodeValidatorTests
     public void Should_Not_Have_Error_When_EmailAddress_Is_Valid(string emailAddress)
     {
         // Arrange
-        var dto = new SendEmailCodeDto 
-        { 
+        var dto = new SendEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
-            EmailAddress = emailAddress 
+            EmailAddress = emailAddress
         };
 
         // Act & Assert
@@ -133,8 +133,8 @@ public class SendEmailCodeValidatorTests
     public void Should_Pass_Validation_When_All_Fields_Are_Valid()
     {
         // Arrange
-        var dto = new SendEmailCodeDto 
-        { 
+        var dto = new SendEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             EmailAddress = "test@example.com"
         };

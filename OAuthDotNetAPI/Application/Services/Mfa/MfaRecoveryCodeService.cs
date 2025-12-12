@@ -24,10 +24,10 @@ public class MfaRecoveryCodeService
     {
         var plainCode = MfaRecoveryCode.GenerateSecureCode();
         var normalizedCode = MfaRecoveryCode.NormalizeCode(plainCode);
-        
+
         // Use secure password hashing (BCrypt with work factor) instead of fast SHA256
         var hashedCode = _passwordHasher.Hash(normalizedCode);
-        
+
         return MfaRecoveryCode.Create(mfaMethodId, hashedCode, plainCode);
     }
 
@@ -46,10 +46,10 @@ public class MfaRecoveryCodeService
             return false;
 
         var normalizedInput = MfaRecoveryCode.NormalizeCode(inputCode);
-        
+
         // Use secure password verification with proper work factor
         var isValid = _passwordHasher.Verify(normalizedInput, recoveryCode.HashedCode);
-        
+
         if (isValid)
         {
             // Mark as used only if validation succeeds
@@ -71,12 +71,12 @@ public class MfaRecoveryCodeService
             throw new ArgumentException("Recovery code count must be between 1 and 20", nameof(count));
 
         var codes = new List<MfaRecoveryCode>(count);
-        
+
         for (int i = 0; i < count; i++)
         {
             codes.Add(GenerateRecoveryCode(mfaMethodId));
         }
-        
+
         return codes;
     }
 }

@@ -194,7 +194,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Set trust score to 98 using reflection
         SetTrustScore(device, 98);
 
@@ -203,7 +203,7 @@ public class MfaPushDeviceTests
 
         // Assert
         device.TrustScore.Should().Be(100);
-        
+
         // Act again - Should stay at 100
         device.RecordSuccessfulUse();
         device.TrustScore.Should().Be(100);
@@ -218,10 +218,10 @@ public class MfaPushDeviceTests
         // Act - First use
         device.RecordSuccessfulUse();
         var firstUseTime = device.LastUsedAt;
-        
+
         // Small delay
         Thread.Sleep(10);
-        
+
         // Act - Second use
         device.RecordSuccessfulUse();
         var secondUseTime = device.LastUsedAt;
@@ -253,7 +253,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Set trust score to 5 using reflection
         SetTrustScore(device, 5);
 
@@ -262,7 +262,7 @@ public class MfaPushDeviceTests
 
         // Assert
         device.TrustScore.Should().Be(0);
-        
+
         // Act again - Should stay at 0
         device.RecordSuspiciousActivity();
         device.TrustScore.Should().Be(0);
@@ -273,7 +273,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Set trust score to 25
         SetTrustScore(device, 25);
 
@@ -290,7 +290,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Set trust score to 30
         SetTrustScore(device, 30);
 
@@ -351,7 +351,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Change trust score and deactivate
         SetTrustScore(device, 75);
         device.Deactivate();
@@ -472,7 +472,7 @@ public class MfaPushDeviceTests
         {
             device.RecordSuspiciousActivity();
         }
-        
+
         device.IsActive.Should().BeFalse();
 
         // Act - Reactivate
@@ -528,7 +528,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Set trust score to near maximum
         SetTrustScore(device, 95);
 
@@ -547,7 +547,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Set trust score to low value
         SetTrustScore(device, 5);
 
@@ -567,7 +567,7 @@ public class MfaPushDeviceTests
     {
         // Arrange
         var device = new MfaPushDevice(_mfaMethodId, _userId, TestDeviceId, TestDeviceName, TestPlatform, TestPushToken, TestPublicKey);
-        
+
         // Set trust score exactly to 20
         SetTrustScore(device, 20);
 
@@ -588,14 +588,14 @@ public class MfaPushDeviceTests
         // Act & Assert - Deactivate then reactivate multiple times
         device.Deactivate();
         device.IsActive.Should().BeFalse();
-        
+
         device.Reactivate();
         device.IsActive.Should().BeTrue();
         device.TrustScore.Should().Be(50);
-        
+
         device.Deactivate();
         device.IsActive.Should().BeFalse();
-        
+
         device.Reactivate();
         device.IsActive.Should().BeTrue();
         device.TrustScore.Should().Be(50);

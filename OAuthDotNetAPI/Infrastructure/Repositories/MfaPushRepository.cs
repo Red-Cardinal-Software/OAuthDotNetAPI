@@ -23,7 +23,7 @@ public class MfaPushRepository(ICrudOperator<MfaPushDevice> pushDeviceCrud, ICru
 
         return devices.AsReadOnly();
     }
-    
+
     public async Task AddPushDeviceAsync(MfaPushDevice device, CancellationToken cancellationToken = default) =>
         await pushDeviceCrud.AddAsync(device, cancellationToken);
 

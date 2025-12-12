@@ -106,8 +106,8 @@ public class MfaChallenge
     /// <param name="userAgent">User agent of the request</param>
     /// <returns>A new MFA challenge</returns>
     public static MfaChallenge Create(
-        Guid userId, 
-        MfaType type, 
+        Guid userId,
+        MfaType type,
         Guid? mfaMethodId = null,
         string? ipAddress = null,
         string? userAgent = null)
@@ -162,7 +162,7 @@ public class MfaChallenge
     {
         if (IsInvalid)
             throw new InvalidOperationException("Cannot complete an invalid challenge");
-        
+
         if (IsCompleted)
             throw new InvalidOperationException("Challenge is already completed");
 
@@ -241,7 +241,7 @@ public class MfaChallenge
         {
             var bytes = new byte[TokenLength];
             rng.GetBytes(bytes);
-            
+
             // Convert to URL-safe base64
             return Convert.ToBase64String(bytes)
                 .Replace('+', '-')

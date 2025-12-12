@@ -46,12 +46,12 @@ public class MfaPushService(
             // Check if device already exists
             var existingDevice = await mfaRepository.GetPushDeviceByDeviceIdAsync(
                 userId, request.DeviceId, cancellationToken);
-            
+
             if (existingDevice != null)
             {
                 // Update existing device token
                 existingDevice.UpdatePushToken(request.PushToken);
-                
+
                 return ServiceResponseFactory.Success(
                     MapToDto(existingDevice),
                     "Device token updated successfully");
@@ -91,7 +91,7 @@ public class MfaPushService(
             logger.LogError(ex,
                 "Error registering push device for user {UserId}",
                 userId);
-            
+
             return ServiceResponseFactory.Error<MfaPushDeviceDto>(
                 "Failed to register device");
         }
@@ -108,7 +108,7 @@ public class MfaPushService(
         {
             // Get the device
             var device = await mfaRepository.GetPushDeviceAsync(deviceId, cancellationToken);
-            
+
             if (device == null || device.UserId != userId || !device.IsActive)
             {
                 return ServiceResponseFactory.Error<MfaPushChallengeDto>(
@@ -118,7 +118,7 @@ public class MfaPushService(
             // Check for rate limiting
             var recentChallenges = await mfaRepository.GetRecentPushChallengesCountAsync(
                 userId, TimeSpan.FromMinutes(_options.RateLimitWindowMinutes), cancellationToken);
-            
+
             if (recentChallenges >= _options.MaxChallengesPerWindow)
             {
                 return ServiceResponseFactory.Error<MfaPushChallengeDto>(
@@ -152,7 +152,7 @@ public class MfaPushService(
 
             var browserInfo = ParseUserAgent(sessionInfo.UserAgent);
             var locationText = sessionInfo.Location ?? "Unknown location";
-            
+
             var success = await pushProvider.SendPushNotificationAsync(
                 device.PushToken,
                 $"{_appOptions.AppName} Login Request",
@@ -182,7 +182,7 @@ public class MfaPushService(
             logger.LogError(ex,
                 "Error sending push challenge for user {UserId}",
                 userId);
-            
+
             return ServiceResponseFactory.Error<MfaPushChallengeDto>(
                 "Failed to send push notification");
         }
@@ -197,7 +197,7 @@ public class MfaPushService(
         try
         {
             var challenge = await mfaRepository.GetPushChallengeAsync(challengeId, cancellationToken);
-            
+
             if (challenge == null || challenge.SessionId != sessionId)
             {
                 return ServiceResponseFactory.Error<MfaPushChallengeStatusDto>(
@@ -225,7 +225,7 @@ public class MfaPushService(
             logger.LogError(ex,
                 "Error checking challenge status {ChallengeId}",
                 challengeId);
-            
+
             return ServiceResponseFactory.Error<MfaPushChallengeStatusDto>(
                 "Failed to check challenge status");
         }
@@ -240,7 +240,7 @@ public class MfaPushService(
         try
         {
             var challenge = await mfaRepository.GetPushChallengeAsync(challengeId, cancellationToken);
-            
+
             if (challenge == null)
             {
                 return ServiceResponseFactory.Error<bool>(
@@ -253,14 +253,14 @@ public class MfaPushService(
                 logger.LogWarning(
                     "Challenge response from wrong device. Expected {ExpectedDevice}, got {ActualDevice}",
                     challenge.DeviceId, response.DeviceId);
-                
+
                 return ServiceResponseFactory.Error<bool>(
                     "Invalid device");
             }
 
             // Get device to verify signature
             var device = await mfaRepository.GetPushDeviceAsync(response.DeviceId, cancellationToken);
-            
+
             if (device == null || !device.IsActive)
             {
                 return ServiceResponseFactory.Error<bool>(
@@ -271,11 +271,11 @@ public class MfaPushService(
             if (!VerifyResponseSignature(challenge, response, device.PublicKey))
             {
                 device.RecordSuspiciousActivity();
-                
+
                 logger.LogWarning(
                     "Invalid signature for challenge {ChallengeId} from device {DeviceId}",
                     challengeId, response.DeviceId);
-                
+
                 return ServiceResponseFactory.Error<bool>(
                     "Invalid signature");
             }
@@ -299,7 +299,7 @@ public class MfaPushService(
             logger.LogError(ex,
                 "Error responding to challenge {ChallengeId}",
                 challengeId);
-            
+
             return ServiceResponseFactory.Error<bool>(
                 "Failed to process response");
         }
@@ -314,7 +314,7 @@ public class MfaPushService(
         {
             var devices = await mfaRepository.GetUserPushDevicesAsync(userId, cancellationToken);
             var dtos = devices.Select(MapToDto).ToList();
-            
+
             return ServiceResponseFactory.Success<IEnumerable<MfaPushDeviceDto>>(dtos);
         }
         catch (Exception ex)
@@ -322,7 +322,7 @@ public class MfaPushService(
             logger.LogError(ex,
                 "Error getting push devices for user {UserId}",
                 userId);
-            
+
             return ServiceResponseFactory.Error<IEnumerable<MfaPushDeviceDto>>(
                 "Failed to get devices");
         }
@@ -337,7 +337,7 @@ public class MfaPushService(
         try
         {
             var device = await mfaRepository.GetPushDeviceAsync(deviceId, cancellationToken);
-            
+
             if (device == null || device.UserId != userId)
             {
                 return ServiceResponseFactory.Error<bool>(
@@ -345,11 +345,11 @@ public class MfaPushService(
             }
 
             device.Deactivate();
-            
+
             logger.LogInformation(
                 "Push device {DeviceId} removed for user {UserId}",
                 deviceId, userId);
-            
+
             return ServiceResponseFactory.Success(true, "Device removed successfully");
         }
         catch (Exception ex)
@@ -357,7 +357,7 @@ public class MfaPushService(
             logger.LogError(ex,
                 "Error removing push device {DeviceId} for user {UserId}",
                 deviceId, userId);
-            
+
             return ServiceResponseFactory.Error<bool>(
                 "Failed to remove device");
         }
@@ -372,7 +372,7 @@ public class MfaPushService(
         try
         {
             var device = await mfaRepository.GetPushDeviceAsync(deviceId, cancellationToken);
-            
+
             if (device == null)
             {
                 return ServiceResponseFactory.Error<bool>(
@@ -386,7 +386,7 @@ public class MfaPushService(
             }
 
             device.UpdatePushToken(newToken);
-            
+
             return ServiceResponseFactory.Success(true, "Device token updated");
         }
         catch (Exception ex)
@@ -394,7 +394,7 @@ public class MfaPushService(
             logger.LogError(ex,
                 "Error updating token for device {DeviceId}",
                 deviceId);
-            
+
             return ServiceResponseFactory.Error<bool>(
                 "Failed to update device token");
         }
@@ -443,7 +443,7 @@ public class MfaPushService(
             return "Safari";
         if (userAgent.Contains("Edge"))
             return "Edge";
-        
+
         return "Unknown Browser";
     }
 
@@ -470,7 +470,7 @@ public class MfaPushService(
 
             using var rsa = RSA.Create();
             rsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);
-            
+
             return rsa.VerifyData(
                 dataBytes,
                 signatureBytes,

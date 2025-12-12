@@ -211,37 +211,37 @@ public static class ServiceCollectionExtensions
             .BindConfiguration("AppSettings")
             .ValidateDataAnnotations()
             .ValidateOnStart();
-            
+
         services.AddOptions<EmailMfaOptions>()
             .BindConfiguration(EmailMfaOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-            
+
         services.AddOptions<PushMfaOptions>()
             .BindConfiguration(PushMfaOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-            
+
         services.AddOptions<MfaOptions>()
             .BindConfiguration(MfaOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-            
+
         services.AddOptions<WebAuthnOptions>()
             .BindConfiguration(WebAuthnOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-            
+
         services.AddOptions<RateLimitingOptions>()
             .BindConfiguration(RateLimitingOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-            
+
         services.AddOptions<HealthCheckOptions>()
             .BindConfiguration(HealthCheckOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-            
+
         services.AddOptions<AccountLockoutOptions>()
             .BindConfiguration(AccountLockoutOptions.SectionName)
             .ValidateDataAnnotations()
@@ -282,7 +282,7 @@ public static class ServiceCollectionExtensions
         {
             var configuration = sp.GetRequiredService<IConfiguration>();
             options.UseSqlServer(configuration.GetConnectionString("SqlConnection"));
-            
+
             // Only allow sensitive data logging when in development
             if (environment.IsDevelopment())
             {
@@ -342,7 +342,7 @@ public static class ServiceCollectionExtensions
         services.AddTypedValidation<PasswordValidator, string>();
         services.AddTypedValidation<NewUserValidator, CreateNewUserDto>();
         services.AddTypedValidation<UpdateUserValidator, AppUserDto>();
-        
+
         // MFA Validators
         services.AddTypedValidation<SendEmailCodeValidator, SendEmailCodeDto>();
         services.AddTypedValidation<VerifyEmailCodeValidator, VerifyEmailCodeDto>();
@@ -376,15 +376,15 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection AddAppHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<DatabaseHealthCheck>();
-        
+
         var healthChecksBuilder = services.AddHealthChecks()
-            .AddCheck<DatabaseHealthCheck>("database", 
+            .AddCheck<DatabaseHealthCheck>("database",
                 failureStatus: HealthStatus.Unhealthy,
                 tags: ["db", "sql", "ready"]);
 
         // Use strongly-typed configuration instead of raw config values
         var healthCheckOptions = configuration.GetSection(HealthCheckOptions.SectionName).Get<HealthCheckOptions>() ?? new HealthCheckOptions();
-        
+
         if (healthCheckOptions.IncludeMemoryCheck)
         {
             services.AddScoped<MemoryHealthCheck>();
@@ -416,7 +416,7 @@ public static class ServiceCollectionExtensions
             // We need to use a factory pattern here since PostConfigure doesn't give us the service provider
             // For now, fall back to reading from configuration directly but using the strongly-typed approach
             var appOptions = configuration.GetSection("AppSettings").Get<AppOptions>();
-            
+
             if (appOptions == null)
                 throw new InvalidOperationException("AppSettings configuration section not found");
             if (string.IsNullOrEmpty(appOptions.JwtSigningKey))
@@ -430,24 +430,24 @@ public static class ServiceCollectionExtensions
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appOptions.JwtSigningKey)),
-                
+
                 // SECURITY: Enable issuer validation to prevent cross-application token attacks
                 ValidateIssuer = true,
                 ValidIssuer = appOptions.JwtIssuer,
-                
+
                 // SECURITY: Enable audience validation to prevent token misuse
                 ValidateAudience = true,
                 ValidAudience = appOptions.JwtAudience,
-                
+
                 // Validate token lifetime
                 ValidateLifetime = true,
-                
+
                 // Zero clock skew for maximum security
                 ClockSkew = TimeSpan.Zero, // No tolerance for clock drift
-                
+
                 // Ensure tokens have not been tampered with
                 RequireSignedTokens = true,
-                
+
                 // Ensure the token has an expiration
                 RequireExpirationTime = true
             };

@@ -53,7 +53,7 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
             // Another thread created the record between our check and insert
             // Return the existing record that was created by the other thread
             var existingRecord = await GetByUserIdAsync(userId, cancellationToken);
-            
+
             // This should never be null at this point, but defensive programming
             return existingRecord ?? throw new InvalidOperationException(
                 $"Failed to create or retrieve AccountLockout for UserId {userId}. " +
@@ -90,7 +90,7 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
 
         var now = DateTimeOffset.UtcNow;
         var results = await accountLockoutCrudOperator.GetAll()
-            .Where(al => al.IsLockedOut && 
+            .Where(al => al.IsLockedOut &&
                         (al.LockoutExpiresAt == null || al.LockoutExpiresAt > now))
             .OrderByDescending(al => al.LockedOutAt)
             .Skip((pageNumber - 1) * pageSize)
@@ -116,8 +116,8 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
 
         var now = DateTimeOffset.UtcNow;
         var results = await accountLockoutCrudOperator.GetAll()
-            .Where(al => al.IsLockedOut && 
-                        al.LockoutExpiresAt != null && 
+            .Where(al => al.IsLockedOut &&
+                        al.LockoutExpiresAt != null &&
                         al.LockoutExpiresAt <= now)
             .OrderBy(al => al.LockoutExpiresAt)
             .Skip((pageNumber - 1) * pageSize)
@@ -164,9 +164,9 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
 
         // Basic counts
         var totalLockouts = await query.CountAsync(cancellationToken);
-        var currentlyLocked = await query.CountAsync(al => al.IsLockedOut && 
+        var currentlyLocked = await query.CountAsync(al => al.IsLockedOut &&
             (al.LockoutExpiresAt == null || al.LockoutExpiresAt > now), cancellationToken);
-        var expiredLockouts = await query.CountAsync(al => al.IsLockedOut && 
+        var expiredLockouts = await query.CountAsync(al => al.IsLockedOut &&
             al.LockoutExpiresAt != null && al.LockoutExpiresAt <= now, cancellationToken);
         var manualLockouts = await query.CountAsync(al => al.LockedByUserId != null, cancellationToken);
         var automaticLockouts = totalLockouts - manualLockouts;
@@ -180,7 +180,8 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
         var hourlyStats = await query
             .Where(al => al.CreatedAt >= DateTimeOffset.UtcNow.AddHours(-24))
             .GroupBy(al => new { al.CreatedAt.Hour, al.CreatedAt.Date })
-            .Select(g => new {
+            .Select(g => new
+            {
                 Hour = g.Key.Hour,
                 Date = g.Key.Date,
                 Count = g.Count(),

@@ -15,7 +15,7 @@ public class UpdateCredentialNameValidatorTests
     [InlineData(null)]
     [InlineData("   ")]
     [InlineData("\t")]
-    public void Should_Have_Error_When_Name_Is_Empty_Or_Whitespace(string name)
+    public void Should_Have_Error_When_Name_Is_Empty_Or_Whitespace(string? name)
     {
         // Arrange
         var dto = new UpdateCredentialNameDto { Name = name };

@@ -25,8 +25,8 @@ public class LoginAttemptRepository(ICrudOperator<LoginAttempt> loginAttemptCrud
     /// Uses optimized indexing for efficient querying of large datasets.
     /// </summary>
     public async Task<IReadOnlyList<LoginAttempt>> GetRecentAttemptsAsync(
-        Guid userId, 
-        DateTimeOffset since, 
+        Guid userId,
+        DateTimeOffset since,
         bool includeSuccessful = false,
         CancellationToken cancellationToken = default)
     {
@@ -50,13 +50,13 @@ public class LoginAttemptRepository(ICrudOperator<LoginAttempt> loginAttemptCrud
     /// Optimized query that only counts records without loading entities.
     /// </summary>
     public async Task<int> GetFailedAttemptCountAsync(
-        Guid userId, 
-        DateTimeOffset since, 
+        Guid userId,
+        DateTimeOffset since,
         CancellationToken cancellationToken = default)
     {
         return await loginAttemptCrudOperator.GetAll()
-            .Where(la => la.UserId == userId && 
-                        la.AttemptedAt >= since && 
+            .Where(la => la.UserId == userId &&
+                        la.AttemptedAt >= since &&
                         !la.IsSuccessful)
             .CountAsync(cancellationToken);
     }
@@ -66,8 +66,8 @@ public class LoginAttemptRepository(ICrudOperator<LoginAttempt> loginAttemptCrud
     /// Useful for detecting potential attacks from specific sources.
     /// </summary>
     public async Task<IReadOnlyList<LoginAttempt>> GetRecentAttemptsByIpAsync(
-        string ipAddress, 
-        DateTimeOffset since, 
+        string ipAddress,
+        DateTimeOffset since,
         bool includeSuccessful = false,
         CancellationToken cancellationToken = default)
     {
@@ -91,13 +91,13 @@ public class LoginAttemptRepository(ICrudOperator<LoginAttempt> loginAttemptCrud
     /// the username corresponds to an existing user account.
     /// </summary>
     public async Task<IReadOnlyList<LoginAttempt>> GetAttemptsByUsernameAsync(
-        string username, 
-        DateTimeOffset since, 
+        string username,
+        DateTimeOffset since,
         bool includeSuccessful = false,
         CancellationToken cancellationToken = default)
     {
         var query = loginAttemptCrudOperator.GetAll()
-            .Where(la => la.AttemptedUsername == username.ToLowerInvariant() && 
+            .Where(la => la.AttemptedUsername == username.ToLowerInvariant() &&
                         la.AttemptedAt >= since);
 
         if (!includeSuccessful)
@@ -118,7 +118,7 @@ public class LoginAttemptRepository(ICrudOperator<LoginAttempt> loginAttemptCrud
     /// Uses batch deletion for performance with large datasets.
     /// </summary>
     public async Task<int> DeleteOldAttemptsAsync(
-        DateTimeOffset olderThan, 
+        DateTimeOffset olderThan,
         CancellationToken cancellationToken = default)
     {
         var oldAttempts = await loginAttemptCrudOperator.GetAll()
@@ -134,7 +134,7 @@ public class LoginAttemptRepository(ICrudOperator<LoginAttempt> loginAttemptCrud
     /// Provides aggregated data for monitoring and analysis.
     /// </summary>
     public async Task<Dictionary<string, object>> GetLoginStatisticsAsync(
-        DateTimeOffset since, 
+        DateTimeOffset since,
         CancellationToken cancellationToken = default)
     {
         var query = loginAttemptCrudOperator.GetAll()
@@ -171,8 +171,9 @@ public class LoginAttemptRepository(ICrudOperator<LoginAttempt> loginAttemptCrud
         var hourlyStats = await query
             .Where(la => la.AttemptedAt >= DateTimeOffset.UtcNow.AddHours(-24))
             .GroupBy(la => new { la.AttemptedAt.Hour, la.AttemptedAt.Date })
-            .Select(g => new { 
-                Hour = g.Key.Hour, 
+            .Select(g => new
+            {
+                Hour = g.Key.Hour,
                 Date = g.Key.Date,
                 Count = g.Count(),
                 Failed = g.Count(la => !la.IsSuccessful)

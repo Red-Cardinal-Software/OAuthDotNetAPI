@@ -24,7 +24,7 @@ public class MfaAuthenticationService(
     IWebAuthnService webAuthnService,
     IUnitOfWork unitOfWork,
     IOptions<MfaOptions> mfaOptions,
-    ILogger<MfaAuthenticationService> logger) 
+    ILogger<MfaAuthenticationService> logger)
     : BaseAppService(unitOfWork), IMfaAuthenticationService
 {
 
@@ -50,13 +50,13 @@ public class MfaAuthenticationService(
 
         // Get default method or first enabled method
         var defaultMethod = enabledMethods.FirstOrDefault(m => m.IsDefault) ?? enabledMethods.First();
-        
+
         // Create challenge
         var challenge = MfaChallenge.Create(
-            userId, 
-            defaultMethod.Type, 
+            userId,
+            defaultMethod.Type,
             defaultMethod.Id,
-            ipAddress, 
+            ipAddress,
             userAgent);
 
         await mfaChallengeRepository.AddAsync(challenge, cancellationToken);
@@ -70,7 +70,7 @@ public class MfaAuthenticationService(
         // Map available methods to DTOs
         var availableMethods = enabledMethods.Select(MapToAvailableMethodDto).ToArray();
 
-        logger.LogInformation("MFA challenge created for user {UserId}, challenge {ChallengeId}", 
+        logger.LogInformation("MFA challenge created for user {UserId}, challenge {ChallengeId}",
             userId, challenge.Id);
 
         return new MfaChallengeDto
@@ -105,9 +105,9 @@ public class MfaAuthenticationService(
 
         if (!canContinue)
         {
-            logger.LogWarning("MFA challenge {ChallengeId} exhausted for user {UserId}", 
+            logger.LogWarning("MFA challenge {ChallengeId} exhausted for user {UserId}",
                 challenge.Id, challenge.UserId);
-            
+
             return MfaVerificationResult.Failure("Maximum verification attempts exceeded", 0, true);
         }
 
@@ -125,7 +125,7 @@ public class MfaAuthenticationService(
 
         // Verify the code
         var verificationResult = await VerifyCodeForMethod(methodToUse, completeMfaDto.Code, completeMfaDto.IsRecoveryCode, cancellationToken);
-        
+
         if (verificationResult.IsValid)
         {
             // Mark challenge as completed
@@ -137,20 +137,20 @@ public class MfaAuthenticationService(
             // Invalidate other challenges for this user
             await InvalidateUserChallengesAsync(challenge.UserId, cancellationToken);
 
-            logger.LogInformation("MFA verification successful for user {UserId}, method {MethodId}", 
+            logger.LogInformation("MFA verification successful for user {UserId}, method {MethodId}",
                 challenge.UserId, methodToUse.Id);
 
             return MfaVerificationResult.Success(
-                challenge.UserId, 
-                methodToUse.Id, 
+                challenge.UserId,
+                methodToUse.Id,
                 completeMfaDto.IsRecoveryCode);
         }
 
-        logger.LogWarning("MFA verification failed for user {UserId}, method {MethodId}", 
+        logger.LogWarning("MFA verification failed for user {UserId}, method {MethodId}",
             challenge.UserId, methodToUse.Id);
 
         return MfaVerificationResult.Failure(
-            verificationResult.ErrorMessage ?? "Invalid verification code", 
+            verificationResult.ErrorMessage ?? "Invalid verification code",
             challenge.GetRemainingAttempts());
     });
 
@@ -160,10 +160,10 @@ public class MfaAuthenticationService(
     public async Task<int> InvalidateUserChallengesAsync(Guid userId, CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         var invalidatedCount = await mfaChallengeRepository.InvalidateAllUserChallengesAsync(userId, cancellationToken);
-        
+
         if (invalidatedCount > 0)
         {
-            logger.LogInformation("Invalidated {Count} MFA challenges for user {UserId}", 
+            logger.LogInformation("Invalidated {Count} MFA challenges for user {UserId}",
                 invalidatedCount, userId);
         }
 
@@ -211,7 +211,7 @@ public class MfaAuthenticationService(
         // Check active challenge count
         var activeChallenges = await GetActiveChallengeCountAsync(userId, cancellationToken);
         var maxActiveChallenges = GetMfaConfiguration().MaxActiveChallenges;
-        
+
         if (activeChallenges >= maxActiveChallenges)
         {
             return false;
@@ -220,10 +220,10 @@ public class MfaAuthenticationService(
         // Check recent challenge creation rate
         var rateLimitWindow = TimeSpan.FromMinutes(GetMfaConfiguration().RateLimitWindowMinutes);
         var recentChallenges = await mfaChallengeRepository.GetChallengeCountSinceAsync(
-            userId, 
-            DateTimeOffset.UtcNow.Subtract(rateLimitWindow), 
+            userId,
+            DateTimeOffset.UtcNow.Subtract(rateLimitWindow),
             cancellationToken);
-        
+
         return recentChallenges < GetMfaConfiguration().MaxChallengesPerWindow;
     }
 
@@ -246,7 +246,7 @@ public class MfaAuthenticationService(
     {
         var cutoffTime = expiredBefore ?? DateTimeOffset.UtcNow.AddHours(-1); // Default cleanup after 1 hour
         var cleanedUpCount = await mfaChallengeRepository.DeleteExpiredChallengesAsync(cutoffTime, cancellationToken);
-        
+
         if (cleanedUpCount > 0)
         {
             logger.LogInformation("Cleaned up {Count} expired MFA challenges", cleanedUpCount);
@@ -268,7 +268,7 @@ public class MfaAuthenticationService(
         {
             // Get unused recovery codes for this method
             var unusedCodes = method.GetUnusedRecoveryCodes();
-            
+
             // Try to validate the code against each unused recovery code
             foreach (var recoveryCode in unusedCodes)
             {
@@ -277,7 +277,7 @@ public class MfaAuthenticationService(
                     return MfaVerificationResult.Success(method.UserId, method.Id, true);
                 }
             }
-            
+
             return MfaVerificationResult.Failure("Invalid recovery code");
         }
 
@@ -302,7 +302,7 @@ public class MfaAuthenticationService(
         }
 
         var isValid = totpProvider.ValidateCode(method.Secret, code);
-        return isValid 
+        return isValid
             ? MfaVerificationResult.Success(method.UserId, method.Id)
             : MfaVerificationResult.Failure("Invalid authenticator code");
     }
@@ -315,7 +315,7 @@ public class MfaAuthenticationService(
         // Get active challenges and find one for this method type
         var activeChallenges = await mfaChallengeRepository.GetActiveByUserIdAsync(method.UserId, cancellationToken);
         var emailChallenge = activeChallenges.FirstOrDefault(c => c.Type == MfaType.Email);
-        
+
         if (emailChallenge == null)
         {
             return MfaVerificationResult.Failure("No active email challenge found");
@@ -323,8 +323,8 @@ public class MfaAuthenticationService(
 
         // Verify the email code using the email service
         var verificationResult = await mfaEmailService.VerifyCodeAsync(emailChallenge.Id, code, cancellationToken);
-        
-        return verificationResult.Success 
+
+        return verificationResult.Success
             ? MfaVerificationResult.Success(method.UserId, method.Id)
             : MfaVerificationResult.Failure(verificationResult.ErrorMessage ?? "Invalid email verification code", verificationResult.RemainingAttempts);
     }
@@ -338,11 +338,11 @@ public class MfaAuthenticationService(
         {
             // Parse the assertion data (in real implementation, this would come from the client)
             // For now, we'll assume the assertionData contains the necessary information
-            
+
             // Get active challenges and find one for WebAuthn
             var activeChallenges = await mfaChallengeRepository.GetActiveByUserIdAsync(method.UserId, cancellationToken);
             var webAuthnChallenge = activeChallenges.FirstOrDefault(c => c.Type == MfaType.WebAuthn);
-            
+
             if (webAuthnChallenge == null)
             {
                 return MfaVerificationResult.Failure("No active WebAuthn challenge found");
@@ -370,7 +370,7 @@ public class MfaAuthenticationService(
                 simulatedAssertionResponse,
                 cancellationToken);
 
-            return verificationResult.Success 
+            return verificationResult.Success
                 ? MfaVerificationResult.Success(method.UserId, method.Id)
                 : MfaVerificationResult.Failure(verificationResult.ErrorMessage ?? "Invalid WebAuthn assertion");
         }
@@ -459,7 +459,7 @@ public class MfaAuthenticationService(
         var result = await mfaEmailService.SendCodeAsync(challengeId, userId, emailAddress, ipAddress, cancellationToken);
         if (!result.Success)
         {
-            logger.LogWarning("Failed to send email MFA code for challenge {ChallengeId}: {Error}", 
+            logger.LogWarning("Failed to send email MFA code for challenge {ChallengeId}: {Error}",
                 challengeId, result.ErrorMessage);
         }
         else

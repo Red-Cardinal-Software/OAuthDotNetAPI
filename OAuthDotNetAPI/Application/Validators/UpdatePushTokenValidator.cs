@@ -45,7 +45,7 @@ public class UpdatePushTokenValidator : AbstractValidator<UpdatePushTokenDto>
             return false;
 
         var lowerToken = token.ToLowerInvariant();
-        
+
         // Check for obvious sensitive patterns that shouldn't be in push tokens
         var sensitivePatterns = new[]
         {

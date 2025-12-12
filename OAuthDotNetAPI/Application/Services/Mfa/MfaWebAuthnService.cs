@@ -77,7 +77,7 @@ public class MfaWebAuthnService(IWebAuthnService webAuthnService, ILogger<MfaWeb
         }
 
         logger.LogInformation("WebAuthn registration completed successfully for user {UserId}, credential {CredentialId}", userId, result.CredentialId);
-        
+
         return new
         {
             credentialId = result.CredentialId,
@@ -190,7 +190,7 @@ public class MfaWebAuthnService(IWebAuthnService webAuthnService, ILogger<MfaWeb
         }
 
         logger.LogInformation("WebAuthn credential {CredentialId} removed successfully for user {UserId}", credentialId, userId);
-        
+
         return new { message = "Credential removed successfully" };
     }
 
@@ -204,8 +204,8 @@ public class MfaWebAuthnService(IWebAuthnService webAuthnService, ILogger<MfaWeb
         logger.LogInformation("Updating name for WebAuthn credential {CredentialId} for user {UserId}", credentialId, userId);
 
         var updated = await webAuthnService.UpdateCredentialNameAsync(
-            userId, 
-            credentialId, 
+            userId,
+            credentialId,
             request.Name);
 
         if (!updated)
@@ -215,7 +215,7 @@ public class MfaWebAuthnService(IWebAuthnService webAuthnService, ILogger<MfaWeb
         }
 
         logger.LogInformation("WebAuthn credential {CredentialId} name updated successfully for user {UserId}", credentialId, userId);
-        
+
         return new { message = "Credential name updated successfully" };
     }
 }

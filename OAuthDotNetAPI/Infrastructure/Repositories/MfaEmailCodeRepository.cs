@@ -24,7 +24,7 @@ public class MfaEmailCodeRepository(ICrudOperator<MfaEmailCode> emailCodeCrudOpe
     public async Task<MfaEmailCode?> GetValidCodeByChallengeIdAsync(Guid challengeId, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
-        
+
         return await emailCodeCrudOperator
             .GetAll()
             .Include(e => e.Challenge)
@@ -38,8 +38,8 @@ public class MfaEmailCodeRepository(ICrudOperator<MfaEmailCode> emailCodeCrudOpe
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<MfaEmailCode>> GetRecentCodesByUserIdAsync(
-        Guid userId, 
-        DateTimeOffset since, 
+        Guid userId,
+        DateTimeOffset since,
         CancellationToken cancellationToken = default)
     {
         return await emailCodeCrudOperator
@@ -66,7 +66,7 @@ public class MfaEmailCodeRepository(ICrudOperator<MfaEmailCode> emailCodeCrudOpe
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<MfaEmailCode>> GetExpiredCodesAsync(
-        DateTimeOffset expiredBefore, 
+        DateTimeOffset expiredBefore,
         CancellationToken cancellationToken = default)
     {
         return await emailCodeCrudOperator

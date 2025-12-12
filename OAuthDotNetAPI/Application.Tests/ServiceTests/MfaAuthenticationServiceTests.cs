@@ -146,7 +146,7 @@ public class MfaAuthenticationServiceTests
     {
         // Arrange
         var enabledMethods = new List<MfaMethod> { CreateTotpMethod(_userId) };
-        
+
         _mfaMethodRepository.Setup(x => x.GetEnabledByUserIdAsync(_userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enabledMethods);
         _mfaChallengeRepository.Setup(x => x.GetActiveChallengeCountAsync(_userId, It.IsAny<CancellationToken>()))
@@ -170,12 +170,12 @@ public class MfaAuthenticationServiceTests
             .ReturnsAsync(0);
         _mfaChallengeRepository.Setup(x => x.GetChallengeCountSinceAsync(_userId, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
-        
+
         _mfaEmailService.Setup(x => x.SendCodeAsync(
-                It.IsAny<Guid>(), 
-                It.IsAny<Guid>(), 
-                It.IsAny<string>(), 
-                It.IsAny<string>(), 
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MfaEmailSendResult { Success = true });
 
@@ -185,10 +185,10 @@ public class MfaAuthenticationServiceTests
         // Assert
         result.Instructions.Should().Contain("email");
         _mfaEmailService.Verify(x => x.SendCodeAsync(
-            It.IsAny<Guid>(), 
-            _userId, 
-            It.IsAny<string>(), 
-            "192.168.1.1", 
+            It.IsAny<Guid>(),
+            _userId,
+            It.IsAny<string>(),
+            "192.168.1.1",
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -280,7 +280,7 @@ public class MfaAuthenticationServiceTests
         // Simulate an expired challenge by setting expiration time to past
         var expiredDate = DateTimeOffset.UtcNow.AddMinutes(-1); // 1 minute ago, expired
         typeof(MfaChallenge).GetProperty("ExpiresAt")?.SetValue(challenge, expiredDate);
-        
+
         var completeMfaDto = new CompleteMfaDto
         {
             ChallengeToken = ChallengeToken,
@@ -665,7 +665,7 @@ public class MfaAuthenticationServiceTests
     {
         // Arrange
         _mfaChallengeRepository.Setup(x => x.DeleteExpiredChallengesAsync(
-                It.Is<DateTimeOffset>(dt => dt <= DateTimeOffset.UtcNow.AddHours(-1)), 
+                It.Is<DateTimeOffset>(dt => dt <= DateTimeOffset.UtcNow.AddHours(-1)),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(3);
 
@@ -770,7 +770,7 @@ public class MfaAuthenticationServiceTests
         var challenge = CreateChallenge(_userId, MfaType.Totp, _methodId);
         var specificMethodId = Guid.NewGuid();
         var specificMethod = CreateEmailMethod(_userId);
-        
+
         var completeMfaDto = new CompleteMfaDto
         {
             ChallengeToken = ChallengeToken,
@@ -806,7 +806,7 @@ public class MfaAuthenticationServiceTests
         var method = MfaMethod.CreateWebAuthn(_userId, "credential-id", "public-key", "device");
         method.SetAsDefault();
         var challenge = CreateChallenge(_userId, MfaType.WebAuthn, method.Id);
-        
+
         var completeMfaDto = new CompleteMfaDto
         {
             ChallengeToken = ChallengeToken,
@@ -840,7 +840,7 @@ public class MfaAuthenticationServiceTests
         // Arrange
         var challenge = CreateChallenge(_userId, MfaType.WebAuthn, _methodId);
         var method = MfaMethod.CreateWebAuthn(_userId, "credential-id", "public-key", "device");
-        
+
         var completeMfaDto = new CompleteMfaDto
         {
             ChallengeToken = ChallengeToken,
@@ -874,7 +874,7 @@ public class MfaAuthenticationServiceTests
         // Arrange
         var challenge = CreateChallenge(_userId, MfaType.WebAuthn, _methodId);
         var method = MfaMethod.CreateWebAuthn(_userId, "credential-id", "public-key", "device");
-        
+
         var completeMfaDto = new CompleteMfaDto
         {
             ChallengeToken = ChallengeToken,

@@ -14,8 +14,8 @@ public class VerifyEmailCodeValidatorTests
     public void Should_Have_Error_When_ChallengeId_Is_Empty()
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.Empty,
             Code = "12345678"
         };
@@ -30,8 +30,8 @@ public class VerifyEmailCodeValidatorTests
     public void Should_Not_Have_Error_When_ChallengeId_Is_Valid()
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             Code = "12345678"
         };
@@ -45,11 +45,11 @@ public class VerifyEmailCodeValidatorTests
     [InlineData("")]
     [InlineData(null)]
     [InlineData("   ")]
-    public void Should_Have_Error_When_Code_Is_Empty_Or_Whitespace(string code)
+    public void Should_Have_Error_When_Code_Is_Empty_Or_Whitespace(string? code)
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             Code = code
         };
@@ -66,8 +66,8 @@ public class VerifyEmailCodeValidatorTests
     public void Should_Have_Error_When_Code_Length_Is_Invalid(string code)
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             Code = code
         };
@@ -86,8 +86,8 @@ public class VerifyEmailCodeValidatorTests
     public void Should_Have_Error_When_Code_Contains_Non_Digits(string code)
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             Code = code
         };
@@ -106,8 +106,8 @@ public class VerifyEmailCodeValidatorTests
     public void Should_Have_Error_When_Code_Is_All_Same_Digits(string code)
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             Code = code
         };
@@ -126,8 +126,8 @@ public class VerifyEmailCodeValidatorTests
     public void Should_Not_Have_Error_When_Code_Is_Valid(string code)
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             Code = code
         };
@@ -141,8 +141,8 @@ public class VerifyEmailCodeValidatorTests
     public void Should_Pass_Validation_When_All_Fields_Are_Valid()
     {
         // Arrange
-        var dto = new VerifyEmailCodeDto 
-        { 
+        var dto = new VerifyEmailCodeDto
+        {
             ChallengeId = Guid.NewGuid(),
             Code = "12345678"
         };

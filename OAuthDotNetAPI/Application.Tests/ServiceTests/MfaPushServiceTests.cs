@@ -178,7 +178,7 @@ public class MfaPushServiceTests
             It.IsAny<CancellationToken>()), Times.Once);
 
         _mfaRepository.Verify(x => x.AddPushDeviceAsync(
-            It.Is<MfaPushDevice>(d => 
+            It.Is<MfaPushDevice>(d =>
                 d.UserId == userId &&
                 d.DeviceId == request.DeviceId &&
                 d.PushToken == request.PushToken),
@@ -192,7 +192,7 @@ public class MfaPushServiceTests
         var userId = Guid.NewGuid();
         var mfaMethodId = Guid.NewGuid();
         var existingMethod = MfaMethod.CreatePush(userId, "Push");
-        
+
         var request = new RegisterPushDeviceRequest
         {
             DeviceId = "device-123",
@@ -328,7 +328,7 @@ public class MfaPushServiceTests
         result.Success.Should().BeFalse();
         result.Message.Should().Be("Too many push requests. Please try again later.");
         _pushProvider.Verify(x => x.SendPushNotificationAsync(
-            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -519,7 +519,7 @@ public class MfaPushServiceTests
         var sessionId = "session-123";
         var challenge = new MfaPushChallenge(
             Guid.NewGuid(), Guid.NewGuid(), sessionId, "192.168.1.1", "Chrome", 5);
-        
+
         // Force expiration by reflection
         var expiresAtProperty = challenge.GetType().GetProperty("ExpiresAt");
         expiresAtProperty!.SetValue(challenge, DateTime.UtcNow.AddMinutes(-1));
@@ -615,7 +615,7 @@ public class MfaPushServiceTests
         var challengeId = Guid.NewGuid();
         var correctDeviceId = Guid.NewGuid();
         var wrongDeviceId = Guid.NewGuid();
-        
+
         var challenge = new MfaPushChallenge(
             Guid.NewGuid(), correctDeviceId, "session", "192.168.1.1", "Chrome", 5);
 
@@ -674,10 +674,10 @@ public class MfaPushServiceTests
         var challengeId = Guid.NewGuid();
         var deviceId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        
+
         var challenge = new MfaPushChallenge(
             userId, deviceId, "session", "192.168.1.1", "Chrome", 5);
-        
+
         var device = CreateTestDevice(userId, deviceId);
 
         var response = new PushChallengeResponse
@@ -709,7 +709,7 @@ public class MfaPushServiceTests
         var challengeId = Guid.NewGuid();
         var deviceId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        
+
         var challenge = new MfaPushChallenge(
             userId, deviceId, "session", "192.168.1.1", "Chrome", 5);
 
@@ -744,7 +744,7 @@ public class MfaPushServiceTests
         var challengeId = Guid.NewGuid();
         var deviceId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        
+
         var challenge = new MfaPushChallenge(
             userId, deviceId, "session", "192.168.1.1", "Chrome", 5);
 
@@ -847,7 +847,7 @@ public class MfaPushServiceTests
         var requestingUserId = Guid.NewGuid();
         var deviceUserId = Guid.NewGuid();
         var deviceId = Guid.NewGuid();
-        
+
         var device = CreateTestDevice(deviceUserId, deviceId);
 
         _mfaRepository.Setup(x => x.GetPushDeviceAsync(deviceId, It.IsAny<CancellationToken>()))

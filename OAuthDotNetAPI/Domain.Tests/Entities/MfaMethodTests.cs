@@ -522,7 +522,7 @@ public class MfaMethodTests
         metadata!.Should().ContainKey("Algorithm");
         metadata.Should().ContainKey("Digits");
         metadata.Should().ContainKey("Period");
-        
+
         // Check default values
         metadata["Algorithm"].ToString().Should().Be("SHA1");
         metadata["Digits"].ToString().Should().Be("6");
@@ -541,7 +541,7 @@ public class MfaMethodTests
         metadata.Should().ContainKey("Counter");
         metadata.Should().ContainKey("DeviceName");
         metadata.Should().ContainKey("AAGUID");
-        
+
         metadata["PublicKey"].ToString().Should().Be("public-key");
         metadata["DeviceName"].ToString().Should().Be("YubiKey");
         metadata["Counter"].ToString().Should().Be("0");

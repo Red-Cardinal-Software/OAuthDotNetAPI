@@ -29,10 +29,10 @@ public class PasswordValidatorTests
             PasswordMinimumLength = 8,
             PasswordMaximumLength = 32
         };
-        
+
         var mockAppOptions = new Mock<IOptions<AppOptions>>();
         mockAppOptions.Setup(x => x.Value).Returns(appOptions);
-        
+
         _blacklistRepo.Setup(r => r.IsPasswordBlacklistedAsync(It.IsAny<string>())).ReturnsAsync(false);
 
         _validator = new PasswordValidator(mockAppOptions.Object, _blacklistRepo.Object);

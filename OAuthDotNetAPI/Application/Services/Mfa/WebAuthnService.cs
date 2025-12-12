@@ -176,7 +176,7 @@ public class WebAuthnService(
 
             await credentialRepository.AddAsync(credential, cancellationToken);
 
-            logger.LogInformation("WebAuthn registration completed for user {UserId}, credential {CredentialId}", 
+            logger.LogInformation("WebAuthn registration completed for user {UserId}, credential {CredentialId}",
                 userId, credential.Id);
 
             return WebAuthnRegistrationCompletionResult.Successful(credential.Id);
@@ -247,7 +247,7 @@ public class WebAuthnService(
         WebAuthnAssertionResponse assertionResponse,
         CancellationToken cancellationToken = default)
     {
-        
+
         var challengeKey = $"webauthn:auth:{challenge}";
         var json = await distributedCache.GetStringAsync(challengeKey, cancellationToken);
 
@@ -257,15 +257,15 @@ public class WebAuthnService(
         }
 
         var storedChallenge = JsonSerializer.Deserialize<StoredAuthenticationChallenge>(json);
-        
+
         await distributedCache.RemoveAsync(challengeKey, cancellationToken);
-        
+
         if (storedChallenge?.Options == null)
         {
             logger.LogWarning("Invalid stored authentication challenge data");
             return WebAuthnAuthenticationCompletionResult.Failed("Invalid challenge data");
         }
-        
+
         try
         {
             // Get the credential from our database
@@ -286,8 +286,8 @@ public class WebAuthnService(
                     AuthenticatorData = Convert.FromBase64String(assertionResponse.Response.AuthenticatorData),
                     ClientDataJson = Convert.FromBase64String(assertionResponse.Response.ClientDataJSON),
                     Signature = Convert.FromBase64String(assertionResponse.Response.Signature),
-                    UserHandle = string.IsNullOrEmpty(assertionResponse.Response.UserHandle) 
-                        ? null 
+                    UserHandle = string.IsNullOrEmpty(assertionResponse.Response.UserHandle)
+                        ? null
                         : Convert.FromBase64String(assertionResponse.Response.UserHandle)
                 }
             };
@@ -305,7 +305,7 @@ public class WebAuthnService(
 
             if (verificationResult.Status != "ok")
             {
-                logger.LogWarning("WebAuthn authentication failed for credential {CredentialId}: {Error}", 
+                logger.LogWarning("WebAuthn authentication failed for credential {CredentialId}: {Error}",
                     credential.Id, verificationResult.ErrorMessage);
                 return WebAuthnAuthenticationCompletionResult.Failed(
                     verificationResult.ErrorMessage ?? "Authentication verification failed");
@@ -315,14 +315,14 @@ public class WebAuthnService(
             if (!credential.UpdateSignCount(verificationResult.Counter))
             {
                 logger.LogWarning("Potential cloned authenticator detected for credential {CredentialId}. " +
-                    "Previous count: {PreviousCount}, New count: {NewCount}", 
+                    "Previous count: {PreviousCount}, New count: {NewCount}",
                     credential.Id, credential.SignCount, verificationResult.Counter);
                 return WebAuthnAuthenticationCompletionResult.Failed("Security error: potential cloned authenticator");
             }
 
             credential.RecordUsage();
 
-            logger.LogInformation("WebAuthn authentication completed for user {UserId}, credential {CredentialId}", 
+            logger.LogInformation("WebAuthn authentication completed for user {UserId}, credential {CredentialId}",
                 credential.UserId, credential.Id);
 
             return WebAuthnAuthenticationCompletionResult.Successful(credential.UserId, credential.Id);
@@ -340,7 +340,7 @@ public class WebAuthnService(
         CancellationToken cancellationToken = default)
     {
         var credentials = await credentialRepository.GetActiveByUserIdAsync(userId, cancellationToken);
-        
+
         return credentials.Select(c => new WebAuthnCredentialInfo
         {
             Id = c.Id,
@@ -413,7 +413,7 @@ public class WebAuthnService(
     {
         var credentialId = Convert.ToBase64String(args.CredentialId);
         var existingCredential = await credentialRepository.GetByCredentialIdAsync(credentialId, cancellationToken);
-        
+
         // For now, simplified check - just ensure credential doesn't already exist
         return existingCredential == null;
     }
@@ -425,7 +425,7 @@ public class WebAuthnService(
     {
         var credentialId = Convert.ToBase64String(args.CredentialId);
         var credential = await credentialRepository.GetByCredentialIdAsync(credentialId, cancellationToken);
-        
+
         // For now, simplified check - just ensure credential exists
         return credential != null;
     }
@@ -502,7 +502,7 @@ public class WebAuthnService(
         // 1. Check the AAGUID against known platform authenticators
         // 2. Examine attestation format
         // 3. Check authenticator flags
-        
+
         // For now, default to CrossPlatform - in a real implementation you would:
         // - Check AAGUID against known platform authenticators
         // - Examine attestation format and flags

@@ -67,13 +67,13 @@ public class EmailTemplate
     /// </summary>
     public EmailTemplate(string key, string subject, string body, bool isHtml = true)
     {
-        if(string.IsNullOrWhiteSpace(key))
+        if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentNullException(nameof(key), "Email template key cannot be null or whitespace.");
 
-        if(string.IsNullOrWhiteSpace(subject))
+        if (string.IsNullOrWhiteSpace(subject))
             throw new ArgumentNullException(nameof(subject), "Subject cannot be null or whitespace.");
 
-        if(string.IsNullOrWhiteSpace(body))
+        if (string.IsNullOrWhiteSpace(body))
             throw new ArgumentNullException(nameof(body), "Body cannot be null or whitespace.");
 
         Id = Guid.NewGuid();
@@ -90,9 +90,9 @@ public class EmailTemplate
     /// <param name="body">The updated body for the email template. Cannot be null or whitespace.</param>
     public void UpdateContent(string subject, string body)
     {
-        if(string.IsNullOrWhiteSpace(subject))
+        if (string.IsNullOrWhiteSpace(subject))
             throw new ArgumentNullException(nameof(subject), "Subject cannot be null or whitespace.");
-        if(string.IsNullOrWhiteSpace(body))
+        if (string.IsNullOrWhiteSpace(body))
             throw new ArgumentNullException(nameof(body), "Body cannot be null or whitespace.");
 
         Subject = subject;

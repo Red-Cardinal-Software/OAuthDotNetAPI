@@ -226,10 +226,10 @@ public class MfaRecoveryCodeTests
         // Arrange - Generate a new code
         var plainCode = MfaRecoveryCode.GenerateSecureCode();
         var normalizedCode = MfaRecoveryCode.NormalizeCode(plainCode);
-        
+
         // Simulate hashing (in real use, this would be done with IPasswordHasher)
         var hashedCode = $"hashed_{normalizedCode}";
-        
+
         // Act - Create recovery code entity
         var recoveryCode = MfaRecoveryCode.Create(_mfaMethodId, hashedCode, plainCode);
 
@@ -245,7 +245,7 @@ public class MfaRecoveryCodeTests
         useResult.Should().BeTrue();
         recoveryCode.IsUsed.Should().BeTrue();
         recoveryCode.UsedAt.Should().NotBeNull();
-        
+
         // Verify can't be used again
         recoveryCode.TryMarkAsUsed().Should().BeFalse();
     }
@@ -283,14 +283,14 @@ public class MfaRecoveryCodeTests
     {
         // Arrange
         var recoveryCode = MfaRecoveryCode.Create(_mfaMethodId, TestHashedCode, TestPlainCode);
-        
+
         // Act - First use
         recoveryCode.TryMarkAsUsed();
         var originalUsedAt = recoveryCode.UsedAt;
-        
+
         // Wait a small amount to ensure time would change if it were updated
         Thread.Sleep(10);
-        
+
         // Act - Attempt second use
         recoveryCode.TryMarkAsUsed();
 
@@ -336,7 +336,7 @@ public class MfaRecoveryCodeTests
         // Assert
         normalizedCode.Should().HaveLength(16);
         normalizedCode.Should().MatchRegex("^[A-Z0-9]{16}$");
-        
+
         // Verify the normalization is idempotent
         MfaRecoveryCode.NormalizeCode(normalizedCode).Should().Be(normalizedCode);
     }
@@ -347,7 +347,7 @@ public class MfaRecoveryCodeTests
         // This tests that the character set doesn't include easily confused characters
         // The current implementation uses A-Z and 0-9, which includes potentially confusing chars
         // But this test documents the current behavior
-        
+
         // Act - Generate many codes to get good coverage
         var allCharacters = new HashSet<char>();
         for (int i = 0; i < 1000; i++)

@@ -16,14 +16,14 @@ public class AppUserMapper(IMapper mapper, IPasswordHasher passwordHasher, IRole
 {
     public AppUserDto ToDto(AppUser user) => new()
     {
-            Id = user.Id,
-            Username = user.Username,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            ForceResetPassword = user.ForceResetPassword,
-            Active = user.Active,
-            LastLoginTime = user.LastLoginTime,
-            Roles = mapper.Map<List<RoleDto>>(user.Roles)
+        Id = user.Id,
+        Username = user.Username,
+        FirstName = user.FirstName,
+        LastName = user.LastName,
+        ForceResetPassword = user.ForceResetPassword,
+        Active = user.Active,
+        LastLoginTime = user.LastLoginTime,
+        Roles = mapper.Map<List<RoleDto>>(user.Roles)
     };
 
     public BasicAppUserDto ToBasicDto(AppUser user) =>
@@ -43,7 +43,7 @@ public class AppUserMapper(IMapper mapper, IPasswordHasher passwordHasher, IRole
         var hashedPassword = passwordHasher.Hash(newUserDto.Password);
         var userRoles = await roleRepository.GetRolesByIdsAsync(newUserDto.Roles.Select(x => x.Id).ToList());
         var newUser = new AppUser(newUserDto.Username, hashedPassword, newUserDto.FirstName, newUserDto.LastName, organizationId);
-        foreach(var role in userRoles)
+        foreach (var role in userRoles)
         {
             newUser.AddRole(role);
         }

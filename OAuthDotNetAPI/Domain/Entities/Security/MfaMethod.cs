@@ -103,12 +103,12 @@ public class MfaMethod
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("User ID cannot be empty", nameof(userId));
-        
+
         if (string.IsNullOrWhiteSpace(secret))
             throw new ArgumentException("Secret cannot be empty", nameof(secret));
 
         var now = DateTimeOffset.UtcNow;
-        
+
         return new MfaMethod
         {
             Id = Guid.NewGuid(),
@@ -139,7 +139,7 @@ public class MfaMethod
             throw new ArgumentException("User ID cannot be empty", nameof(userId));
 
         var now = DateTimeOffset.UtcNow;
-        
+
         return new MfaMethod
         {
             Id = Guid.NewGuid(),
@@ -172,7 +172,7 @@ public class MfaMethod
             throw new ArgumentException("User ID cannot be empty", nameof(userId));
 
         var now = DateTimeOffset.UtcNow;
-        
+
         return new MfaMethod
         {
             Id = Guid.NewGuid(),
@@ -199,12 +199,12 @@ public class MfaMethod
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("User ID cannot be empty", nameof(userId));
-        
+
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("Email cannot be empty", nameof(email));
 
         var now = DateTimeOffset.UtcNow;
-        
+
         return new MfaMethod
         {
             Id = Guid.NewGuid(),
@@ -303,7 +303,7 @@ public class MfaMethod
         // Clear existing unused codes
         var usedCodes = RecoveryCodes.Where(c => c.IsUsed).ToList();
         RecoveryCodes.Clear();
-        
+
         // Re-add used codes for audit trail
         foreach (var usedCode in usedCodes)
         {
@@ -325,7 +325,7 @@ public class MfaMethod
     public IReadOnlyList<string> GetNewRecoveryCodes()
     {
         UpdatedAt = DateTimeOffset.UtcNow;
-        
+
         return RecoveryCodes
             .Where(c => !c.IsUsed && !string.IsNullOrEmpty(c.Code))
             .Select(c => c.Code)
@@ -343,7 +343,7 @@ public class MfaMethod
     {
         var recoveryCode = RecoveryCodes
             .FirstOrDefault(c => c.Id == recoveryCodeId && !c.IsUsed);
-        
+
         if (recoveryCode?.TryMarkAsUsed() == true)
         {
             RecordUsage();
@@ -352,7 +352,7 @@ public class MfaMethod
 
         return false;
     }
-    
+
     /// <summary>
     /// Gets all unused recovery codes for this MFA method.
     /// Used by the service layer for validation.
@@ -388,8 +388,8 @@ public class MfaMethod
             throw new InvalidOperationException("Cannot store setup code for already verified method");
 
         // Parse existing metadata
-        var metadataObj = string.IsNullOrWhiteSpace(Metadata) 
-            ? new Dictionary<string, object>() 
+        var metadataObj = string.IsNullOrWhiteSpace(Metadata)
+            ? new Dictionary<string, object>()
             : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(Metadata)!;
 
         // Add verification code info
@@ -472,17 +472,17 @@ public enum MfaType
     /// Time-based One-Time Password (Google Authenticator, Authy, etc.)
     /// </summary>
     Totp = 1,
-    
+
     /// <summary>
     /// WebAuthn/FIDO2 (Passkeys, Security Keys)
     /// </summary>
     WebAuthn = 2,
-    
+
     /// <summary>
     /// Email verification code
     /// </summary>
     Email = 3,
-    
+
     /// <summary>
     /// Push notification to mobile app
     /// </summary>

@@ -74,7 +74,7 @@ public class MfaEmailCodeConfiguration : IEntityTypeConfiguration<MfaEmailCode>
             .WithMany()
             .HasForeignKey(e => e.MfaChallengeId)
             .OnDelete(DeleteBehavior.Cascade);
-            
+
         // User relationship without cascade to avoid circular paths
         builder.HasOne<Domain.Entities.Identity.AppUser>()
             .WithMany()

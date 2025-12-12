@@ -135,7 +135,7 @@ public class MfaEmailCodeTests
     {
         // Arrange
         var (emailCode, _) = MfaEmailCode.Create(_challengeId, _userId, TestEmail, TestHashedCode);
-        
+
         // Max out attempts (3)
         emailCode.RecordAttempt();
         emailCode.RecordAttempt();
@@ -240,7 +240,7 @@ public class MfaEmailCodeTests
     {
         // Arrange
         var (emailCode, _) = MfaEmailCode.Create(_challengeId, _userId, TestEmail, TestHashedCode);
-        
+
         // Force attempt count beyond maximum (simulate edge case)
         emailCode.RecordAttempt();
         emailCode.RecordAttempt();
@@ -282,7 +282,7 @@ public class MfaEmailCodeTests
 
         // Assert - All codes should be unique (extremely high probability with crypto RNG)
         codes.Should().HaveCount(100, "cryptographically secure random codes should not collide");
-        
+
         // Assert - All codes should be 8 digits
         foreach (var code in codes)
         {
@@ -300,7 +300,7 @@ public class MfaEmailCodeTests
     {
         // Arrange
         var (emailCode, _) = MfaEmailCode.Create(_challengeId, _userId, TestEmail, TestHashedCode);
-        
+
         // Record prior attempts
         for (int i = 0; i < priorAttempts; i++)
         {

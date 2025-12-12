@@ -161,7 +161,7 @@ public class MfaPushChallenge
     {
         if (string.IsNullOrWhiteSpace(signature))
             throw new ArgumentNullException(nameof(signature));
-        
+
         ValidateCanRespond();
 
         Status = ChallengeStatus.Approved;
@@ -178,7 +178,7 @@ public class MfaPushChallenge
     {
         if (string.IsNullOrWhiteSpace(signature))
             throw new ArgumentNullException(nameof(signature));
-        
+
         ValidateCanRespond();
 
         Status = ChallengeStatus.Denied;

@@ -101,7 +101,7 @@ public class WebAuthnCredentialConfiguration : IEntityTypeConfiguration<WebAuthn
             .WithMany()
             .HasForeignKey(w => w.MfaMethodId)
             .OnDelete(DeleteBehavior.Cascade);
-            
+
         // User relationship without cascade to avoid circular paths
         builder.HasOne<Domain.Entities.Identity.AppUser>()
             .WithMany()

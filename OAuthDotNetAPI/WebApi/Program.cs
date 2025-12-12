@@ -11,9 +11,9 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
-        { 
-            Title = "Starbase Template .NET API", 
+        c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+        {
+            Title = "Starbase Template .NET API",
             Version = "v1",
             Description = "A secure .NET API with comprehensive MFA and security features"
         });

@@ -104,7 +104,7 @@ public class MfaPushController(
     public async Task<IActionResult> SendChallenge([FromBody] SendPushChallengeDto request)
     {
         var userId = RoleUtility.GetUserIdFromClaims(User);
-        
+
         var sessionInfo = new PushChallengeSessionInfo
         {
             SessionId = request.SessionId,

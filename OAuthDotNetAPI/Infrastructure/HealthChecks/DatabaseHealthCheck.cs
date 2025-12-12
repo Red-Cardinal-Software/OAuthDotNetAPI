@@ -17,7 +17,7 @@ namespace Infrastructure.HealthChecks
             CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -26,11 +26,11 @@ namespace Infrastructure.HealthChecks
                 // Create a new scope to get a scoped DbContext
                 using var scope = serviceProvider.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                
+
                 // Use a simple query with timeout
                 var canConnect = await dbContext.Database
                     .CanConnectAsync(timeoutCts.Token);
-                
+
                 if (!canConnect)
                 {
                     logger.LogError("Database CanConnectAsync returned false");
@@ -44,15 +44,15 @@ namespace Infrastructure.HealthChecks
                 stopwatch.Stop();
 
                 // Log detailed information internally
-                logger.LogInformation("Database health check completed in {ElapsedMs}ms", 
+                logger.LogInformation("Database health check completed in {ElapsedMs}ms",
                     stopwatch.ElapsedMilliseconds);
 
                 // Determine health status based on response time
                 if (stopwatch.ElapsedMilliseconds > WarningThresholdMs)
                 {
-                    logger.LogWarning("Database health check took {ElapsedMs}ms, exceeding warning threshold of {Threshold}ms", 
+                    logger.LogWarning("Database health check took {ElapsedMs}ms, exceeding warning threshold of {Threshold}ms",
                         stopwatch.ElapsedMilliseconds, WarningThresholdMs);
-                    
+
                     return HealthCheckResult.Degraded("Service degraded");
                 }
 
@@ -61,13 +61,13 @@ namespace Infrastructure.HealthChecks
             catch (OperationCanceledException)
             {
                 logger.LogError("Database health check timed out after {TimeoutSeconds} seconds", TimeoutSeconds);
-                
+
                 return HealthCheckResult.Unhealthy("Service unavailable");
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Database health check failed with exception: {ExceptionType}", ex.GetType().Name);
-                
+
                 return HealthCheckResult.Unhealthy("Service unavailable");
             }
         }

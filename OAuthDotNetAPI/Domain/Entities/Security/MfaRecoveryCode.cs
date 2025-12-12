@@ -68,10 +68,10 @@ public class MfaRecoveryCode
     {
         if (mfaMethodId == Guid.Empty)
             throw new ArgumentException("MFA method ID cannot be empty", nameof(mfaMethodId));
-            
+
         if (string.IsNullOrWhiteSpace(hashedCode))
             throw new ArgumentException("Hashed code cannot be empty", nameof(hashedCode));
-            
+
         if (string.IsNullOrWhiteSpace(plainCode))
             throw new ArgumentException("Plain code cannot be empty", nameof(plainCode));
 
@@ -109,7 +109,7 @@ public class MfaRecoveryCode
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         const int codeLength = 16;
-        
+
         var result = new char[codeLength + 3]; // Include space for hyphens
         var position = 0;
 

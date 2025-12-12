@@ -35,11 +35,11 @@ public class MfaConfigurationServiceTests
         _userRepository = new Mock<IAppUserRepository>();
         _totpProvider = new Mock<ITotpProvider>();
         _passwordHasher = new Mock<IPasswordHasher>();
-        
+
         // Setup password hasher to return a non-empty hash for any input
         _passwordHasher.Setup(x => x.Hash(It.IsAny<string>()))
             .Returns((string input) => $"hashed_{input}");
-            
+
         var recoveryCodeService = new MfaRecoveryCodeService(_passwordHasher.Object);
         _unitOfWork = new Mock<IUnitOfWork>();
         _emailService = new Mock<IEmailService>();
@@ -193,7 +193,7 @@ public class MfaConfigurationServiceTests
         result.RecoveryCodes.Should().HaveCount(8); // Real service generates 8 codes
         result.IsDefault.Should().BeTrue(); // First method becomes default
         result.SecurityMessage.Should().Contain("Save these recovery codes");
-        
+
         _emailService.Verify(x => x.SendMfaSecurityNotificationAsync(
             It.IsAny<string>(),
             It.IsAny<string>(),
@@ -281,7 +281,7 @@ public class MfaConfigurationServiceTests
         var userId = user.Id;
         var method = MfaMethod.CreateEmail(userId, "test@example.com");
         method.StoreSetupVerificationCode("hashedcode", DateTimeOffset.UtcNow.AddMinutes(10));
-        
+
         var verifyDto = new VerifyMfaSetupDto { Code = "123456", Name = "My Email" };
         var recoveryCodes = new List<MfaRecoveryCode>
         {

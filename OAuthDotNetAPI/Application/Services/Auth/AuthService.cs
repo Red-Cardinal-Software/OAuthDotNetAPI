@@ -51,10 +51,10 @@ public class AuthService(
         {
             // Record failed attempt for non-existent user
             await accountLockoutService.RecordFailedAttemptAsync(
-                Guid.Empty, 
-                username, 
-                ipAddress, 
-                null, 
+                Guid.Empty,
+                username,
+                ipAddress,
+                null,
                 ServiceResponseConstants.UserDoesNotExist);
 
             logger.Critical(new StructuredLogBuilder()
@@ -72,10 +72,10 @@ public class AuthService(
         {
             // Record failed attempt for null user (should not happen if UserExists worked correctly)
             await accountLockoutService.RecordFailedAttemptAsync(
-                Guid.Empty, 
-                username, 
-                ipAddress, 
-                null, 
+                Guid.Empty,
+                username,
+                ipAddress,
+                null,
                 ServiceResponseConstants.UserNotFoundInDatabase);
 
             logger.Critical(new StructuredLogBuilder()
@@ -92,8 +92,8 @@ public class AuthService(
         if (lockout is not null && lockout.IsLockedOut)
         {
             var remainingTime = lockout.GetRemainingLockoutDuration();
-            var lockoutMessage = remainingTime.HasValue 
-                ? ServiceResponseConstants.AccountTemporarilyLocked 
+            var lockoutMessage = remainingTime.HasValue
+                ? ServiceResponseConstants.AccountTemporarilyLocked
                 : ServiceResponseConstants.AccountLocked;
 
             logger.Warning(new StructuredLogBuilder()
@@ -110,14 +110,14 @@ public class AuthService(
         {
             // Record failed login attempt
             var wasLocked = await accountLockoutService.RecordFailedAttemptAsync(
-                user.Id, 
-                username, 
-                ipAddress, 
-                null, 
+                user.Id,
+                username,
+                ipAddress,
+                null,
                 ServiceResponseConstants.InvalidCredentials);
 
-            var errorMessage = wasLocked 
-                ? ServiceResponseConstants.AccountTemporarilyLocked 
+            var errorMessage = wasLocked
+                ? ServiceResponseConstants.AccountTemporarilyLocked
                 : ServiceResponseConstants.UsernameOrPasswordIncorrect;
 
             logger.Critical(new StructuredLogBuilder()
@@ -135,15 +135,15 @@ public class AuthService(
 
         // Check if MFA is required
         var requiresMfa = await mfaAuthenticationService.RequiresMfaAsync(user.Id);
-        
+
         if (requiresMfa)
         {
             // Create MFA challenge instead of completing login
             var mfaChallenge = await mfaAuthenticationService.CreateChallengeAsync(
-                user.Id, 
-                ipAddress, 
+                user.Id,
+                ipAddress,
                 null); // userAgent would come from request headers in controller
-            
+
             logger.Info(new StructuredLogBuilder()
                 .SetAction(AuthActions.Login)
                 .SetStatus(LogStatuses.Success)

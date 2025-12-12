@@ -350,13 +350,13 @@ public class MfaChallengeTests
 
         // Act & Assert
         challenge.GetRemainingAttempts().Should().Be(3);
-        
+
         challenge.RecordFailedAttempt();
         challenge.GetRemainingAttempts().Should().Be(2);
-        
+
         challenge.RecordFailedAttempt();
         challenge.GetRemainingAttempts().Should().Be(1);
-        
+
         challenge.RecordFailedAttempt();
         challenge.GetRemainingAttempts().Should().Be(0);
     }
@@ -407,7 +407,7 @@ public class MfaChallengeTests
     {
         // Arrange - Create challenge with past expiration
         var challenge = MfaChallenge.Create(_userId, MfaType.Totp);
-        
+
         // Use reflection to set ExpiresAt to past time (simulating expired challenge)
         var expiresAtProperty = typeof(MfaChallenge).GetProperty(nameof(MfaChallenge.ExpiresAt))!;
         expiresAtProperty.SetValue(challenge, DateTimeOffset.UtcNow.AddMinutes(-1));
@@ -568,10 +568,10 @@ public class MfaChallengeTests
 
         // Act & Assert
         challenge.IsInvalid.Should().BeTrue();
-        
+
         var act1 = () => challenge.SetMetadata("test");
         act1.Should().Throw<InvalidOperationException>();
-        
+
         var act2 = () => challenge.Complete();
         act2.Should().Throw<InvalidOperationException>();
     }

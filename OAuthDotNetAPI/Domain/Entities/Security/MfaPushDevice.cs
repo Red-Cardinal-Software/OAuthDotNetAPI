@@ -140,7 +140,7 @@ public class MfaPushDevice
     public void RecordSuccessfulUse()
     {
         LastUsedAt = DateTime.UtcNow;
-        
+
         // Increase trust score on successful use, max 100
         if (TrustScore < 100)
             TrustScore = Math.Min(100, TrustScore + 5);
@@ -153,7 +153,7 @@ public class MfaPushDevice
     {
         // Decrease trust score on suspicious activity, min 0
         TrustScore = Math.Max(0, TrustScore - 10);
-        
+
         // Auto-disable if trust score too low and device is still active
         if (TrustScore < 20 && IsActive)
             Deactivate();

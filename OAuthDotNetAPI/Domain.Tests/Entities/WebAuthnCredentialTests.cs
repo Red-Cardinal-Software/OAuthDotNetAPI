@@ -396,10 +396,10 @@ public class WebAuthnCredentialTests
         // Act - First use
         credential.RecordUsage();
         var firstUseTime = credential.LastUsedAt;
-        
+
         // Small delay
         Thread.Sleep(10);
-        
+
         // Act - Second use
         credential.RecordUsage();
         var secondUseTime = credential.LastUsedAt;
@@ -444,7 +444,7 @@ public class WebAuthnCredentialTests
     {
         // Arrange
         var credential = WebAuthnCredential.Create(_mfaMethodId, _userId, "valid-cred-id", TestPublicKey, TestSignCount, AuthenticatorType.Platform, [], true);
-        
+
         // Use reflection to set empty credential ID (simulating corrupted data)
         var credentialIdProperty = typeof(WebAuthnCredential).GetProperty(nameof(WebAuthnCredential.CredentialId))!;
         credentialIdProperty.SetValue(credential, "");
@@ -461,7 +461,7 @@ public class WebAuthnCredentialTests
     {
         // Arrange
         var credential = WebAuthnCredential.Create(_mfaMethodId, _userId, TestCredentialId, "valid-public-key", TestSignCount, AuthenticatorType.Platform, [], true);
-        
+
         // Use reflection to set empty public key (simulating corrupted data)
         var publicKeyProperty = typeof(WebAuthnCredential).GetProperty(nameof(WebAuthnCredential.PublicKey))!;
         publicKeyProperty.SetValue(credential, "");
@@ -605,12 +605,12 @@ public class WebAuthnCredentialTests
         // Act - Multiple successful authentications
         credential.UpdateSignCount(2);
         var firstUseTime = credential.LastUsedAt;
-        
+
         Thread.Sleep(10);
-        
+
         credential.UpdateSignCount(3);
         var secondUseTime = credential.LastUsedAt;
-        
+
         credential.RecordUsage(); // Manual usage recording
         var thirdUseTime = credential.LastUsedAt;
 

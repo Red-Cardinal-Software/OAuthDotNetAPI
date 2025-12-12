@@ -38,7 +38,7 @@ public class MfaPushChallengeTests
         challenge.ResponseSignature.Should().BeNull();
         challenge.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
         challenge.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(5), TimeSpan.FromSeconds(1));
-        
+
         // Verify challenge code generation
         challenge.ChallengeCode.Should().NotBeNullOrEmpty();
         challenge.ChallengeCode.Should().HaveLength(16);
@@ -139,7 +139,7 @@ public class MfaPushChallengeTests
         // Act & Assert
         var act = () => new MfaPushChallenge(_userId, _deviceId, TestSessionId, TestIpAddress, TestUserAgent, expiryMinutes);
         act.Should().NotThrow();
-        
+
         var challenge = act();
         challenge.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(expiryMinutes), TimeSpan.FromSeconds(1));
     }
@@ -527,7 +527,7 @@ public class MfaPushChallengeTests
         // Act
         challenge.SetLocation("First Location");
         challenge.SetLocation("Second Location");
-        
+
         challenge.SetContextData("""{"first": "data"}""");
         challenge.SetContextData("""{"second": "data"}""");
 
@@ -544,7 +544,7 @@ public class MfaPushChallengeTests
 
         // Act - Approve, then try other operations
         challenge.Approve(TestSignature);
-        
+
         // Assert - Cannot deny after approval
         var actDeny = () => challenge.Deny("other-signature");
         actDeny.Should().Throw<InvalidStateTransitionException>();

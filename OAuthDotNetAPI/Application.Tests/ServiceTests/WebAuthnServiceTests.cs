@@ -49,7 +49,7 @@ public class WebAuthnServiceTests
         var userName = "testuser";
         var displayName = "Test User";
         var challenge = new byte[] { 1, 2, 3, 4 };
-        
+
         var credentialCreateOptions = new CredentialCreateOptions
         {
             Challenge = challenge,
@@ -67,7 +67,7 @@ public class WebAuthnServiceTests
 
         _credentialRepository.Setup(x => x.GetActiveByUserIdAsync(_userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<WebAuthnCredential>());
-        
+
         _fido2.Setup(x => x.RequestNewCredential(
                 It.IsAny<Fido2User>(),
                 It.IsAny<List<PublicKeyCredentialDescriptor>>(),
@@ -100,7 +100,7 @@ public class WebAuthnServiceTests
         const string userName = "testuser";
         const string displayName = "Test User";
         var challenge = new byte[] { 1, 2, 3, 4 };
-        
+
         var credentialCreateOptions = new CredentialCreateOptions
         {
             Challenge = challenge,
@@ -118,7 +118,7 @@ public class WebAuthnServiceTests
 
         _credentialRepository.Setup(x => x.GetActiveByUserIdAsync(_userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<WebAuthnCredential>());
-        
+
         _fido2.Setup(x => x.RequestNewCredential(
                 It.IsAny<Fido2User>(),
                 It.IsAny<List<PublicKeyCredentialDescriptor>>(),
@@ -205,7 +205,7 @@ public class WebAuthnServiceTests
 
         // Assert
         result.Success.Should().BeTrue();
-        
+
         _fido2.Verify(x => x.RequestNewCredential(
             It.IsAny<Fido2User>(),
             It.Is<List<PublicKeyCredentialDescriptor>>(list => list.Count == 1),
@@ -455,7 +455,7 @@ public class WebAuthnServiceTests
 
         // Assert
         result.Should().HaveCount(2);
-        
+
         var platformCred = result.First(c => c.Name == "Platform Authenticator");
         platformCred.AuthenticatorType.Should().Be("Platform");
         platformCred.Transports.Should().Contain("internal");
@@ -712,7 +712,7 @@ public class WebAuthnServiceTests
         // Arrange
         var userName = "testuser";
         var displayName = "Test User";
-        
+
         var credentialCreateOptions = new CredentialCreateOptions
         {
             Challenge = [1, 2, 3, 4]

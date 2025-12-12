@@ -11,19 +11,19 @@ internal class MfaPushDeviceConfiguration : EntityTypeConfiguration<MfaPushDevic
     {
         // Table configuration
         builder.ToTable("MfaPushDevices", "Security");
-        
+
         // Primary Key
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Id)
             .ValueGeneratedNever();
-        
+
         // Properties
         builder.Property(p => p.UserId)
             .IsRequired();
 
         builder.Property(p => p.MfaMethodId)
             .IsRequired();
-        
+
         builder.Property(p => p.DeviceId)
             .IsRequired()
             .HasMaxLength(256); // Device identifiers can be quite long
@@ -80,7 +80,7 @@ internal class MfaPushDeviceConfiguration : EntityTypeConfiguration<MfaPushDevic
             .WithMany()
             .HasForeignKey(p => p.MfaMethodId)
             .OnDelete(DeleteBehavior.Cascade);
-            
+
         // User relationship without cascade to avoid circular paths
         builder.HasOne<Domain.Entities.Identity.AppUser>()
             .WithMany()

@@ -153,8 +153,8 @@ public class MfaEmailCode
     /// </summary>
     public bool IsValid()
     {
-        return !IsUsed 
-            && DateTimeOffset.UtcNow <= ExpiresAt 
+        return !IsUsed
+            && DateTimeOffset.UtcNow <= ExpiresAt
             && AttemptCount < MaxAttempts;
     }
 
@@ -183,11 +183,11 @@ public class MfaEmailCode
         using var rng = RandomNumberGenerator.Create();
         var bytes = new byte[4];
         rng.GetBytes(bytes);
-        
+
         // Convert to uint and take modulo to get 8-digit number
         var value = BinaryPrimitives.ReadUInt32BigEndian(bytes);
         var code = (value % 90000000) + 10000000; // Ensures 8 digits
-        
+
         return code.ToString();
     }
 }

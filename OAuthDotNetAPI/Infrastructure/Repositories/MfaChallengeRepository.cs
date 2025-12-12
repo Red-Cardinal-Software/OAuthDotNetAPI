@@ -39,11 +39,11 @@ public class MfaChallengeRepository(ICrudOperator<MfaChallenge> mfaChallengeCrud
     public async Task<IReadOnlyList<MfaChallenge>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
-        
+
         var challenges = await mfaChallengeCrudOperator.GetAll()
-            .Where(c => c.UserId == userId 
-                && !c.IsCompleted 
-                && !c.IsInvalid 
+            .Where(c => c.UserId == userId
+                && !c.IsCompleted
+                && !c.IsInvalid
                 && c.ExpiresAt > now)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -85,11 +85,11 @@ public class MfaChallengeRepository(ICrudOperator<MfaChallenge> mfaChallengeCrud
     public async Task<int> GetActiveChallengeCountAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
-        
+
         return await mfaChallengeCrudOperator.GetAll()
-            .CountAsync(c => c.UserId == userId 
-                && !c.IsCompleted 
-                && !c.IsInvalid 
+            .CountAsync(c => c.UserId == userId
+                && !c.IsCompleted
+                && !c.IsInvalid
                 && c.ExpiresAt > now, cancellationToken);
     }
 
@@ -127,11 +127,11 @@ public class MfaChallengeRepository(ICrudOperator<MfaChallenge> mfaChallengeCrud
     public async Task<int> InvalidateAllUserChallengesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
-        
+
         var activeChallenges = await mfaChallengeCrudOperator.GetAll()
-            .Where(c => c.UserId == userId 
-                && !c.IsCompleted 
-                && !c.IsInvalid 
+            .Where(c => c.UserId == userId
+                && !c.IsCompleted
+                && !c.IsInvalid
                 && c.ExpiresAt > now)
             .ToListAsync(cancellationToken);
 

@@ -14,7 +14,7 @@ public class UpdatePushTokenValidatorTests
     [InlineData("")]
     [InlineData(null)]
     [InlineData("   ")]
-    public void Should_Have_Error_When_NewToken_Is_Empty_Or_Whitespace(string token)
+    public void Should_Have_Error_When_NewToken_Is_Empty_Or_Whitespace(string? token)
     {
         // Arrange
         var dto = new UpdatePushTokenDto { NewToken = token };
