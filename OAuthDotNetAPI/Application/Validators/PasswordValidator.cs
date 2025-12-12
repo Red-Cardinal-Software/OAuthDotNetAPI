@@ -1,7 +1,8 @@
+using Application.Common.Configuration;
 using Application.Common.Constants;
 using Application.Interfaces.Security;
 using FluentValidation;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Application.Validators;
 
@@ -14,18 +15,19 @@ namespace Application.Validators;
 /// - The password meets the minimum and maximum length requirements, which are configurable.
 /// - The password is not present in a blacklist of common or insecure passwords.
 /// </remarks>
-/// <param name="configuration">
-/// Provides access to application configuration settings, such as password length constraints.
+/// <param name="appOptions">
+/// Provides access to application configuration options, such as password length constraints.
 /// </param>
 /// <param name="blacklistedPasswordRepository">
 /// An interface used to check if a given password is blacklisted.
 /// </param>
 public class PasswordValidator : AbstractValidator<string>
 {
-    public PasswordValidator(IConfiguration configuration, IBlacklistedPasswordRepository blacklistedPasswordRepository)
+    public PasswordValidator(IOptions<AppOptions> appOptions, IBlacklistedPasswordRepository blacklistedPasswordRepository)
     {
-        var minPasswordLength = GetMinimumPasswordLength(configuration);
-        var maxPasswordLength = GetMaximumPasswordLength(configuration);
+        var options = appOptions.Value;
+        var minPasswordLength = options.PasswordMinimumLength;
+        var maxPasswordLength = options.PasswordMaximumLength;
         RuleFor(p => p)
             .NotEmpty()
             .WithMessage(ServiceResponseConstants.PasswordMustNotBeEmpty)
@@ -35,25 +37,5 @@ public class PasswordValidator : AbstractValidator<string>
             .WithMessage(ServiceResponseConstants.PasswordExceedsMaximumLengthRequirements)
             .MustAsync(async (password, _) => !await blacklistedPasswordRepository.IsPasswordBlacklistedAsync(password))
             .WithMessage(ServiceResponseConstants.PasswordIsBlacklisted);
-    }
-
-    private static int GetMinimumPasswordLength(IConfiguration configuration)
-    {
-        if (!int.TryParse(configuration["PasswordMinimumLength"], out var passwordMinimumLength))
-        {
-            passwordMinimumLength = SystemDefaults.DefaultPasswordMinimumLength;
-        }
-
-        return passwordMinimumLength;
-    }
-
-    private static int GetMaximumPasswordLength(IConfiguration configuration)
-    {
-        if (!int.TryParse(configuration["PasswordMaximumLength"], out var passwordMaximumLength))
-        {
-            passwordMaximumLength = SystemDefaults.DefaultPasswordMaximumLength;
-        }
-
-        return passwordMaximumLength;
     }
 }

@@ -16,4 +16,19 @@ public class NotImplementedEmailService : IEmailService
     {
         throw new NotImplementedException();
     }
+
+    public Task SendMfaVerificationCodeAsync(string to, string verificationCode, int expiresInMinutes, string appName, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task SendMfaSetupVerificationCodeAsync(string to, string verificationCode, int expiresInMinutes, string appName, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task SendMfaSecurityNotificationAsync(string to, string eventType, string eventDetails, DateTimeOffset timestamp, string? ipAddress, string appName, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -100,5 +100,5 @@ public class RefreshToken
     /// Checks if the token is valid
     /// </summary>
     /// <returns>If the token is valid</returns>
-    public bool IsValid() => !IsExpired() && ReplacedBy is not null;
+    public bool IsValid() => !IsExpired() && ReplacedBy is null;
 }

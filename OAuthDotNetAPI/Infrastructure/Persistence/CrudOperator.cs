@@ -16,11 +16,12 @@ public class CrudOperator<TEntity>(AppDbContext context) : ICrudOperator<TEntity
         context.Set<TEntity>().RemoveRange(entities);
     }
 
-    public async Task<TEntity> AddAsync(TEntity entity)
+    public async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-         var savedEntity = await context.Set<TEntity>().AddAsync(entity);
+         var savedEntity = await context.Set<TEntity>().AddAsync(entity, cancellationToken);
          return savedEntity.Entity;
     }
 
-    public Task AddManyAsync(IEnumerable<TEntity> entities) => context.Set<TEntity>().AddRangeAsync(entities);
+    public Task AddManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) => 
+        context.Set<TEntity>().AddRangeAsync(entities, cancellationToken);
 }

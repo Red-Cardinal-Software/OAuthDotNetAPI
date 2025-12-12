@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Application.Common.Configuration;
 using Application.Common.Constants;
 using Application.Common.Factories;
 using Application.Common.Services;
@@ -13,7 +14,7 @@ using Application.Interfaces.Services;
 using Application.Logging;
 using Application.Models;
 using Domain.Entities.Identity;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Application.Services.Auth;
@@ -31,8 +32,9 @@ public class AuthService(
     IRoleRepository roleRepository,
     IPasswordResetTokenRepository passwordResetTokenRepository,
     IAccountLockoutService accountLockoutService,
+    IMfaAuthenticationService mfaAuthenticationService,
     LogContextHelper<AuthService> logger,
-    IConfiguration configuration)
+    IOptions<AppOptions> appOptions)
     : BaseAppService(unitOfWork), IAuthService
 {
 
@@ -128,28 +130,37 @@ public class AuthService(
             return ServiceResponseFactory.Error<JwtResponseDto>(errorMessage);
         }
 
-        // Record successful login attempt
+        // Record successful login attempt (password phase)
         await accountLockoutService.RecordSuccessfulLoginAsync(user.Id, username, ipAddress, null);
 
-        user.LoggedIn();
-
-        var refreshTokenExpirationTime = GetRefreshTokenExpirationTime(configuration);
-
-        var refreshTokenEntity = new RefreshToken(user, DateTime.UtcNow.AddHours(refreshTokenExpirationTime), ipAddress);
-        await refreshTokenRepository.SaveRefreshTokenAsync(refreshTokenEntity);
-
-        logger.Info(new StructuredLogBuilder()
-            .SetAction(AuthActions.Login)
-            .SetStatus(LogStatuses.Success)
-            .SetTarget(AuthTargets.User(username))
-            .SetEntity(nameof(Domain.Entities.Identity.AppUser)));
-
-        return ServiceResponseFactory.Success(new JwtResponseDto
+        // Check if MFA is required
+        var requiresMfa = await mfaAuthenticationService.RequiresMfaAsync(user.Id);
+        
+        if (requiresMfa)
         {
-            Token = await CreateToken(user),
-            RefreshToken = refreshTokenEntity.Id.ToString(),
-            ForceReset = user.ForceResetPassword
-        });
+            // Create MFA challenge instead of completing login
+            var mfaChallenge = await mfaAuthenticationService.CreateChallengeAsync(
+                user.Id, 
+                ipAddress, 
+                null); // userAgent would come from request headers in controller
+            
+            logger.Info(new StructuredLogBuilder()
+                .SetAction(AuthActions.Login)
+                .SetStatus(LogStatuses.Success)
+                .SetTarget(AuthTargets.User(username))
+                .SetEntity(nameof(Domain.Entities.Identity.AppUser))
+                .SetDetail("MFA challenge created"));
+
+            return ServiceResponseFactory.Success(new JwtResponseDto
+            {
+                RequiresMfa = true,
+                MfaChallenge = mfaChallenge,
+                ForceReset = user.ForceResetPassword
+            });
+        }
+
+        // No MFA required - complete login normally
+        return await CompleteUserLogin(user, username, ipAddress);
     });
 
     /// <summary>
@@ -226,11 +237,10 @@ public class AuthService(
             return ServiceResponseFactory.Error<JwtResponseDto>(ServiceResponseConstants.RefreshTokenExpired);
         }
 
-        var refreshToken = Guid.NewGuid();
-        var refreshTokenEntity = new RefreshToken(user, DateTime.UtcNow.AddHours(GetRefreshTokenExpirationTime(configuration)), ipAddress, thisToken.TokenFamily);
+        var refreshTokenEntity = new RefreshToken(user, DateTime.UtcNow.AddHours(appOptions.Value.RefreshTokenExpirationTimeHours), ipAddress, thisToken.TokenFamily);
         await refreshTokenRepository.SaveRefreshTokenAsync(refreshTokenEntity);
 
-        thisToken.MarkReplaced(refreshToken.ToString());
+        thisToken.MarkReplaced(refreshTokenEntity.Id.ToString());
 
         if (!thisToken.IsValid())
         {
@@ -242,7 +252,7 @@ public class AuthService(
 
             return ServiceResponseFactory.Success(new JwtResponseDto
             {
-                RefreshToken = refreshToken.ToString(),
+                RefreshToken = refreshTokenEntity.Id.ToString(),
                 Token = await CreateToken(user)
             });
         }
@@ -324,10 +334,7 @@ public class AuthService(
             return ServiceResponseFactory.Success(true, ServiceResponseConstants.EmailPasswordResetSent);
         }
 
-        if (!int.TryParse(configuration["PasswordResetExpirationTime"], out var passwordResetExpirationTimeHours))
-        {
-            passwordResetExpirationTimeHours = SystemDefaults.DefaultPasswordResetExpirationInHours;
-        }
+        var passwordResetExpirationTimeHours = appOptions.Value.PasswordResetExpirationTimeHours;
 
         var newPasswordResetToken =
             new PasswordResetToken(user, DateTime.Now.AddHours(passwordResetExpirationTimeHours), ipAddress);
@@ -377,14 +384,77 @@ public class AuthService(
     {
         var appUser = await appUserRepository.GetUserByUsernameAsync(RoleUtility.GetUserNameFromClaim(user));
 
-        var refreshToken = Guid.NewGuid();
-
+        // Note: This method generates a new JWT but doesn't create a refresh token entity.
+        // If refresh token functionality is needed, consider creating and saving a RefreshToken entity.
         return new JwtResponseDto
         {
-            RefreshToken = refreshToken.ToString(),
+            RefreshToken = null, // No refresh token generated as no entity is created
             Token = await CreateToken(appUser!)
         };
     }
+
+    /// <summary>
+    /// Completes the MFA verification process and issues authentication tokens.
+    /// </summary>
+    /// <param name="completeMfaDto">The MFA completion information including challenge token and verification code.</param>
+    /// <param name="ipAddress">The IP address of the device completing MFA verification.</param>
+    /// <returns>A service response containing JWT tokens upon successful MFA verification.</returns>
+    public async Task<ServiceResponse<JwtResponseDto>> CompleteMfaAuthentication(CompleteMfaDto completeMfaDto, string ipAddress) => await RunWithCommitAsync(async () =>
+    {
+        // Verify the MFA challenge
+        var verificationResult = await mfaAuthenticationService.VerifyMfaAsync(completeMfaDto);
+
+        if (!verificationResult.IsValid)
+        {
+            // Log the failed MFA attempt
+            logger.Warning(new StructuredLogBuilder()
+                .SetAction(AuthActions.Login)
+                .SetStatus(LogStatuses.Failure)
+                .SetTarget(AuthTargets.User("MFA"))
+                .SetEntity("MfaChallenge")
+                .SetDetail($"MFA verification failed: {verificationResult.ErrorMessage}"));
+
+            if (verificationResult.IsExhausted)
+            {
+                logger.Critical(new StructuredLogBuilder()
+                    .SetAction(AuthActions.Login)
+                    .SetStatus(LogStatuses.Failure)
+                    .SetTarget(AuthTargets.User("MFA"))
+                    .SetEntity("MfaChallenge")
+                    .SetDetail("MFA challenge exhausted - potential brute force attempt"));
+            }
+
+            return ServiceResponseFactory.Error<JwtResponseDto>(
+                verificationResult.ErrorMessage ?? "Invalid MFA verification code");
+        }
+
+        // Get the user
+        var user = await appUserRepository.GetUserByIdAsync(verificationResult.UserId);
+        if (user == null)
+        {
+            logger.Critical(new StructuredLogBuilder()
+                .SetAction(AuthActions.Login)
+                .SetStatus(LogStatuses.Failure)
+                .SetTarget(AuthTargets.User(verificationResult.UserId.ToString()))
+                .SetEntity(nameof(AppUser))
+                .SetDetail("User not found after successful MFA verification"));
+
+            return ServiceResponseFactory.Error<JwtResponseDto>("Authentication failed");
+        }
+
+        // Complete the login process
+        var loginResult = await CompleteUserLogin(user, user.Username, ipAddress);
+
+        // Log successful MFA completion
+        logger.Info(new StructuredLogBuilder()
+            .SetAction(AuthActions.Login)
+            .SetStatus(LogStatuses.Success)
+            .SetTarget(AuthTargets.User(user.Username))
+            .SetEntity(nameof(AppUser))
+            .SetDetail($"MFA authentication completed successfully. Recovery code used: {verificationResult.UsedRecoveryCode}"));
+
+        return loginResult;
+    });
 
     /// <summary>
     /// General check if the user actually exists in the system
@@ -396,19 +466,34 @@ public class AuthService(
         return await appUserRepository.UserExistsAsync(username);
     }
 
-    /// <summary>
-    /// Retreives the configured refresh token expiration time
-    /// </summary>
-    /// <param name="configuration">Configuration to get the set hours of expiration</param>
-    /// <returns>The configured set hours for expiration or the system default</returns>
-    private static int GetRefreshTokenExpirationTime(IConfiguration configuration)
-    {
-        if (!int.TryParse(configuration["RefreshTokenExpirationTime"], out var refreshTokenExpirationTime))
-        {
-            refreshTokenExpirationTime = SystemDefaults.DefaultRefreshTokenExpirationTimeInHours;
-        }
 
-        return refreshTokenExpirationTime;
+    /// <summary>
+    /// Completes the user login process by creating tokens and logging successful authentication.
+    /// Used for both regular login and MFA completion flows.
+    /// </summary>
+    /// <param name="user">The authenticated user</param>
+    /// <param name="username">The username used for login</param>
+    /// <param name="ipAddress">The IP address of the login request</param>
+    /// <returns>JWT response with tokens</returns>
+    private async Task<ServiceResponse<JwtResponseDto>> CompleteUserLogin(Domain.Entities.Identity.AppUser user, string username, string ipAddress)
+    {
+        var refreshTokenEntity = new RefreshToken(user, DateTime.UtcNow.AddHours(appOptions.Value.RefreshTokenExpirationTimeHours), ipAddress);
+        await refreshTokenRepository.SaveRefreshTokenAsync(refreshTokenEntity);
+
+        logger.Info(new StructuredLogBuilder()
+            .SetAction(AuthActions.Login)
+            .SetStatus(LogStatuses.Success)
+            .SetTarget(AuthTargets.User(username))
+            .SetEntity(nameof(Domain.Entities.Identity.AppUser))
+            .SetDetail("User authentication completed successfully"));
+
+        return ServiceResponseFactory.Success(new JwtResponseDto
+        {
+            RefreshToken = refreshTokenEntity.Id.ToString(),
+            Token = await CreateToken(user),
+            ForceReset = user.ForceResetPassword,
+            RequiresMfa = false
+        });
     }
 
     /// <summary>
@@ -438,25 +523,18 @@ public class AuthService(
         var userInfoClaims = ClaimsUtility.BuildClaimsForUser(user, allRoles);
         claims.AddRange(userInfoClaims);
 
-        var appSettingsToken = configuration["AppSettings-Token"];
-        if (appSettingsToken is null)
-        {
-            throw new Exception("AppSettings Token is null");
-        }
-
-        var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(appSettingsToken));
+        var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(appOptions.Value.JwtSigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-        if (!int.TryParse(configuration["JwtExpirationTimeMinutes"], out var jwtExpirationTimeMinutes))
-        {
-            jwtExpirationTimeMinutes = SystemDefaults.DefaultJwtExpirationTimeInMinutes;
-        }
+        var jwtExpirationTimeMinutes = appOptions.Value.JwtExpirationTimeMinutes;
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(jwtExpirationTimeMinutes),
-            SigningCredentials = credentials
+            SigningCredentials = credentials,
+            Issuer = appOptions.Value.JwtIssuer,
+            Audience = appOptions.Value.JwtAudience
         };
 
         var tokenHandler = new JwtSecurityTokenHandler();

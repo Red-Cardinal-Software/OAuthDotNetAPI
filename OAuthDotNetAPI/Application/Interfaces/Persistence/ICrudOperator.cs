@@ -28,13 +28,15 @@ public interface ICrudOperator<TEntity> where TEntity : class
     /// Adds a new entity of type <typeparamref name="TEntity"/> to the database asynchronously.
     /// </summary>
     /// <param name="entity">The entity of type <typeparamref name="TEntity"/> to be added.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, containing the added entity of type <typeparamref name="TEntity"/>.</returns>
-    Task<TEntity> AddAsync(TEntity entity);
+    Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds multiple entities of type <typeparamref name="TEntity"/> to the database asynchronously.
     /// </summary>
     /// <param name="entities">A collection of entities of type <typeparamref name="TEntity"/> to be added.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
-    Task AddManyAsync(IEnumerable<TEntity> entities);
+    Task AddManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
 }

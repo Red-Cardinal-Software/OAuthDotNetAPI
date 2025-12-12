@@ -71,6 +71,7 @@ public static class PredefinedPrivileges
         public const string Create = "org:create";
         public const string Update = "org:update";
         public const string Deactivate = "org:deactivate";
+        public const string MfaMetrics = "org:mfa:metrics";
     }
 
     /// <summary>

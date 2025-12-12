@@ -1,15 +1,12 @@
-using System.Security.Claims;
 using Application.Common.Constants;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Security;
 using Application.Logging;
-using Application.Services;
 using Application.Services.PasswordReset;
 using Domain.Entities.Identity;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TestUtils.EntityBuilders;
@@ -25,22 +22,17 @@ public class PasswordResetServiceTests
     private readonly Mock<IPasswordResetTokenRepository> _passwordResetTokenRepository = new();
     private readonly Mock<IValidator<string>> _passwordValidator = new();
     private readonly Mock<ILogger<PasswordResetService>> _mockLogger = new();
-    private readonly LogContextHelper<PasswordResetService> _logger;
 
     private readonly PasswordResetService _passwordResetService;
     public PasswordResetServiceTests()
     {
-        _logger = new LogContextHelper<PasswordResetService>(_mockLogger.Object);
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            { "AppSettings-Token", "test-key" }
-        }).Build();
+        var logger = new LogContextHelper<PasswordResetService>(_mockLogger.Object);
 
         _passwordResetService = new PasswordResetService(
             _passwordResetTokenRepository.Object,
             _passwordHasher.Object,
             _appUserRepository.Object,
-            _logger,
+            logger,
             _passwordValidator.Object
         );
     }
@@ -172,9 +164,6 @@ public class PasswordResetServiceTests
     {
         // Arrange
         var user = new AppUserBuilder().Build();
-        var claims = new ClaimsPrincipal(new ClaimsIdentity([
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-        ]));
 
         var positiveValidationResult = new ValidationResult
         {

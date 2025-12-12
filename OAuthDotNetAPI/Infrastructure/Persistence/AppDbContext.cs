@@ -24,6 +24,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
     // Security Tables
     public DbSet<LoginAttempt> LoginAttempts { get; set; }
     public DbSet<AccountLockout> AccountLockouts { get; set; }
+    public DbSet<MfaMethod> MfaMethods { get; set; }
+    public DbSet<MfaRecoveryCode> MfaRecoveryCodes { get; set; }
+    public DbSet<MfaChallenge> MfaChallenges { get; set; }
+    public DbSet<MfaEmailCode> MfaEmailCodes { get; set; }
+    public DbSet<WebAuthnCredential> WebAuthnCredentials { get; set; }
+    public DbSet<MfaPushDevice> MfaPushDevices { get; set; }
+    public DbSet<MfaPushChallenge> MfaPushChallenges { get; set; }
 
     // App Tables
     public DbSet<Organization> Organizations { get; set; }
@@ -40,7 +47,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
 
         // Use any database for connection, this example is using SqlServer
         // The configuration path shown makes it easy to set up config in Azure if it is hosted there
-        options.UseSqlServer(configuration["ConnectionStrings-DefaultConnection"])
+        options.UseSqlServer(configuration.GetConnectionString("SqlConnection"), sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null);
+            })
             .UseSeeding((context, _) =>
             {
                 context.ApplySeedData();

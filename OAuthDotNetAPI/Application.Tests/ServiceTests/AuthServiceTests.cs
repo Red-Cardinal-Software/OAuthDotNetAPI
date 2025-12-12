@@ -1,3 +1,4 @@
+using Application.Common.Configuration;
 using Application.Common.Constants;
 using Application.Interfaces.Persistence;
 using Application.Interfaces.Repositories;
@@ -7,8 +8,8 @@ using Application.Logging;
 using Application.Services.Auth;
 using Domain.Entities.Identity;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using TestUtils.EntityBuilders;
 using TestUtils.Utilities;
@@ -26,6 +27,7 @@ public class AuthServiceTests
     private readonly Mock<IRoleRepository> _roleRepository = new();
     private readonly Mock<IPasswordResetTokenRepository> _passwordResetTokenRepository = new();
     private readonly Mock<IAccountLockoutService> _accountLockoutService = new();
+    private readonly Mock<IMfaAuthenticationService> _mfaAuthenticationService = new();
     private readonly Mock<ILogger<AuthService>> _mockLogger = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
@@ -34,14 +36,23 @@ public class AuthServiceTests
     public AuthServiceTests()
     {
         var logger = new LogContextHelper<AuthService>(_mockLogger.Object);
-        var inMemorySettings = new Dictionary<string, string?>
+        
+        // Create AppOptions for the test
+        var appOptions = new AppOptions
         {
-            {"AppSettings-Token", "k<tS6l6;<{{P#'iI5vW8KZon7o7*_>j&V)b9<:&jB[_#wb[#GSm/$t<<u<=!#&|5@0M()Y"}
+            AppName = "Starbase Template (Test)",
+            JwtSigningKey = "k<tS6l6;<{{P#'iI5vW8KZon7o7*_>j&V)b9<:&jB[_#wb[#GSm/$t<<u<=!#&|5@0M()Y",
+            JwtIssuer = "https://localhost:5001",
+            JwtAudience = "starbase-template-api-users-test",
+            JwtExpirationTimeMinutes = 15,
+            RefreshTokenExpirationTimeHours = 24,
+            PasswordResetExpirationTimeHours = 1,
+            PasswordMinimumLength = 8,
+            PasswordMaximumLength = 64
         };
-
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(inMemorySettings)
-            .Build();
+        
+        var mockAppOptions = new Mock<IOptions<AppOptions>>();
+        mockAppOptions.Setup(x => x.Value).Returns(appOptions);
 
         _authService = new AuthService(
             _userRepo.Object,
@@ -53,8 +64,9 @@ public class AuthServiceTests
             _roleRepository.Object,
             _passwordResetTokenRepository.Object,
             _accountLockoutService.Object,
+            _mfaAuthenticationService.Object,
             logger,
-            config
+            mockAppOptions.Object
         );
     }
 
@@ -94,6 +106,10 @@ public class AuthServiceTests
             .ReturnsAsync((Domain.Entities.Security.AccountLockout?)null);
         _accountLockoutService.Setup(x => x.RecordSuccessfulLoginAsync(
             user.Id, "testuser", "127.0.0.1", null, It.IsAny<CancellationToken>()));
+        
+        // MFA service mocks
+        _mfaAuthenticationService.Setup(x => x.RequiresMfaAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         // Act
         var result = await _authService.Login("testuser", TestConstants.Passwords.Default, "127.0.0.1");

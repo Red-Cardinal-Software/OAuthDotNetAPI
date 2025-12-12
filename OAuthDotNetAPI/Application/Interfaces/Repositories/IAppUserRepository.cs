@@ -58,4 +58,15 @@ public interface IAppUserRepository
     /// Retrieves a user by their username.
     /// </summary>
     Task<AppUser?> GetUserByUsernameAsync(string username);
+
+    /// <summary>
+    /// Gets the total number of users in the system.
+    /// </summary>
+    Task<int> GetTotalUserCountAsync();
+
+    /// <summary>
+    /// Gets the total number of users in a specific organization.
+    /// </summary>
+    /// <param name="organizationId">The organization ID</param>
+    Task<int> GetTotalUserCountForOrganizationAsync(Guid organizationId);
 }

@@ -1,5 +1,9 @@
+using Application.Common.Configuration;
 using Application.Common.Email;
 using Application.Common.Interfaces;
+using Application.DTOs.Mfa;
+using Application.DTOs.Mfa.EmailMfa;
+using Application.DTOs.Mfa.WebAuthn;
 using Application.DTOs.Users;
 using Application.Interfaces.Mappers;
 using Application.Interfaces.Persistence;
@@ -15,6 +19,7 @@ using Application.Services.AppUser;
 using Application.Services.AccountLockout;
 using Application.Services.Auth;
 using Application.Services.Email;
+using Application.Services.Mfa;
 using Application.Services.PasswordReset;
 using Application.Validators;
 using AutoMapper;
@@ -26,6 +31,7 @@ using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Infrastructure.Security.Repository;
 using Infrastructure.Web.Validation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +39,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Application.Interfaces.Providers;
+using Fido2NetLib;
+using Infrastructure.Providers;
 
 namespace DependencyInjectionConfiguration;
 
@@ -50,6 +61,9 @@ public class AppDependencyOptions
     public bool IncludeAuthorization { get; set; } = true;
     public bool IncludeAutoMapper { get; set; } = true;
     public bool IncludeHealthChecks { get; set; } = true;
+    public bool IncludeAuthentication { get; set; } = true;
+    public bool IncludeRateLimiting { get; set; } = true;
+    public bool IncludeCaching { get; set; } = true;
 }
 
 /// <summary>
@@ -68,11 +82,12 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The IServiceCollection instance to which dependencies will be added.</param>
     /// <param name="environment">The IHostEnvironment instance that provides information about the application's hosting environment.</param>
+    /// <param name="configuration">The IConfiguration instance for reading application settings.</param>
     /// <param name="configure">
     /// An optional Action to configure the <see cref="AppDependencyOptions"/> for determining which components to include.
     /// </param>
     /// <returns>The modified <see cref="IServiceCollection"/> instance.</returns>
-    public static IServiceCollection AddAppDependencies(this IServiceCollection services, IHostEnvironment environment, Action<AppDependencyOptions>? configure = null)
+    public static IServiceCollection AddAppDependencies(this IServiceCollection services, IHostEnvironment environment, IConfiguration configuration, Action<AppDependencyOptions>? configure = null)
     {
         var options = new AppDependencyOptions();
         configure?.Invoke(options);
@@ -80,11 +95,35 @@ public static class ServiceCollectionExtensions
         if (options.IncludeDb) services.AddDbContext(environment);
         if (options.IncludeAutoMapper) services.AddAutoMapper();
         services.AddCoreInfrastructure(); // assumed to always be needed
+        services.AddAppOptions(); // Add this before services so options are available
         if (options.IncludeRepositories) services.AddRepositories();
         if (options.IncludeServices) services.AddServices();
+        if (options.IncludeAuthentication) services.AddSecureJwtAuthentication(configuration);
         if (options.IncludeAuthorization) services.AddAuthorizationPolicies();
         if (options.IncludeValidation) services.AddValidation();
-        if (options.IncludeHealthChecks) services.AddAppHealthChecks();
+        if (options.IncludeHealthChecks) services.AddAppHealthChecks(configuration);
+        if (options.IncludeRateLimiting) services.AddRateLimiting(configuration);
+        if (options.IncludeCaching)
+        {
+            // Support both local (memory) and Cloud (redis) automatically
+            var redisConnection = configuration.GetConnectionString("Redis");
+
+            if (!string.IsNullOrWhiteSpace(redisConnection))
+            {
+                services.AddStackExchangeRedisCache(cacheOptions =>
+                {
+                    cacheOptions.Configuration = configuration.GetConnectionString("redis");
+                    cacheOptions.InstanceName = "StarbaseTemplate_";
+                });
+            }
+            else
+            {
+                // Development: Fallback to Memory if no redis config is found.
+                // Implements the IDistributedCache so your services don't need to change.
+                services.AddDistributedMemoryCache();
+            }
+
+        }
 
         return services;
     }
@@ -107,6 +146,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
         services.AddScoped<IAccountLockoutRepository, AccountLockoutRepository>();
         services.AddScoped<ILoginAttemptRepository, LoginAttemptRepository>();
+        services.AddScoped<IMfaMethodRepository, MfaMethodRepository>();
+        services.AddScoped<IMfaChallengeRepository, MfaChallengeRepository>();
+        services.AddScoped<IMfaEmailCodeRepository, MfaEmailCodeRepository>();
+        services.AddScoped<IWebAuthnCredentialRepository, WebAuthnCredentialRepository>();
+        services.AddScoped<IMfaPushRepository, MfaPushRepository>();
+        services.AddScoped<IPushNotificationProvider, MockPushNotificationProvider>();
 
         return services;
     }
@@ -128,6 +173,79 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAppUserService, AppUserService>();
         services.AddScoped<IEmailService, NotImplementedEmailService>(); // Replace it with your own implementation
         services.AddScoped<IAccountLockoutService, AccountLockoutService>();
+        services.AddScoped<IMfaConfigurationService, MfaConfigurationService>();
+        services.AddScoped<IMfaAuthenticationService, MfaAuthenticationService>();
+        services.AddScoped<IMfaEmailService, MfaEmailService>();
+        services.AddScoped<IMfaEmailAuthenticationService, MfaEmailAuthenticationService>();
+        services.AddScoped<IMfaWebAuthnService, MfaWebAuthnService>();
+        services.AddScoped<MfaRecoveryCodeService>();
+        services.AddScoped<IWebAuthnService, WebAuthnService>();
+        services.AddScoped<IFido2>(sp =>
+        {
+            var configuration = sp.GetRequiredService<IConfiguration>();
+            var fido2Configuration = new Fido2Configuration
+            {
+                ServerDomain = configuration["WebAuthn:ServerDomain"] ?? "localhost",
+                ServerName = configuration["WebAuthn:ServerName"] ?? "Starbase Template .NET API",
+                Origins = new HashSet<string>(configuration.GetSection("WebAuthn:Origins").Get<string[]>() ?? new[] { "https://localhost" }),
+                TimestampDriftTolerance = 300000 // 5 minutes
+            };
+            return new Fido2(fido2Configuration);
+        });
+        services.AddScoped<ITotpProvider, TotpProvider>();
+        services.AddScoped<IMfaPushService, MfaPushService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers strongly-typed configuration options with validation and startup configuration binding.
+    /// This method configures all application options classes to bind to their respective configuration sections,
+    /// validates them using data annotations, and ensures they are validated at application startup.
+    /// </summary>
+    /// <param name="services">The IServiceCollection instance to which options will be added.</param>
+    /// <returns>The modified IServiceCollection instance with options configured.</returns>
+    private static IServiceCollection AddAppOptions(this IServiceCollection services)
+    {
+        services.AddOptions<AppOptions>()
+            .BindConfiguration("AppSettings")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<EmailMfaOptions>()
+            .BindConfiguration(EmailMfaOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<PushMfaOptions>()
+            .BindConfiguration(PushMfaOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<MfaOptions>()
+            .BindConfiguration(MfaOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<WebAuthnOptions>()
+            .BindConfiguration(WebAuthnOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<RateLimitingOptions>()
+            .BindConfiguration(RateLimitingOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<HealthCheckOptions>()
+            .BindConfiguration(HealthCheckOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<AccountLockoutOptions>()
+            .BindConfiguration(AccountLockoutOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         return services;
     }
@@ -163,7 +281,7 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             var configuration = sp.GetRequiredService<IConfiguration>();
-            options.UseSqlServer(configuration["ConnectionStrings-DefaultConnection"]);
+            options.UseSqlServer(configuration.GetConnectionString("SqlConnection"));
             
             // Only allow sensitive data logging when in development
             if (environment.IsDevelopment())
@@ -224,6 +342,13 @@ public static class ServiceCollectionExtensions
         services.AddTypedValidation<PasswordValidator, string>();
         services.AddTypedValidation<NewUserValidator, CreateNewUserDto>();
         services.AddTypedValidation<UpdateUserValidator, AppUserDto>();
+        
+        // MFA Validators
+        services.AddTypedValidation<SendEmailCodeValidator, SendEmailCodeDto>();
+        services.AddTypedValidation<VerifyEmailCodeValidator, VerifyEmailCodeDto>();
+        services.AddTypedValidation<UpdateCredentialNameValidator, UpdateCredentialNameDto>();
+        services.AddTypedValidation<SendPushChallengeValidator, SendPushChallengeDto>();
+        services.AddTypedValidation<UpdatePushTokenValidator, UpdatePushTokenDto>();
 
         return services;
     }
@@ -246,8 +371,9 @@ public static class ServiceCollectionExtensions
     /// Includes database connectivity checks and optional memory monitoring for privileged access.
     /// </summary>
     /// <param name="services">The IServiceCollection instance to which health checks will be added.</param>
+    /// <param name="configuration">The IConfiguration instance for reading health check settings.</param>
     /// <returns>The modified IServiceCollection instance.</returns>
-    private static IServiceCollection AddAppHealthChecks(this IServiceCollection services)
+    private static IServiceCollection AddAppHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<DatabaseHealthCheck>();
         
@@ -256,18 +382,76 @@ public static class ServiceCollectionExtensions
                 failureStatus: HealthStatus.Unhealthy,
                 tags: ["db", "sql", "ready"]);
 
-        // Add memory health check only if enabled in configuration
-        var serviceProvider = services.BuildServiceProvider();
-        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-        var includeMemoryCheck = configuration.GetValue("HealthChecks:IncludeMemoryCheck", false);
+        // Use strongly-typed configuration instead of raw config values
+        var healthCheckOptions = configuration.GetSection(HealthCheckOptions.SectionName).Get<HealthCheckOptions>() ?? new HealthCheckOptions();
         
-        if (includeMemoryCheck)
+        if (healthCheckOptions.IncludeMemoryCheck)
         {
             services.AddScoped<MemoryHealthCheck>();
             healthChecksBuilder.AddCheck<MemoryHealthCheck>("memory",
                 failureStatus: HealthStatus.Degraded,
                 tags: ["memory", "privileged"]); // Tag as privileged for security
         }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures JWT Bearer authentication with proper security validation.
+    /// This method sets up secure JWT token validation including issuer, audience, and signing key validation
+    /// to prevent token misuse and security vulnerabilities.
+    /// </summary>
+    /// <param name="services">The IServiceCollection instance to which JWT authentication will be added.</param>
+    /// <param name="configuration">Configuration instance to read JWT settings from</param>
+    /// <returns>The modified IServiceCollection instance with JWT authentication configured.</returns>
+    private static IServiceCollection AddSecureJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer();
+
+        // Configure JWT Bearer options using PostConfigure to access IOptions<AppOptions>
+        // This avoids BuildServiceProvider while still using strongly-typed options
+        services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, (jwtOptions) =>
+        {
+            // We need to use a factory pattern here since PostConfigure doesn't give us the service provider
+            // For now, fall back to reading from configuration directly but using the strongly-typed approach
+            var appOptions = configuration.GetSection("AppSettings").Get<AppOptions>();
+            
+            if (appOptions == null)
+                throw new InvalidOperationException("AppSettings configuration section not found");
+            if (string.IsNullOrEmpty(appOptions.JwtSigningKey))
+                throw new InvalidOperationException("JWT signing key is not configured");
+            if (string.IsNullOrEmpty(appOptions.JwtIssuer))
+                throw new InvalidOperationException("JWT issuer is not configured");
+            if (string.IsNullOrEmpty(appOptions.JwtAudience))
+                throw new InvalidOperationException("JWT audience is not configured");
+
+            jwtOptions.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appOptions.JwtSigningKey)),
+                
+                // SECURITY: Enable issuer validation to prevent cross-application token attacks
+                ValidateIssuer = true,
+                ValidIssuer = appOptions.JwtIssuer,
+                
+                // SECURITY: Enable audience validation to prevent token misuse
+                ValidateAudience = true,
+                ValidAudience = appOptions.JwtAudience,
+                
+                // Validate token lifetime
+                ValidateLifetime = true,
+                
+                // Zero clock skew for maximum security
+                ClockSkew = TimeSpan.Zero, // No tolerance for clock drift
+                
+                // Ensure tokens have not been tampered with
+                RequireSignedTokens = true,
+                
+                // Ensure the token has an expiration
+                RequireExpirationTime = true
+            };
+        });
 
         return services;
     }

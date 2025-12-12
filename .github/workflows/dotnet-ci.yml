@@ -6,6 +6,10 @@ on:
   push:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     name: Build and Test
@@ -23,9 +27,16 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore ./OAuthDotNetAPI/OAuthDotNetAPI.sln
 
+    - name: Check Formatting
+      run: dotnet format ./OAuthDotNetAPI/OAuthDotNetAPI.sln --verify-no-changes --verbosity diagnostic
+
     - name: Build
-      run: dotnet build ./OAuthDotNetAPI/OAuthDotNetAPI.sln --no-restore --configuration Release
+      run: dotnet build ./OAuthDotNetAPI/OAuthDotNetAPI.sln --no-restore --configuration Release -p:TreatWarningsAsErrors=true
 
     - name: Run tests
       run: dotnet test ./OAuthDotNetAPI/OAuthDotNetAPI.sln --no-build --verbosity normal --configuration Release
+
+    - name: Scan for Vulnerable NuGets
+      run: dotnet list ./OAuthDotNetAPI/OAuthDotNetAPI.sln package --vulnerable --include-transitive
+      continue-on-error: false
 
