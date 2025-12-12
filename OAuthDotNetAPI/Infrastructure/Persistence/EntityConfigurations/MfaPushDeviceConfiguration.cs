@@ -38,7 +38,7 @@ internal class MfaPushDeviceConfiguration : EntityTypeConfiguration<MfaPushDevic
 
         builder.Property(p => p.PushToken)
             .IsRequired()
-            .HasMaxLength(4096); // Push tokens can be very long
+            .HasMaxLength(4000); // Push tokens can be very long
 
         builder.Property(p => p.PublicKey)
             .IsRequired()
