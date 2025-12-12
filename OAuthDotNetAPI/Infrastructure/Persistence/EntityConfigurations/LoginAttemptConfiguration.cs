@@ -15,7 +15,7 @@ internal class LoginAttemptConfiguration : EntityTypeConfiguration<LoginAttempt>
     protected override void PerformConfiguration(EntityTypeBuilder<LoginAttempt> builder)
     {
         // Table configuration
-        builder.ToTable("LoginAttempts");
+        builder.ToTable("LoginAttempts", "Security");
 
         // Primary key
         builder.HasKey(x => x.Id);

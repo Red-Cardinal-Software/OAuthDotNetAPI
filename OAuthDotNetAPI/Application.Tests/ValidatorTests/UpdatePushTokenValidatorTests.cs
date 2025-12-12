@@ -40,7 +40,7 @@ public class UpdatePushTokenValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(dto);
         result.ShouldHaveValidationErrorFor(x => x.NewToken)
-            .WithErrorMessage("Push token must be between 10 and 4096 characters");
+            .WithErrorMessage("Push token must be between 10 and 4000 characters");
     }
 
     [Fact]

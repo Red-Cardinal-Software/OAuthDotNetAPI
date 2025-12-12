@@ -9,6 +9,8 @@ internal class AppUserConfiguration : EntityTypeConfiguration<AppUser>
 {
     protected override void PerformConfiguration(EntityTypeBuilder<AppUser> builder)
     {
+        builder.ToTable("AppUsers", "Identity");
+
         builder.Property(p => p.Username).IsRequired().HasMaxLength(200);
         builder.Property(p => p.FirstName).IsRequired().HasMaxLength(100);
         builder.Property(p => p.LastName).IsRequired().HasMaxLength(100);
