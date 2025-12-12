@@ -22,7 +22,7 @@ namespace Infrastructure.Migrations
                     DeviceId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     DeviceName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Platform = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    PushToken = table.Column<string>(type: "nvarchar(4000)", maxLength: 4096, nullable: false),
+                    PushToken = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     PublicKey = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: false),
                     RegisteredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),

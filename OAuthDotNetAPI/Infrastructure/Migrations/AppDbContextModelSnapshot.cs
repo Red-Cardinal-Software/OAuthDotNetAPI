@@ -710,7 +710,7 @@ namespace Infrastructure.Migrations
                     b.Property<string>("PushToken")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4096)");
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<DateTime>("RegisteredAt")
                         .HasColumnType("datetime2");
