@@ -611,12 +611,193 @@ Expected: First 5 attempts return 401, 6th attempt returns 401 with lockout mess
 5. **Consider IP-Based Rules** – May want to add IP-based blocking for persistent attackers
 6. **Regular Maintenance** – Clean up old data to maintain performance
 
+## Observability & Logging
+
+This template includes enterprise-grade observability and logging capabilities designed for production environments.
+
+### Structured Logging with Serilog
+
+The application uses Serilog for comprehensive structured logging with rich context and flexible output targets.
+
+**Key Features:**
+- **Structured logging** with enriched context for detailed tracing
+- **Environment-aware output** - Console for development, configurable sinks for production
+- **Configuration-driven setup** via `appsettings.json`
+- **Log context enrichment** for request correlation and user tracking
+- **Production-ready** with configurable log levels and filtering
+
+**Configuration:**
+Logging is configured in `WebApi/Program.cs` with environment-aware sink selection:
+```csharp
+var loggerConfig = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext();
+
+// Only write to console in development - production should use configured sinks
+if (builder.Environment.IsDevelopment())
+{
+    loggerConfig.WriteTo.Console();
+}
+
+Log.Logger = loggerConfig.CreateLogger();
+```
+
+**Serilog Dependencies:**
+- `Serilog.AspNetCore` - ASP.NET Core integration
+- `Serilog.Sinks.Console` - Console output sink
+
+**Custom Logging Components:**
+- `LogContextHelper<T>` - Structured context building
+- `StructuredLogBuilder` - Fluent log entry construction
+- Context enrichment for user ID, request ID, and operation tracking
+
+**Development Configuration:**
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "System": "Warning"
+      }
+    },
+    "Enrich": ["FromLogContext"]
+  }
+}
+```
+
+**Production Configuration Example:**
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "System": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "path": "/var/log/oauth-api/app-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 7,
+          "formatter": "Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact"
+        }
+      },
+      {
+        "Name": "ApplicationInsights",
+        "Args": {
+          "connectionString": "your-application-insights-connection-string"
+        }
+      }
+    ],
+    "Enrich": ["FromLogContext"],
+    "Properties": {
+      "Application": "OAuth.NET.API",
+      "Environment": "Production"
+    }
+  }
+}
+```
+
+### OpenTelemetry Instrumentation
+
+Production-ready observability with comprehensive distributed tracing and metrics collection.
+
+**Instrumentation Coverage:**
+- **ASP.NET Core** - HTTP request/response tracing
+- **HTTP Client** - Outbound HTTP call tracing  
+- **SQL Client** - Database operation tracing
+- **Custom traces** - Application-specific tracing with source "StarbaseTemplateAPI"
+
+**Export Options:**
+- **OTLP (OpenTelemetry Protocol)** - Production telemetry export
+- **Console Exporter** - Development debugging (development environment only)
+
+**Implementation:**
+Located in `DependencyInjectionConfiguration/ServiceCollectionExtensions.cs`:
+```csharp
+private static IServiceCollection AddOpenTelemetryObservability(this IServiceCollection services, IHostEnvironment environment)
+{
+    services.AddOpenTelemetry()
+        .WithTracing(tracing =>
+        {
+            tracing
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddSqlClientInstrumentation()
+                .AddSource("StarbaseTemplateAPI")
+                .AddOtlpExporter();
+
+            if (environment.IsDevelopment())
+            {
+                tracing.AddConsoleExporter();
+            }
+        })
+        .WithMetrics(metrics => metrics
+            .AddAspNetCoreInstrumentation());
+
+    return services;
+}
+```
+
+**OpenTelemetry Dependencies:**
+- `OpenTelemetry.Extensions.Hosting` - Hosting integration
+- `OpenTelemetry.Instrumentation.AspNetCore` - ASP.NET Core instrumentation
+- `OpenTelemetry.Instrumentation.Http` - HTTP client instrumentation
+
+**Benefits:**
+- **End-to-end visibility** - Full request tracing across service boundaries
+- **Performance monitoring** - Identify bottlenecks and latency issues
+- **Error tracking** - Comprehensive error context and stack traces
+- **Metrics collection** - HTTP request metrics, response times, error rates
+- **Integration ready** - Compatible with Jaeger, Zipkin, Azure Application Insights, and other OTLP-compatible backends
+
+**Environment Configuration:**
+Configure OTLP export endpoints via environment variables:
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://your-collector:4317
+OTEL_SERVICE_NAME=oauth-api
+OTEL_RESOURCE_ATTRIBUTES=service.version=1.0.0,deployment.environment=production
+```
+
+**Custom Tracing:**
+Add custom traces in your services:
+```csharp
+using var activity = ActivitySource.StartActivity("CustomOperation");
+activity?.SetTag("user.id", userId);
+activity?.SetTag("operation.type", "mfa-verification");
+// Your business logic here
+```
+
+### Production Monitoring Setup
+
+**Centralized Logging:**
+- Configure Serilog sinks for your preferred logging platform (ELK Stack, Splunk, Azure Application Insights)
+- Use structured logging properties for effective querying and alerting
+
+**Distributed Tracing:**
+- Deploy OpenTelemetry Collector for production telemetry processing
+- Configure sampling rates to manage data volume
+- Set up dashboards in your observability platform (Grafana, DataDog, New Relic)
+
+**Log Correlation:**
+- Request IDs automatically correlate logs across components
+- User context enriches logs for audit trails
+- Exception context provides detailed error information
+
 ## Technologies Used
 - ASP.NET Core 8
 - Entity Framework Core 9
 - FluentValidation
 - OAuth 2.0 with JWT and Refresh Tokens
 - Microsoft.AspNetCore.RateLimiting (built-in .NET 8)
+- Serilog (Structured Logging)
+- OpenTelemetry (Distributed Tracing & Metrics)
 - xUnit + Moq + FluentAssertions
 - Clean Architecture / Domain Driven Design
 
