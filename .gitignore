@@ -52,6 +52,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
-OAuthDotNetAPI/.idea/
+Starbase/.idea/
 
-OAuthDotNetAPI/OAuthDotNetAPI.sln.DotSettings.user
+Starbase/Starbase.sln.DotSettings.user
