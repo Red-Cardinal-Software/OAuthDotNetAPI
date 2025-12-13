@@ -15,7 +15,7 @@ internal class AccountLockoutConfiguration : EntityTypeConfiguration<AccountLock
     protected override void PerformConfiguration(EntityTypeBuilder<AccountLockout> builder)
     {
         // Table configuration
-        builder.ToTable("AccountLockouts");
+        builder.ToTable("AccountLockouts", "Security");
 
         // Primary key
         builder.HasKey(x => x.Id);

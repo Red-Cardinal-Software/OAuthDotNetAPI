@@ -38,36 +38,44 @@ public class RoleAndPrivilegeSeeder : IEntitySeeder
         var admin = await EnsureRoleExists(PredefinedRoles.Admin);
         var user = await EnsureRoleExists(PredefinedRoles.User);
 
+        // Load existing role-privilege relationships
+        await dbContext.Entry(superAdmin).Collection(r => r.Privileges).LoadAsync();
+        await dbContext.Entry(admin).Collection(r => r.Privileges).LoadAsync();
+        await dbContext.Entry(user).Collection(r => r.Privileges).LoadAsync();
+
         // Only assign privileges if they aren't assigned yet (idempotency)
         var superAdminPrivs = new[]
         {
-        PredefinedPrivileges.SystemAdministration.ManageTenants,
-        PredefinedPrivileges.SystemAdministration.Secrets,
-        PredefinedPrivileges.SystemAdministration.SeedingExecute,
-        PredefinedPrivileges.SystemAdministration.Metrics
-    };
+            PredefinedPrivileges.SystemAdministration.ManageTenants,
+            PredefinedPrivileges.SystemAdministration.Secrets,
+            PredefinedPrivileges.SystemAdministration.SeedingExecute,
+            PredefinedPrivileges.SystemAdministration.Metrics
+        };
 
         foreach (var priv in superAdminPrivs)
         {
-            if (!superAdmin.Privileges.Contains(privilegesByName[priv]))
+            var privilege = privilegesByName[priv];
+            if (!superAdmin.Privileges.Any(p => p.Id == privilege.Id))
             {
-                superAdmin.AddPrivilege(privilegesByName[priv]);
+                superAdmin.AddPrivilege(privilege);
             }
         }
 
         foreach (var def in PrivilegeDefinitions.All.Where(p => p.IsAdminDefault))
         {
-            if (!admin.Privileges.Contains(privilegesByName[def.Name]))
+            var privilege = privilegesByName[def.Name];
+            if (!admin.Privileges.Any(p => p.Id == privilege.Id))
             {
-                admin.AddPrivilege(privilegesByName[def.Name]);
+                admin.AddPrivilege(privilege);
             }
         }
 
         foreach (var def in PrivilegeDefinitions.All.Where(p => p.IsUserDefault))
         {
-            if (!user.Privileges.Contains(privilegesByName[def.Name]))
+            var privilege = privilegesByName[def.Name];
+            if (!user.Privileges.Any(p => p.Id == privilege.Id))
             {
-                user.AddPrivilege(privilegesByName[def.Name]);
+                user.AddPrivilege(privilege);
             }
         }
 
