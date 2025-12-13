@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace OAuthDotNetAPI.Controllers;
+namespace Starbase.Controllers;
 
 /// <summary>
 /// Base controller providing common functionality for API controller classes,

@@ -4,7 +4,7 @@ using Application.Validators;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace OAuthDotNetAPI.Controllers;
+namespace Starbase.Controllers;
 
 /// <summary>
 /// Controller for email-based Multi-Factor Authentication operations.
