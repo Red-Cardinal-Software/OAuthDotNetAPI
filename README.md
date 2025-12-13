@@ -1,4 +1,5 @@
-# Secure .NET API Template
+# Starbase
+### A Secure .NET Clean Architecture Template
 
 A secure, extensible, and production-ready .NET template project built with clean architecture, Domain-Driven Design (DDD), and a strong focus on testability and maintainability.
 
@@ -40,7 +41,7 @@ It can also serve as a reference for security and design practices.
 - **Unit of Work & Repository Patterns**
 - **Value Objects and Guarded Entities**
 
-- ## Project Structure
+## Project Structure
 
 ```bash
 .
@@ -58,13 +59,13 @@ Uses xUnit, FluentAssertions, and Moq
 
 Tests are designed to demonstrate best practices, not just assert behavior
 
-- ## Getting Started
+## Getting Started
 
 Clone this repository
 
 ```bash
-git clone [https://github.com/your-username/secure-dotnet-template.git](https://github.com/Red-Cardinal-Software/OAuthDotNetAPI.git)
-cd OAuthDotNetAPI
+git clone https://github.com/Red-Cardinal-Software/Secure-DotNet-Clean-Architecture.git
+cd Secure-DotNet-Clean-Architecture
 ```
 
 Create and configure the database

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace OAuthDotNetAPI.Controllers;
+namespace Starbase.Controllers;
 
 /// <summary>
 /// Controller for managing push notification multi-factor authentication.

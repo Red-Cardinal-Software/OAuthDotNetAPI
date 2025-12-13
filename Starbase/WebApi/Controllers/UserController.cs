@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace OAuthDotNetAPI.Controllers;
+namespace Starbase.Controllers;
 
 [Route("api/admin/[controller]")]
 [ApiController]

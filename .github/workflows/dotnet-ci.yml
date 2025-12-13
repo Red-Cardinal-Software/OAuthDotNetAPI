@@ -25,18 +25,18 @@ jobs:
         dotnet-version: '8.x'
 
     - name: Restore dependencies
-      run: dotnet restore ./OAuthDotNetAPI/OAuthDotNetAPI.sln
+      run: dotnet restore ./Starbase/Starbase.sln
 
     - name: Check Formatting
-      run: dotnet format ./OAuthDotNetAPI/OAuthDotNetAPI.sln --verify-no-changes --verbosity diagnostic
+      run: dotnet format ./Starbase/Starbase.sln --verify-no-changes --verbosity diagnostic
 
     - name: Build
-      run: dotnet build ./OAuthDotNetAPI/OAuthDotNetAPI.sln --no-restore --configuration Release -p:TreatWarningsAsErrors=true
+      run: dotnet build ./Starbase/Starbase.sln --no-restore --configuration Release -p:TreatWarningsAsErrors=true
 
     - name: Run tests
-      run: dotnet test ./OAuthDotNetAPI/OAuthDotNetAPI.sln --no-build --verbosity normal --configuration Release
+      run: dotnet test ./Starbase/Starbase.sln --no-build --verbosity normal --configuration Release
 
     - name: Scan for Vulnerable NuGets
-      run: dotnet list ./OAuthDotNetAPI/OAuthDotNetAPI.sln package --vulnerable --include-transitive
+      run: dotnet list ./Starbase/Starbase.sln package --vulnerable --include-transitive
       continue-on-error: false
 

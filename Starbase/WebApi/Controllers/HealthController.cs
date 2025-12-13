@@ -5,7 +5,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Application.Security;
 using Domain.Constants;
 
-namespace OAuthDotNetAPI.Controllers
+namespace Starbase.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

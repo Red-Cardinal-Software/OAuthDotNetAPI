@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 
-namespace OAuthDotNetAPI.Controllers;
+namespace Starbase.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
