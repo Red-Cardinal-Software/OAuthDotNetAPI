@@ -66,6 +66,7 @@ public class AppDependencyOptions
     public bool IncludeAuthentication { get; set; } = true;
     public bool IncludeRateLimiting { get; set; } = true;
     public bool IncludeCaching { get; set; } = true;
+    public bool IncludeCors { get; set; } = true;
 }
 
 /// <summary>
@@ -106,6 +107,7 @@ public static class ServiceCollectionExtensions
         if (options.IncludeValidation) services.AddValidation();
         if (options.IncludeHealthChecks) services.AddAppHealthChecks(configuration);
         if (options.IncludeRateLimiting) services.AddRateLimiting(configuration);
+        if (options.IncludeCors) services.AddConfigurableCors(configuration);
         if (options.IncludeCaching)
         {
             // Support both local (memory) and Cloud (redis) automatically
@@ -247,6 +249,11 @@ public static class ServiceCollectionExtensions
 
         services.AddOptions<AccountLockoutOptions>()
             .BindConfiguration(AccountLockoutOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<CorsOptions>()
+            .BindConfiguration(CorsOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -478,6 +485,88 @@ public static class ServiceCollectionExtensions
             })
             .WithMetrics(metrics => metrics
                 .AddAspNetCoreInstrumentation());
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures Cross-Origin Resource Sharing (CORS) based on application settings.
+    /// This method reads CORS configuration from appsettings.json and sets up the appropriate
+    /// policy with allowed origins, methods, headers, and credentials.
+    /// </summary>
+    /// <param name="services">The IServiceCollection instance to which CORS will be added.</param>
+    /// <param name="configuration">The IConfiguration instance for reading CORS settings.</param>
+    /// <returns>The modified IServiceCollection instance with CORS configured.</returns>
+    public static IServiceCollection AddConfigurableCors(this IServiceCollection services, IConfiguration configuration)
+    {
+        var corsOptions = configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>() ?? new CorsOptions();
+
+        if (!corsOptions.Enabled)
+        {
+            return services;
+        }
+
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                // Configure allowed origins
+                if (corsOptions.AllowedOrigins.Length == 0)
+                {
+                    // No origins configured - deny all cross-origin requests
+                    // This is the secure default
+                }
+                else if (corsOptions.AllowedOrigins.Length == 1 && corsOptions.AllowedOrigins[0] == "*")
+                {
+                    // Allow any origin (not recommended with credentials)
+                    policy.AllowAnyOrigin();
+                }
+                else
+                {
+                    policy.WithOrigins(corsOptions.AllowedOrigins);
+                }
+
+                // Configure allowed methods
+                if (corsOptions.AllowedMethods.Length == 1 && corsOptions.AllowedMethods[0] == "*")
+                {
+                    policy.AllowAnyMethod();
+                }
+                else
+                {
+                    policy.WithMethods(corsOptions.AllowedMethods);
+                }
+
+                // Configure allowed headers
+                if (corsOptions.AllowedHeaders.Length == 1 && corsOptions.AllowedHeaders[0] == "*")
+                {
+                    policy.AllowAnyHeader();
+                }
+                else
+                {
+                    policy.WithHeaders(corsOptions.AllowedHeaders);
+                }
+
+                // Configure exposed headers
+                if (corsOptions.ExposedHeaders.Length > 0)
+                {
+                    policy.WithExposedHeaders(corsOptions.ExposedHeaders);
+                }
+
+                // Configure credentials
+                // Note: AllowCredentials cannot be used with AllowAnyOrigin
+                if (corsOptions.AllowCredentials &&
+                    !(corsOptions.AllowedOrigins.Length == 1 && corsOptions.AllowedOrigins[0] == "*"))
+                {
+                    policy.AllowCredentials();
+                }
+
+                // Configure preflight cache
+                if (corsOptions.PreflightMaxAgeSeconds > 0)
+                {
+                    policy.SetPreflightMaxAge(TimeSpan.FromSeconds(corsOptions.PreflightMaxAgeSeconds));
+                }
+            });
+        });
 
         return services;
     }
