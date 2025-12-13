@@ -47,13 +47,13 @@ public class UpdatePushTokenValidatorTests
     public void Should_Have_Error_When_NewToken_Is_Too_Long()
     {
         // Arrange
-        var longToken = new string('a', 4097); // 4097 characters - too long
+        var longToken = new string('a', 4001); // 4001 characters - too long
         var dto = new UpdatePushTokenDto { NewToken = longToken };
 
         // Act & Assert
         var result = _validator.TestValidate(dto);
         result.ShouldHaveValidationErrorFor(x => x.NewToken)
-            .WithErrorMessage("Push token must be between 10 and 4096 characters");
+            .WithErrorMessage("Push token must be between 10 and 4000 characters");
     }
 
     [Theory]
@@ -131,7 +131,7 @@ public class UpdatePushTokenValidatorTests
     public void Should_Pass_Validation_When_Token_Is_Exactly_Maximum_Length()
     {
         // Arrange
-        var maxToken = new string('a', 4096); // Exactly 4096 characters
+        var maxToken = new string('a', 4000); // Exactly 4000 characters
         var dto = new UpdatePushTokenDto { NewToken = maxToken };
 
         // Act & Assert
