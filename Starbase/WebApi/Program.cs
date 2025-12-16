@@ -1,8 +1,16 @@
 using Azure.Identity;
 using DependencyInjectionConfiguration;
+using Infrastructure.Web.Middleware;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// SECURITY: Disable the 'Server' header to prevent fingerprinting
+// CMMC SI.L2-3.14.1 - Hide system information
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.AddServerHeader = false;
+});
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -84,19 +92,29 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Security middleware, order matters!
+// 1. HSTS - only in production (tells browsers to always use HTTPS)
 if (!app.Environment.IsDevelopment())
 {
+    // CMMC SI.L2-3.14.1 - System Flaw Identification
+    // Use a generic error handler to prevent stack trace leakage
+    app.UseExceptionHandler("/error");
     app.UseHsts();
 }
 
-// Only allow HTTPS
+app.UseSerilogRequestLogging();
+
+// 2. Redirect HTTP to HTTPS
 app.UseHttpsRedirection();
 
-// Use only Secure Communication
-app.UseHsts();
+// 3. Add security headers (X-Frame-Options, CSP, etc.)
+app.UseSecurityHeaders();
 
-// Enable rate limiting middleware
+// 4. Rate limiting
 app.UseRateLimiting();
+
+// 5. CORS - must be before authentication to handle preflight requests
+app.UseCors();
 
 // Authentication and Authorization middleware
 app.UseAuthentication();
