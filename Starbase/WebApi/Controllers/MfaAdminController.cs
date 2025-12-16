@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace OAuthDotNetAPI.Controllers;
+namespace Starbase.Controllers;
 
 /// <summary>
 /// Administrative controller for multi-factor authentication metrics and management.
