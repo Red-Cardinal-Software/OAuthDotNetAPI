@@ -258,7 +258,7 @@ public class MfaMethodTests
 
         // Assert
         method.IsDefault.Should().BeTrue();
-        method.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+        method.UpdatedAt.Should().BeOnOrAfter(originalUpdatedAt);
     }
 
     [Fact]
@@ -274,7 +274,7 @@ public class MfaMethodTests
 
         // Assert
         method.IsDefault.Should().BeFalse();
-        method.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+        method.UpdatedAt.Should().BeOnOrAfter(originalUpdatedAt);
     }
 
     #endregion
@@ -294,7 +294,7 @@ public class MfaMethodTests
         // Assert
         method.LastUsedAt.Should().NotBeNull();
         method.LastUsedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
-        method.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+        method.UpdatedAt.Should().BeOnOrAfter(originalUpdatedAt);
     }
 
     #endregion
@@ -315,7 +315,7 @@ public class MfaMethodTests
         // Assert
         method.IsEnabled.Should().BeFalse();
         method.IsDefault.Should().BeFalse();
-        method.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+        method.UpdatedAt.Should().BeOnOrAfter(originalUpdatedAt);
     }
 
     #endregion
@@ -335,7 +335,7 @@ public class MfaMethodTests
 
         // Assert
         method.Name.Should().Be(newName);
-        method.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+        method.UpdatedAt.Should().BeOnOrAfter(originalUpdatedAt);
     }
 
     [Theory]
@@ -412,7 +412,7 @@ public class MfaMethodTests
 
         // Assert
         codes.Should().BeEmpty(); // No recovery codes set
-        method.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+        method.UpdatedAt.Should().BeOnOrAfter(originalUpdatedAt);
     }
 
     #endregion

@@ -7,6 +7,8 @@ namespace Application.Models;
 /// <typeparam name="T">The type of data being returned in the response.</typeparam>
 public class ServiceResponse<T>
 {
+    private int _status = 200;
+
     /// <summary>
     /// Gets or sets the data object of type <typeparamref name="T"/>
     /// that represents the core payload of the service response.
@@ -26,9 +28,20 @@ public class ServiceResponse<T>
 
     /// <summary>
     /// Gets or sets the HTTP status code representing the outcome of the service response.
+    /// When set to 400 or above, Success is automatically set to false.
     /// </summary>
-    public int Status { get; set; } = 200;
-
+    public int Status
+    {
+        get => _status;
+        set
+        {
+            _status = value;
+            if (value >= 400)
+            {
+                Success = false;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets the metadata associated with the service response,

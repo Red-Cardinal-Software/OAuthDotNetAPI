@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Application.DTOs.Mfa;
 
 /// <summary>
@@ -53,11 +55,15 @@ public class VerifyMfaSetupDto
     /// <summary>
     /// The 6-digit TOTP code from the user's authenticator app.
     /// </summary>
+    [Required(ErrorMessage = "Code is required")]
+    [StringLength(8, MinimumLength = 6, ErrorMessage = "Code must be between 6 and 8 characters")]
+    [RegularExpression(@"^\d{6,8}$", ErrorMessage = "Code must be 6-8 digits")]
     public string Code { get; init; } = string.Empty;
 
     /// <summary>
     /// Optional friendly name for this MFA method.
     /// </summary>
+    [StringLength(100, ErrorMessage = "Name must not exceed 100 characters")]
     public string? Name { get; init; }
 }
 

@@ -84,7 +84,8 @@ public class MfaPushController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateDeviceToken(Guid deviceId, [FromBody] UpdatePushTokenDto request)
     {
-        return await ResolveAsync(() => mfaPushService.UpdateDeviceTokenAsync(deviceId, request.NewToken));
+        var userId = RoleUtility.GetUserIdFromClaims(User);
+        return await ResolveAsync(() => mfaPushService.UpdateDeviceTokenAsync(deviceId, request.NewToken, userId));
     }
 
     /// <summary>

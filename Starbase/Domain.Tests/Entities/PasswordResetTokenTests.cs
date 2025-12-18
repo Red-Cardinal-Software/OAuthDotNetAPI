@@ -51,7 +51,7 @@ public class PasswordResetTokenTests
     [Fact]
     public void Claim_ShouldMarkTokenAsClaimed_AndUpdatePassword()
     {
-        var user = new AppUserBuilder().WithPasswordHash("old").Build();
+        var user = new AppUserBuilder().WithPassword("old").Build();
         var token = new PasswordResetToken(user, DateTime.UtcNow.AddHours(1), "127.0.0.1");
 
         token.Claim("newHashedPassword1234567890", "8.8.8.8");

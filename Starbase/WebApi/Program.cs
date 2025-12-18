@@ -10,6 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.AddServerHeader = false;
+
+    // SECURITY: Limit request body size to prevent DoS attacks with oversized payloads
+    // Default is ~28.6MB, we limit to 1MB which is generous for JSON API requests
+    serverOptions.Limits.MaxRequestBodySize = 1 * 1024 * 1024; // 1MB
 });
 
 // Add services to the container.
@@ -79,6 +83,10 @@ if (builder.Environment.IsDevelopment())
 }
 
 Log.Logger = loggerConfig.CreateLogger();
+
+// Register Serilog with the host - required for UseSerilogRequestLogging()
+// Pass the logger explicitly to avoid conflicts with test configuration
+builder.Host.UseSerilog(Log.Logger, dispose: true);
 
 builder.Services.AddAppDependencies(builder.Environment, builder.Configuration);
 builder.Services.AddControllers();

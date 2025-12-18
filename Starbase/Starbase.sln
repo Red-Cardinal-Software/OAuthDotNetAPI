@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.Tests", "Domain.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyInjectionConfiguration", "DependencyInjectionConfiguration\DependencyInjectionConfiguration.csproj", "{5867496A-1F49-4F3A-99DD-707EA6B7E260}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi.Integration.Tests", "WebApi.Integration.Tests\WebApi.Integration.Tests.csproj", "{53B1659C-2981-472E-A664-24845A7C885F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,10 +58,15 @@ Global
 		{5867496A-1F49-4F3A-99DD-707EA6B7E260}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5867496A-1F49-4F3A-99DD-707EA6B7E260}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5867496A-1F49-4F3A-99DD-707EA6B7E260}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53B1659C-2981-472E-A664-24845A7C885F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53B1659C-2981-472E-A664-24845A7C885F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53B1659C-2981-472E-A664-24845A7C885F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53B1659C-2981-472E-A664-24845A7C885F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A28D2F70-E345-4D38-A254-E00B96616FA8} = {577051EC-DE56-42B0-AA17-46F8B5939E8C}
 		{63539A82-F84D-4D11-A5D2-182F4596FFA4} = {577051EC-DE56-42B0-AA17-46F8B5939E8C}
 		{A6EA6AC9-EA9B-4361-B520-3F7BCAA1F86B} = {577051EC-DE56-42B0-AA17-46F8B5939E8C}
+		{53B1659C-2981-472E-A664-24845A7C885F} = {577051EC-DE56-42B0-AA17-46F8B5939E8C}
 	EndGlobalSection
 EndGlobal

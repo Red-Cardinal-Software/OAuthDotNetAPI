@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Domain.Entities.Security;
 
 namespace Application.DTOs.Auth;
@@ -10,11 +11,15 @@ public class CompleteMfaDto
     /// <summary>
     /// The challenge token received from the initial login attempt.
     /// </summary>
+    [Required(ErrorMessage = "Challenge token is required")]
+    [StringLength(512, ErrorMessage = "Challenge token must not exceed 512 characters")]
     public required string ChallengeToken { get; set; }
 
     /// <summary>
     /// The MFA verification code (6-digit TOTP, recovery code, etc.).
     /// </summary>
+    [Required(ErrorMessage = "Code is required")]
+    [StringLength(32, ErrorMessage = "Code must not exceed 32 characters")]
     public required string Code { get; set; }
 
     /// <summary>

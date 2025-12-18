@@ -22,7 +22,7 @@ public class PasswordResetTokenRepository(ICrudOperator<PasswordResetToken> pass
 
     public Task<List<PasswordResetToken>> GetAllUnclaimedResetTokensForUserAsync(Guid userId) =>
         GetAllWithChildren()
-            .Where(prt => !prt.IsClaimed() && prt.AppUserId == userId)
+            .Where(prt => prt.ClaimedDate == null && prt.AppUserId == userId)
             .ToListAsync();
 
     /// <summary>

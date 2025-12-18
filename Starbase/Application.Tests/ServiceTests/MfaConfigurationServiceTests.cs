@@ -91,31 +91,36 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Secret.Should().Be(secret);
-        result.FormattedSecret.Should().Be("ABCD 1234 5678 90");
-        result.QrCodeUri.Should().Be(uri);
-        result.QrCodeImage.Should().Be(qrCodeImage);
-        result.IssuerName.Should().Be("TestApp");
-        result.AccountName.Should().Be("testuser");
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Secret.Should().Be(secret);
+        result.Data.FormattedSecret.Should().Be("ABCD 1234 5678 90");
+        result.Data.QrCodeUri.Should().Be(uri);
+        result.Data.QrCodeImage.Should().Be(qrCodeImage);
+        result.Data.IssuerName.Should().Be("TestApp");
+        result.Data.AccountName.Should().Be("testuser");
 
         _mfaMethodRepository.Verify(x => x.AddAsync(It.IsAny<MfaMethod>(), It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task StartTotpSetupAsync_ShouldThrow_WhenUserNotFound()
+    public async Task StartTotpSetupAsync_ShouldReturnError_WhenUserNotFound()
     {
         // Arrange
         _userRepository.Setup(x => x.GetUserByIdAsync(_userId))
             .ReturnsAsync((AppUser?)null);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.StartTotpSetupAsync(_userId, "testuser", CancellationToken.None));
+        // Act
+        var result = await _service.StartTotpSetupAsync(_userId, "testuser", CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("User not found");
     }
 
     [Fact]
-    public async Task StartTotpSetupAsync_ShouldThrow_WhenTotpAlreadyEnabled()
+    public async Task StartTotpSetupAsync_ShouldReturnError_WhenTotpAlreadyEnabled()
     {
         // Arrange
         var user = new AppUserBuilder().WithEmail("test@user.org").Build();
@@ -128,9 +133,12 @@ public class MfaConfigurationServiceTests
         _mfaMethodRepository.Setup(x => x.GetByUserAndTypeAsync(userId, MfaType.Totp, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingMethod);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.StartTotpSetupAsync(userId, "testuser", CancellationToken.None));
+        // Act
+        var result = await _service.StartTotpSetupAsync(userId, "testuser", CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("already configured");
     }
 
     [Fact]
@@ -189,10 +197,12 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.MfaMethodId.Should().Be(method.Id);
-        result.RecoveryCodes.Should().HaveCount(8); // Real service generates 8 codes
-        result.IsDefault.Should().BeTrue(); // First method becomes default
-        result.SecurityMessage.Should().Contain("Save these recovery codes");
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.MfaMethodId.Should().Be(method.Id);
+        result.Data.RecoveryCodes.Should().HaveCount(8); // Real service generates 8 codes
+        result.Data.IsDefault.Should().BeTrue(); // First method becomes default
+        result.Data.SecurityMessage.Should().Contain("Save these recovery codes");
 
         _emailService.Verify(x => x.SendMfaSecurityNotificationAsync(
             It.IsAny<string>(),
@@ -205,7 +215,7 @@ public class MfaConfigurationServiceTests
     }
 
     [Fact]
-    public async Task VerifyTotpSetupAsync_ShouldThrow_WhenInvalidCode()
+    public async Task VerifyTotpSetupAsync_ShouldReturnError_WhenInvalidCode()
     {
         // Arrange
         var method = MfaMethod.CreateTotp(_userId, "secret");
@@ -219,10 +229,12 @@ public class MfaConfigurationServiceTests
         _totpProvider.Setup(x => x.ValidateCode("secret", "000000", It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
             .Returns(false);
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.VerifyTotpSetupAsync(_userId, verifyDto, CancellationToken.None));
-        exception.Message.Should().Be("Invalid verification code");
+        // Act
+        var result = await _service.VerifyTotpSetupAsync(_userId, verifyDto, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Invalid verification code");
     }
 
     #endregion
@@ -250,16 +262,18 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.EmailAddress.Should().Be(email);
-        result.CodeSent.Should().BeTrue();
-        result.Instructions.Should().Contain("verification code");
-        result.ExpiresAt.Should().BeCloseTo(DateTimeOffset.UtcNow.AddMinutes(10), TimeSpan.FromMinutes(1));
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.EmailAddress.Should().Be(email);
+        result.Data.CodeSent.Should().BeTrue();
+        result.Data.Instructions.Should().Contain("verification code");
+        result.Data.ExpiresAt.Should().BeCloseTo(DateTimeOffset.UtcNow.AddMinutes(10), TimeSpan.FromMinutes(1));
 
         _mfaMethodRepository.Verify(x => x.AddAsync(It.IsAny<MfaMethod>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task StartEmailSetupAsync_ShouldThrow_WhenInvalidEmail()
+    public async Task StartEmailSetupAsync_ShouldReturnError_WhenInvalidEmail()
     {
         // Arrange
         var user = new AppUserBuilder().WithEmail("test@user.org").Build();
@@ -268,9 +282,12 @@ public class MfaConfigurationServiceTests
         _userRepository.Setup(x => x.GetUserByIdAsync(userId))
             .ReturnsAsync(user);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.StartEmailSetupAsync(userId, "invalid-email", CancellationToken.None));
+        // Act
+        var result = await _service.StartEmailSetupAsync(userId, "invalid-email", CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Invalid email");
     }
 
     [Fact]
@@ -283,10 +300,6 @@ public class MfaConfigurationServiceTests
         method.StoreSetupVerificationCode("hashedcode", DateTimeOffset.UtcNow.AddMinutes(10));
 
         var verifyDto = new VerifyMfaSetupDto { Code = "123456", Name = "My Email" };
-        var recoveryCodes = new List<MfaRecoveryCode>
-        {
-            MfaRecoveryCode.Create(method.Id, "hash1", "CODE1")
-        };
 
         _mfaMethodRepository.Setup(x => x.GetByUserAndTypeAsync(userId, MfaType.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(method);
@@ -302,9 +315,11 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.MfaMethodId.Should().Be(method.Id);
-        result.IsDefault.Should().BeTrue();
-        result.SecurityMessage.Should().Contain("email");
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.MfaMethodId.Should().Be(method.Id);
+        result.Data.IsDefault.Should().BeTrue();
+        result.Data.SecurityMessage.Should().Contain("email");
     }
 
     #endregion
@@ -330,12 +345,14 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.HasEnabledMfa.Should().BeTrue();
-        result.TotalMethods.Should().Be(2);
-        result.EnabledMethods.Should().Be(1);
-        result.Methods.Should().HaveCount(2);
-        result.AvailableTypes.Should().Contain(MfaType.WebAuthn.ToString());
-        result.AvailableTypes.Should().Contain(MfaType.Push.ToString());
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.HasEnabledMfa.Should().BeTrue();
+        result.Data.TotalMethods.Should().Be(2);
+        result.Data.EnabledMethods.Should().Be(1);
+        result.Data.Methods.Should().HaveCount(2);
+        result.Data.AvailableTypes.Should().Contain(MfaType.WebAuthn.ToString());
+        result.Data.AvailableTypes.Should().Contain(MfaType.Push.ToString());
     }
 
     [Fact]
@@ -353,8 +370,10 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Type.Should().Be(MfaType.Totp);
-        result.IsEnabled.Should().BeTrue();
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Type.Should().Be(MfaType.Totp);
+        result.Data.IsEnabled.Should().BeTrue();
     }
 
     [Fact]
@@ -371,7 +390,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.GetMfaMethodAsync(_userId, _methodId, CancellationToken.None);
 
         // Assert
-        result.Should().BeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeNull();
     }
 
     [Fact]
@@ -389,7 +409,9 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Name.Should().Be("New Name");
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Name.Should().Be("New Name");
     }
 
     [Fact]
@@ -403,15 +425,16 @@ public class MfaConfigurationServiceTests
             .ReturnsAsync(method);
 
         // Act
-        await _service.SetDefaultMfaMethodAsync(_userId, _methodId, CancellationToken.None);
+        var result = await _service.SetDefaultMfaMethodAsync(_userId, _methodId, CancellationToken.None);
 
         // Assert
+        result.Success.Should().BeTrue();
         _mfaMethodRepository.Verify(x => x.ClearDefaultFlagsAsync(_userId, It.IsAny<CancellationToken>()), Times.Once);
         method.IsDefault.Should().BeTrue();
     }
 
     [Fact]
-    public async Task SetDefaultMfaMethodAsync_ShouldThrow_WhenMethodNotEnabled()
+    public async Task SetDefaultMfaMethodAsync_ShouldReturnError_WhenMethodNotEnabled()
     {
         // Arrange
         var method = MfaMethod.CreateTotp(_userId, "secret");
@@ -420,9 +443,11 @@ public class MfaConfigurationServiceTests
         _mfaMethodRepository.Setup(x => x.GetByIdAsync(_methodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(method);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.SetDefaultMfaMethodAsync(_userId, _methodId, CancellationToken.None));
+        // Act
+        var result = await _service.SetDefaultMfaMethodAsync(_userId, _methodId, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
     }
 
     [Fact]
@@ -440,7 +465,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.RemoveMfaMethodAsync(_userId, _methodId, CancellationToken.None);
 
         // Assert
-        result.Should().BeTrue();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
         _mfaMethodRepository.Verify(x => x.Remove(method), Times.Once);
     }
 
@@ -462,13 +488,15 @@ public class MfaConfigurationServiceTests
         var result = await _service.RegenerateRecoveryCodesAsync(_userId, _methodId, CancellationToken.None);
 
         // Assert
-        result.Should().HaveCount(8); // Real service generates 8 codes
-        result.Should().OnlyContain(code => !string.IsNullOrWhiteSpace(code));
-        result.Should().OnlyHaveUniqueItems();
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Should().HaveCount(8); // Real service generates 8 codes
+        result.Data.Should().OnlyContain(code => !string.IsNullOrWhiteSpace(code));
+        result.Data.Should().OnlyHaveUniqueItems();
     }
 
     [Fact]
-    public async Task RegenerateRecoveryCodesAsync_ShouldThrow_WhenMethodNotEnabled()
+    public async Task RegenerateRecoveryCodesAsync_ShouldReturnError_WhenMethodNotEnabled()
     {
         // Arrange
         var method = MfaMethod.CreateTotp(_userId, "secret");
@@ -477,9 +505,11 @@ public class MfaConfigurationServiceTests
         _mfaMethodRepository.Setup(x => x.GetByIdAsync(_methodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(method);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.RegenerateRecoveryCodesAsync(_userId, _methodId, CancellationToken.None));
+        // Act
+        var result = await _service.RegenerateRecoveryCodesAsync(_userId, _methodId, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
     }
 
     [Fact]
@@ -501,7 +531,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.GetRecoveryCodeCountAsync(_userId, _methodId, CancellationToken.None);
 
         // Assert
-        result.Should().Be(2);
+        result.Success.Should().BeTrue();
+        result.Data.Should().Be(2);
     }
 
     #endregion
@@ -519,7 +550,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.UserHasMfaEnabledAsync(_userId, CancellationToken.None);
 
         // Assert
-        result.Should().BeTrue();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
     }
 
     [Fact]
@@ -538,10 +570,12 @@ public class MfaConfigurationServiceTests
         var result = await _service.ValidateMethodRemovalAsync(_userId, _methodId, CancellationToken.None);
 
         // Assert
-        result.CanRemove.Should().BeTrue();
-        result.WillDisableMfa.Should().BeTrue();
-        result.RemainingMethodCount.Should().Be(0);
-        result.Warnings.Should().Contain("This will remove your last MFA method and disable two-factor authentication.");
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.CanRemove.Should().BeTrue();
+        result.Data.WillDisableMfa.Should().BeTrue();
+        result.Data.RemainingMethodCount.Should().Be(0);
+        result.Data.Warnings.Should().Contain("This will remove your last MFA method and disable two-factor authentication.");
     }
 
     [Fact]
@@ -558,7 +592,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.CanSetupMfaTypeAsync(_userId, MfaType.Totp, CancellationToken.None);
 
         // Assert
-        result.Should().BeFalse();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeFalse();
     }
 
     [Fact]
@@ -572,7 +607,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.CanSetupMfaTypeAsync(_userId, MfaType.Totp, CancellationToken.None);
 
         // Assert
-        result.Should().BeTrue();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
     }
 
     #endregion
@@ -603,11 +639,13 @@ public class MfaConfigurationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.TotalUsers.Should().Be(200);
-        result.UsersWithMfa.Should().Be(120);
-        result.MfaAdoptionRate.Should().Be(60.0m);
-        result.MethodsByType.Should().BeEquivalentTo(methodsByType);
-        result.UnverifiedSetups.Should().Be(10);
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TotalUsers.Should().Be(200);
+        result.Data.UsersWithMfa.Should().Be(120);
+        result.Data.MfaAdoptionRate.Should().Be(60.0m);
+        result.Data.MethodsByType.Should().BeEquivalentTo(methodsByType);
+        result.Data.UnverifiedSetups.Should().Be(10);
     }
 
     [Fact]
@@ -628,7 +666,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.CleanupUnverifiedMethodsAsync(maxAge, CancellationToken.None);
 
         // Assert
-        result.Should().Be(2);
+        result.Success.Should().BeTrue();
+        result.Data.Should().Be(2);
         _mfaMethodRepository.Verify(x => x.Remove(It.IsAny<MfaMethod>()), Times.Exactly(2));
     }
 
@@ -649,7 +688,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.CancelSetupAsync(_userId, MfaType.Totp, CancellationToken.None);
 
         // Assert
-        result.Should().BeTrue();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
         _mfaMethodRepository.Verify(x => x.Remove(unverifiedMethod), Times.Once);
     }
 
@@ -664,7 +704,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.CancelSetupAsync(_userId, MfaType.Totp, CancellationToken.None);
 
         // Assert
-        result.Should().BeFalse();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeFalse();
     }
 
     [Fact]
@@ -681,7 +722,8 @@ public class MfaConfigurationServiceTests
         var result = await _service.CancelSetupAsync(_userId, MfaType.Totp, CancellationToken.None);
 
         // Assert
-        result.Should().BeFalse();
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeFalse();
     }
 
     #endregion
@@ -689,19 +731,22 @@ public class MfaConfigurationServiceTests
     #region Edge Cases and Error Scenarios
 
     [Fact]
-    public async Task VerifyTotpSetupAsync_ShouldThrow_WhenNoSetupFound()
+    public async Task VerifyTotpSetupAsync_ShouldReturnError_WhenNoSetupFound()
     {
         // Arrange
         _mfaMethodRepository.Setup(x => x.GetByUserAndTypeAsync(_userId, MfaType.Totp, It.IsAny<CancellationToken>()))
             .ReturnsAsync((MfaMethod?)null);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.VerifyTotpSetupAsync(_userId, new VerifyMfaSetupDto { Code = "123456" }, CancellationToken.None));
+        // Act
+        var result = await _service.VerifyTotpSetupAsync(_userId, new VerifyMfaSetupDto { Code = "123456" }, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("setup");
     }
 
     [Fact]
-    public async Task VerifyTotpSetupAsync_ShouldThrow_WhenAlreadyVerified()
+    public async Task VerifyTotpSetupAsync_ShouldReturnError_WhenAlreadyVerified()
     {
         // Arrange
         var method = MfaMethod.CreateTotp(_userId, "secret");
@@ -710,9 +755,11 @@ public class MfaConfigurationServiceTests
         _mfaMethodRepository.Setup(x => x.GetByUserAndTypeAsync(_userId, MfaType.Totp, It.IsAny<CancellationToken>()))
             .ReturnsAsync(method);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.VerifyTotpSetupAsync(_userId, new VerifyMfaSetupDto { Code = "123456" }, CancellationToken.None));
+        // Act
+        var result = await _service.VerifyTotpSetupAsync(_userId, new VerifyMfaSetupDto { Code = "123456" }, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
     }
 
     [Fact]
@@ -736,8 +783,10 @@ public class MfaConfigurationServiceTests
         var result = await _service.StartEmailSetupAsync(_userId, email, CancellationToken.None);
 
         // Assert
-        result.CodeSent.Should().BeFalse();
-        result.Message.Should().Contain("could not be sent");
+        result.Success.Should().BeTrue(); // Setup succeeds but code not sent
+        result.Data.Should().NotBeNull();
+        result.Data!.CodeSent.Should().BeFalse();
+        result.Data.Message.Should().Contain("could not be sent");
     }
 
     #endregion

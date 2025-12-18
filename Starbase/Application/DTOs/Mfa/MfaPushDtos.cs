@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Application.DTOs.Mfa;
 
 /// <summary>
@@ -8,26 +10,36 @@ public class RegisterPushDeviceRequest
     /// <summary>
     /// Gets or sets the unique device identifier.
     /// </summary>
+    [Required(ErrorMessage = "Device ID is required")]
+    [StringLength(128, ErrorMessage = "Device ID must not exceed 128 characters")]
     public string DeviceId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the friendly name of the device.
     /// </summary>
+    [Required(ErrorMessage = "Device name is required")]
+    [StringLength(100, ErrorMessage = "Device name must not exceed 100 characters")]
     public string DeviceName { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the platform (iOS, Android, etc.).
     /// </summary>
+    [Required(ErrorMessage = "Platform is required")]
+    [StringLength(50, ErrorMessage = "Platform must not exceed 50 characters")]
     public string Platform { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the push notification token.
     /// </summary>
+    [Required(ErrorMessage = "Push token is required")]
+    [StringLength(512, ErrorMessage = "Push token must not exceed 512 characters")]
     public string PushToken { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the public key for response verification.
     /// </summary>
+    [Required(ErrorMessage = "Public key is required")]
+    [StringLength(2048, ErrorMessage = "Public key must not exceed 2048 characters")]
     public string PublicKey { get; set; } = null!;
 }
 
@@ -188,15 +200,19 @@ public class PushChallengeResponse
     /// <summary>
     /// Gets or sets the cryptographic signature.
     /// </summary>
+    [Required(ErrorMessage = "Signature is required")]
+    [StringLength(1024, ErrorMessage = "Signature must not exceed 1024 characters")]
     public string Signature { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the device ID responding.
     /// </summary>
+    [Required(ErrorMessage = "Device ID is required")]
     public Guid DeviceId { get; set; }
 
     /// <summary>
     /// Gets or sets any additional context.
     /// </summary>
+    [StringLength(500, ErrorMessage = "Context must not exceed 500 characters")]
     public string? Context { get; set; }
 }

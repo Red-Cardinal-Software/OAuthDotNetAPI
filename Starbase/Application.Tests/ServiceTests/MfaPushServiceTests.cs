@@ -1,6 +1,7 @@
 using Application.Common.Configuration;
 using Application.Common.Factories;
 using Application.DTOs.Mfa;
+using Application.Interfaces.Persistence;
 using Application.Interfaces.Providers;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
@@ -21,6 +22,7 @@ namespace Application.Tests.ServiceTests;
 /// </summary>
 public class MfaPushServiceTests
 {
+    private readonly Mock<IUnitOfWork> _unitOfWork;
     private readonly Mock<IMfaPushRepository> _mfaRepository;
     private readonly Mock<IMfaMethodRepository> _mfaMethodRepository;
     private readonly Mock<IPushNotificationProvider> _pushProvider;
@@ -31,6 +33,7 @@ public class MfaPushServiceTests
 
     public MfaPushServiceTests()
     {
+        _unitOfWork = new Mock<IUnitOfWork>();
         _mfaRepository = new Mock<IMfaPushRepository>();
         _mfaMethodRepository = new Mock<IMfaMethodRepository>();
         _pushProvider = new Mock<IPushNotificationProvider>();
@@ -56,6 +59,7 @@ public class MfaPushServiceTests
         _appOptions = Options.Create(appOptions);
 
         _service = new MfaPushService(
+            _unitOfWork.Object,
             _mfaRepository.Object,
             _mfaMethodRepository.Object,
             _pushProvider.Object,
@@ -897,7 +901,7 @@ public class MfaPushServiceTests
             .ReturnsAsync((MfaPushDevice?)null);
 
         // Act
-        var result = await _service.UpdateDeviceTokenAsync(deviceId, newToken);
+        var result = await _service.UpdateDeviceTokenAsync(deviceId, newToken, Guid.NewGuid());
 
         // Assert
         result.Success.Should().BeFalse();
@@ -909,7 +913,8 @@ public class MfaPushServiceTests
     {
         // Arrange
         var deviceId = Guid.NewGuid();
-        var device = CreateTestDevice(Guid.NewGuid(), deviceId);
+        var userId = Guid.NewGuid();
+        var device = CreateTestDevice(userId, deviceId);
         var newToken = "invalid-token";
 
         _mfaRepository.Setup(x => x.GetPushDeviceAsync(deviceId, It.IsAny<CancellationToken>()))
@@ -919,7 +924,7 @@ public class MfaPushServiceTests
             .Returns(false);
 
         // Act
-        var result = await _service.UpdateDeviceTokenAsync(deviceId, newToken);
+        var result = await _service.UpdateDeviceTokenAsync(deviceId, newToken, userId);
 
         // Assert
         result.Success.Should().BeFalse();
@@ -931,7 +936,8 @@ public class MfaPushServiceTests
     {
         // Arrange
         var deviceId = Guid.NewGuid();
-        var device = CreateTestDevice(Guid.NewGuid(), deviceId);
+        var userId = Guid.NewGuid();
+        var device = CreateTestDevice(userId, deviceId);
         var newToken = "new-valid-token";
 
         _mfaRepository.Setup(x => x.GetPushDeviceAsync(deviceId, It.IsAny<CancellationToken>()))
@@ -941,7 +947,7 @@ public class MfaPushServiceTests
             .Returns(true);
 
         // Act
-        var result = await _service.UpdateDeviceTokenAsync(deviceId, newToken);
+        var result = await _service.UpdateDeviceTokenAsync(deviceId, newToken, userId);
 
         // Assert
         result.Success.Should().BeTrue();

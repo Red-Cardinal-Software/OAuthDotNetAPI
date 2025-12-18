@@ -27,7 +27,7 @@ public class AppUserBuilder
         return this;
     }
 
-    public AppUserBuilder WithPasswordHash(string password)
+    public AppUserBuilder WithPassword(string password)
     {
         _password = password;
         return this;
