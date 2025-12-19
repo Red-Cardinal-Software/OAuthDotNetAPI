@@ -1,6 +1,7 @@
 using Application.DTOs.Mfa.EmailMfa;
 using Application.Interfaces.Services;
 using Application.Validators;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,8 +11,9 @@ namespace Starbase.Controllers;
 /// Controller for email-based Multi-Factor Authentication operations.
 /// Provides endpoints for sending and verifying email MFA codes.
 /// </summary>
+[ApiVersion("1.0")]
 [ApiController]
-[Route("api/mfa/email")]
+[Route("api/v{version:apiVersion}/mfa/email")]
 [Authorize]
 public class EmailMfaController(
     IMfaEmailAuthenticationService emailAuthService,

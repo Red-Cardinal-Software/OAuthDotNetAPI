@@ -26,7 +26,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         // Arrange - No authorization header set
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -39,7 +39,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "");
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -52,7 +52,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "not.a.valid.jwt.token");
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -69,7 +69,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", fakeToken);
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -98,7 +98,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tamperedToken);
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -126,7 +126,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", wronglySignedToken);
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -144,7 +144,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         var (_, refreshToken) = await CreateUserAndGetTokensAsync(email);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new UserRefreshTokenDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new UserRefreshTokenDto
         {
             Username = email,
             RefreshToken = refreshToken
@@ -166,7 +166,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         await CreateUserAndGetTokensAsync(email);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new UserRefreshTokenDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new UserRefreshTokenDto
         {
             Username = email,
             RefreshToken = "invalid-refresh-token"
@@ -192,7 +192,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         var (_, refreshToken) = await CreateUserAndGetTokensAsync(email);
 
         // Act - Try to use refresh token with different username
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new UserRefreshTokenDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new UserRefreshTokenDto
         {
             Username = "different@example.com",
             RefreshToken = refreshToken
@@ -211,7 +211,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         var (accessToken, _) = await CreateUserAndGetTokensAsync(email);
 
         // Act - Try to use access token as refresh token
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new UserRefreshTokenDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new UserRefreshTokenDto
         {
             Username = email,
             RefreshToken = accessToken
@@ -237,7 +237,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         var (_, refreshToken) = await CreateUserAndGetTokensAsync(email);
 
         // Refresh to get new token
-        var refreshResponse = await Client.PostAsJsonAsync("/api/auth/refresh", new UserRefreshTokenDto
+        var refreshResponse = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new UserRefreshTokenDto
         {
             Username = email,
             RefreshToken = refreshToken
@@ -249,7 +249,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
 
         // Act - Use new token on protected endpoint
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -267,14 +267,14 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         var (_, refreshToken) = await CreateUserAndGetTokensAsync(email);
 
         // Logout first
-        await Client.PostAsJsonAsync("/api/auth/logout", new UserLogoutDto
+        await Client.PostAsJsonAsync("/api/v1/auth/logout", new UserLogoutDto
         {
             Username = email,
             RefreshToken = refreshToken
         });
 
         // Act - Try to refresh after logout
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new UserRefreshTokenDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new UserRefreshTokenDto
         {
             Username = email,
             RefreshToken = refreshToken
@@ -298,7 +298,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -313,9 +313,9 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act - Make multiple requests
-        var response1 = await Client.GetAsync("/api/auth/mfa/overview");
-        var response2 = await Client.GetAsync("/api/auth/mfa/overview");
-        var response3 = await Client.GetAsync("/api/auth/mfa/overview");
+        var response1 = await Client.GetAsync("/api/v1/auth/mfa/overview");
+        var response2 = await Client.GetAsync("/api/v1/auth/mfa/overview");
+        var response3 = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response1.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -335,7 +335,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -348,7 +348,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
         var (token, _) = await CreateUserAndGetTokensAsync("jwt-querystring@example.com");
 
         // Act - Token in query string should not work (tokens should be in Authorization header)
-        var response = await Client.GetAsync($"/api/auth/mfa/overview?access_token={token}");
+        var response = await Client.GetAsync($"/api/v1/auth/mfa/overview?access_token={token}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -366,7 +366,7 @@ public class JwtTokenValidationTests(SqlServerContainerFixture dbFixture) : Inte
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

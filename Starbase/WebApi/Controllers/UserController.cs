@@ -2,6 +2,7 @@ using Application.DTOs.Users;
 using Application.Interfaces.Services;
 using Application.Security;
 using Application.Validators;
+using Asp.Versioning;
 using Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,8 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Starbase.Controllers;
 
-[Route("api/admin/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/admin/[controller]")]
 [ApiController]
 [Authorize]
 [RequireActiveUser]

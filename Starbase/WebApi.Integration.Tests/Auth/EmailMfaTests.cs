@@ -22,7 +22,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
     public async Task StartEmailSetup_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = "test@example.com"
         });
@@ -35,7 +35,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
     public async Task VerifyEmailSetup_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = "12345678"
         });
@@ -59,7 +59,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         var mfaEmail = "mfa-verify@example.com";
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
@@ -90,7 +90,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         var mfaEmail = "mfa-complete@example.com";
 
         // Start email setup
-        await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
@@ -100,7 +100,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         verificationCode.Should().NotBeNullOrEmpty();
 
         // Act - Verify with the captured code
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = verificationCode!
         });
@@ -125,13 +125,13 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         var mfaEmail = "mfa-invalid@example.com";
 
         // Start email setup
-        await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
 
         // Act - Verify with wrong code
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = "00000000" // Wrong code
         });
@@ -151,7 +151,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act - Try to verify without starting setup
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = "12345678"
         });
@@ -176,19 +176,19 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         var mfaEmail = "mfa-dup@example.com";
 
         // Complete first email MFA setup
-        await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
 
         var verificationCode = TestEmailService.GetLastCodeForEmail(mfaEmail);
-        await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = verificationCode!
         });
 
         // Act - Try to setup email MFA again
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = "another@example.com"
         });
@@ -211,13 +211,13 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         var secondMfaEmail = "second-mfa@example.com";
 
         // Start first setup but don't verify
-        await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = firstMfaEmail
         });
 
         // Act - Start setup with different email (should replace unverified)
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = secondMfaEmail
         });
@@ -246,7 +246,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act - Send request with null email (via empty JSON body)
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new { });
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new { });
 
         // Assert - Should fail (either validation error or service error)
         if (response.StatusCode == HttpStatusCode.UnprocessableEntity ||
@@ -277,13 +277,13 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         var mfaEmail = $"mfa-code-{Guid.NewGuid():N}@example.com";
 
         // Start setup first
-        await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
 
         // Act - Verify with invalid code format
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = invalidCode
         });
@@ -316,19 +316,19 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
         var mfaEmail = "mfa-overview@example.com";
 
         // Complete email MFA setup
-        await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
 
         var verificationCode = TestEmailService.GetLastCodeForEmail(mfaEmail);
-        await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = verificationCode!
         });
 
         // Act - Get MFA overview
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -350,7 +350,7 @@ public class EmailMfaTests(SqlServerContainerFixture dbFixture) : IntegrationTes
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

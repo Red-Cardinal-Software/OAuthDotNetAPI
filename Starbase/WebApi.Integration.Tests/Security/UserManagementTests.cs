@@ -21,7 +21,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
     public async Task GetAllUsers_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.GetAsync("/api/admin/user/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/user/GetAllUsers");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -42,7 +42,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.GetAsync("/api/admin/user/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/user/GetAllUsers");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -61,7 +61,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.GetAsync("/api/admin/user/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/user/GetAllUsers");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -87,7 +87,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.DeleteAsync($"/api/admin/user/{targetUser.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/admin/user/{targetUser.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -110,7 +110,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.DeleteAsync($"/api/admin/user/{targetUser.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/admin/user/{targetUser.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -146,7 +146,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -173,7 +173,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -219,7 +219,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act - Try to access with token from now-inactive user
-        var response = await Client.GetAsync("/api/admin/user/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/user/GetAllUsers");
 
         // Assert - Token still works because IsUserActive claim was set at login time
         // This is expected JWT behavior - user can access until token expires
@@ -249,7 +249,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         });
 
         // Act - Login as deactivated user
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -293,7 +293,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert - ValidDto attribute returns 422 for validation failures
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -320,7 +320,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert - API returns 200 with ServiceResponse indicating failure
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -352,7 +352,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert - ValidDto attribute returns 422 for duplicate username
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -364,7 +364,7 @@ public class UserManagementTests(SqlServerContainerFixture dbFixture) : Integrat
 
     private async Task<string> LoginAndGetTokenAsync(string email, string password)
     {
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

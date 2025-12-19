@@ -29,7 +29,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
     public async Task Login_WithSqlInjectionUsername_DoesNotExecuteInjection(string maliciousUsername)
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = maliciousUsername,
             Password = "Password123!"
@@ -56,7 +56,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
             .WithPassword("RealPassword123!"));
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = maliciousPassword
@@ -78,7 +78,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = maliciousEmail
         });
@@ -103,7 +103,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        var response = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"device-{Guid.NewGuid():N}",
             DeviceName = xssPayload,
@@ -131,7 +131,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
             "application/json");
 
         // Act
-        var response = await Client.PostAsync("/api/auth/login", malformedJson);
+        var response = await Client.PostAsync("/api/v1/auth/login", malformedJson);
 
         // Assert - malformed JSON should return client error, not server error
         response.StatusCode.Should().BeOneOf(
@@ -147,7 +147,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         var emptyContent = new StringContent("", Encoding.UTF8, "application/json");
 
         // Act
-        var response = await Client.PostAsync("/api/auth/login", emptyContent);
+        var response = await Client.PostAsync("/api/v1/auth/login", emptyContent);
 
         // Assert
         response.StatusCode.Should().BeOneOf(
@@ -162,7 +162,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         var nullJson = new StringContent("null", Encoding.UTF8, "application/json");
 
         // Act
-        var response = await Client.PostAsync("/api/auth/login", nullJson);
+        var response = await Client.PostAsync("/api/v1/auth/login", nullJson);
 
         // Assert
         response.StatusCode.Should().BeOneOf(
@@ -177,7 +177,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         var arrayJson = new StringContent("[1, 2, 3]", Encoding.UTF8, "application/json");
 
         // Act
-        var response = await Client.PostAsync("/api/auth/login", arrayJson);
+        var response = await Client.PostAsync("/api/v1/auth/login", arrayJson);
 
         // Assert
         response.StatusCode.Should().BeOneOf(
@@ -196,7 +196,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         var oversizedUsername = new string('a', 500) + "@example.com";
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = oversizedUsername,
             Password = "Password123!"
@@ -215,7 +215,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         var oversizedPassword = new string('P', 1000) + "123!";
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = "test@example.com",
             Password = oversizedPassword
@@ -236,7 +236,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         var largeKey = Convert.ToBase64String(new byte[10_000]);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        var response = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"device-{Guid.NewGuid():N}",
             DeviceName = "Test Device",
@@ -261,7 +261,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
     public async Task Login_WithSpecialCharacters_HandlesGracefully(string specialUsername)
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = specialUsername,
             Password = "Password123!"
@@ -279,7 +279,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
     public async Task Login_WithPathTraversalAttempt_HandlesGracefully(string pathTraversal)
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = pathTraversal,
             Password = "Password123!"
@@ -303,7 +303,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
     public async Task Login_WithUnicodeCharacters_HandlesGracefully(string unicodeUsername)
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = unicodeUsername,
             Password = "Password123!"
@@ -328,7 +328,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
             "application/xml");
 
         // Act
-        var response = await Client.PostAsync("/api/auth/login", xmlContent);
+        var response = await Client.PostAsync("/api/v1/auth/login", xmlContent);
 
         // Assert - Should reject XML
         response.StatusCode.Should().BeOneOf(
@@ -348,7 +348,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         });
 
         // Act
-        var response = await Client.PostAsync("/api/auth/login", formContent);
+        var response = await Client.PostAsync("/api/v1/auth/login", formContent);
 
         // Assert - API expects JSON, should reject form data
         response.StatusCode.Should().BeOneOf(
@@ -368,7 +368,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
     public async Task Login_WithEmptyOrWhitespaceUsername_ReturnsError(string username)
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = username,
             Password = "Password123!"
@@ -395,7 +395,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
         await CreateTestUserAsync(u => u.WithEmail(email).WithPassword("RealPassword123!"));
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -418,7 +418,7 @@ public class InputValidationTests(SqlServerContainerFixture dbFixture) : Integra
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

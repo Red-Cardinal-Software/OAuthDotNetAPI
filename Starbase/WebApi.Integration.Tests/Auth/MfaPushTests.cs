@@ -21,7 +21,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
     public async Task RegisterDevice_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        var response = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = "test-device-123",
             DeviceName = "Test iPhone",
@@ -38,7 +38,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
     public async Task GetDevices_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.GetAsync("/api/MfaPush/devices");
+        var response = await Client.GetAsync("/api/v1/MfaPush/devices");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -48,7 +48,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
     public async Task RemoveDevice_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.DeleteAsync($"/api/MfaPush/devices/{Guid.NewGuid()}");
+        var response = await Client.DeleteAsync($"/api/v1/MfaPush/devices/{Guid.NewGuid()}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -75,7 +75,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/MfaPush/register-device", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -104,7 +104,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         };
 
         // Register first time
-        await Client.PostAsJsonAsync("/api/MfaPush/register-device", firstRequest);
+        await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", firstRequest);
 
         // Register same device with new token
         var secondRequest = new RegisterPushDeviceRequest
@@ -117,7 +117,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/MfaPush/register-device", secondRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", secondRequest);
 
         // Assert - Should succeed and update the token
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -143,7 +143,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/MfaPush/register-device", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", request);
 
         // Assert
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<MfaPushDeviceDto>>();
@@ -162,7 +162,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.GetAsync("/api/MfaPush/devices");
+        var response = await Client.GetAsync("/api/v1/MfaPush/devices");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -179,7 +179,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Register two devices
-        await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"device-1-{Guid.NewGuid():N}",
             DeviceName = "iPhone 15 Pro",
@@ -188,7 +188,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
             PublicKey = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("key-1"))
         });
 
-        await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"device-2-{Guid.NewGuid():N}",
             DeviceName = "Pixel 8",
@@ -198,7 +198,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         });
 
         // Act
-        var response = await Client.GetAsync("/api/MfaPush/devices");
+        var response = await Client.GetAsync("/api/v1/MfaPush/devices");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -221,7 +221,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Register a device first
-        var registerResponse = await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        var registerResponse = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"device-to-remove-{Guid.NewGuid():N}",
             DeviceName = "Device to Remove",
@@ -234,7 +234,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         var deviceId = registerResult!.Data!.Id;
 
         // Act
-        var response = await Client.DeleteAsync($"/api/MfaPush/devices/{deviceId}");
+        var response = await Client.DeleteAsync($"/api/v1/MfaPush/devices/{deviceId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -242,7 +242,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         result!.Success.Should().BeTrue();
 
         // Verify device is deactivated (soft delete - device remains in list but IsActive=false)
-        var devicesResponse = await Client.GetAsync("/api/MfaPush/devices");
+        var devicesResponse = await Client.GetAsync("/api/v1/MfaPush/devices");
         var devicesResult = await devicesResponse.Content.ReadFromJsonAsync<ServiceResponse<IEnumerable<MfaPushDeviceDto>>>();
         var removedDevice = devicesResult!.Data!.FirstOrDefault(d => d.Id == deviceId);
         removedDevice.Should().NotBeNull("device should still exist in list as soft-deleted");
@@ -257,7 +257,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.DeleteAsync($"/api/MfaPush/devices/{Guid.NewGuid()}");
+        var response = await Client.DeleteAsync($"/api/v1/MfaPush/devices/{Guid.NewGuid()}");
 
         // Assert
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -271,7 +271,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         var token1 = await CreateUserAndGetTokenAsync("push-user1@example.com");
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
 
-        var registerResponse = await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        var registerResponse = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"user1-device-{Guid.NewGuid():N}",
             DeviceName = "User 1 Device",
@@ -288,7 +288,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
 
         // Act
-        var response = await Client.DeleteAsync($"/api/MfaPush/devices/{deviceId}");
+        var response = await Client.DeleteAsync($"/api/v1/MfaPush/devices/{deviceId}");
 
         // Assert - Should fail because device belongs to another user
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -307,7 +307,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Register a device first
-        var registerResponse = await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        var registerResponse = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"device-update-token-{Guid.NewGuid():N}",
             DeviceName = "Token Update Device",
@@ -320,7 +320,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         var deviceId = registerResult!.Data!.Id;
 
         // Act
-        var response = await Client.PutAsJsonAsync($"/api/MfaPush/devices/{deviceId}/token", new UpdatePushTokenDto
+        var response = await Client.PutAsJsonAsync($"/api/v1/MfaPush/devices/{deviceId}/token", new UpdatePushTokenDto
         {
             NewToken = $"new-token-{Guid.NewGuid():N}"
         });
@@ -340,7 +340,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
         var nonExistentDeviceId = Guid.NewGuid();
 
         // Act
-        var response = await Client.PutAsJsonAsync($"/api/MfaPush/devices/{nonExistentDeviceId}/token", new UpdatePushTokenDto
+        var response = await Client.PutAsJsonAsync($"/api/v1/MfaPush/devices/{nonExistentDeviceId}/token", new UpdatePushTokenDto
         {
             NewToken = "new-token-for-nonexistent"
         });
@@ -364,7 +364,7 @@ public class MfaPushTests(SqlServerContainerFixture dbFixture) : IntegrationTest
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

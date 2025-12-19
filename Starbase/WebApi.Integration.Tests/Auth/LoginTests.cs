@@ -27,7 +27,7 @@ public class LoginTests(SqlServerContainerFixture dbFixture) : IntegrationTestBa
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -54,7 +54,7 @@ public class LoginTests(SqlServerContainerFixture dbFixture) : IntegrationTestBa
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -74,7 +74,7 @@ public class LoginTests(SqlServerContainerFixture dbFixture) : IntegrationTestBa
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -100,7 +100,7 @@ public class LoginTests(SqlServerContainerFixture dbFixture) : IntegrationTestBa
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

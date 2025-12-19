@@ -61,13 +61,13 @@ public class RateLimitingTests(SqlServerContainerFixture dbFixture) : IAsyncLife
         // Act - Make requests up to the limit (should succeed)
         for (var i = 0; i < AuthRateLimit; i++)
         {
-            var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+            var response = await _client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
             response.StatusCode.Should().NotBe(HttpStatusCode.TooManyRequests,
                 $"request {i + 1} of {AuthRateLimit} should not be rate limited");
         }
 
         // Make one more request that exceeds the limit
-        var rateLimitedResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var rateLimitedResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         // Assert
         rateLimitedResponse.StatusCode.Should().Be(HttpStatusCode.TooManyRequests,
@@ -91,7 +91,7 @@ public class RateLimitingTests(SqlServerContainerFixture dbFixture) : IAsyncLife
         var responses = new List<HttpResponseMessage>();
         for (var i = 0; i < AuthRateLimit; i++)
         {
-            responses.Add(await _client.PostAsJsonAsync("/api/auth/login", loginRequest));
+            responses.Add(await _client.PostAsJsonAsync("/api/v1/auth/login", loginRequest));
         }
 
         // Assert - All should succeed (not be rate limited)
@@ -117,11 +117,11 @@ public class RateLimitingTests(SqlServerContainerFixture dbFixture) : IAsyncLife
         // Exhaust the rate limit
         for (var i = 0; i < AuthRateLimit; i++)
         {
-            await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+            await _client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
         }
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var response = await _client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);

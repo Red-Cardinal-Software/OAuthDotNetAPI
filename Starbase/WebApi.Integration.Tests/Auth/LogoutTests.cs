@@ -21,7 +21,7 @@ public class LogoutTests(SqlServerContainerFixture dbFixture) : IntegrationTestB
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -33,7 +33,7 @@ public class LogoutTests(SqlServerContainerFixture dbFixture) : IntegrationTestB
         var refreshToken = loginResult.Data!.RefreshToken!;
 
         // Act - Logout
-        var logoutResponse = await Client.PostAsJsonAsync("/api/auth/logout", new UserLogoutDto
+        var logoutResponse = await Client.PostAsJsonAsync("/api/v1/auth/logout", new UserLogoutDto
         {
             Username = email,
             RefreshToken = refreshToken
@@ -43,7 +43,7 @@ public class LogoutTests(SqlServerContainerFixture dbFixture) : IntegrationTestB
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify refresh token is now invalid
-        var refreshResponse = await Client.PostAsJsonAsync("/api/auth/refresh", new UserRefreshTokenDto
+        var refreshResponse = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new UserRefreshTokenDto
         {
             Username = email,
             RefreshToken = refreshToken
@@ -64,7 +64,7 @@ public class LogoutTests(SqlServerContainerFixture dbFixture) : IntegrationTestB
             .WithForceResetPassword(false));
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/logout", new UserLogoutDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/logout", new UserLogoutDto
         {
             Username = email,
             RefreshToken = "invalid-refresh-token"
@@ -91,7 +91,7 @@ public class LogoutTests(SqlServerContainerFixture dbFixture) : IntegrationTestB
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -101,14 +101,14 @@ public class LogoutTests(SqlServerContainerFixture dbFixture) : IntegrationTestB
         var refreshToken = loginResult!.Data!.RefreshToken!;
 
         // Logout
-        await Client.PostAsJsonAsync("/api/auth/logout", new UserLogoutDto
+        await Client.PostAsJsonAsync("/api/v1/auth/logout", new UserLogoutDto
         {
             Username = email,
             RefreshToken = refreshToken
         });
 
         // Act - Login again
-        var reloginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var reloginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

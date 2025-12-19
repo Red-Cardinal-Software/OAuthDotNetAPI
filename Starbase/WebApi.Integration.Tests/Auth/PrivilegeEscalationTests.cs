@@ -28,7 +28,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // User 1 starts email MFA setup
         var mfaEmail = "user1-mfa@example.com";
-        var setupResponse = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var setupResponse = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
@@ -38,7 +38,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // Verify the MFA setup
         var verificationCode = TestEmailService.GetLastCodeForEmail(mfaEmail);
-        await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = verificationCode!
         });
@@ -49,7 +49,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user2Token);
 
         // Act - User 2 tries to delete User 1's MFA method
-        var response = await Client.DeleteAsync($"/api/auth/mfa/method/{methodId}");
+        var response = await Client.DeleteAsync($"/api/v1/auth/mfa/method/{methodId}");
 
         // Assert - Should fail (user cannot delete another user's MFA method)
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -66,7 +66,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // User 1 starts email MFA setup
         var mfaEmail = "update-mfa-user1@example.com";
-        var setupResponse = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var setupResponse = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
@@ -76,7 +76,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // Verify the MFA setup
         var verificationCode = TestEmailService.GetLastCodeForEmail(mfaEmail);
-        await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = verificationCode!
         });
@@ -87,7 +87,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user2Token);
 
         // Act - User 2 tries to update User 1's MFA method
-        var response = await Client.PutAsJsonAsync($"/api/auth/mfa/method/{methodId}", new UpdateMfaMethodDto
+        var response = await Client.PutAsJsonAsync($"/api/v1/auth/mfa/method/{methodId}", new UpdateMfaMethodDto
         {
             Name = "Hacked by User 2"
         });
@@ -107,7 +107,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // User 1 starts email MFA setup
         var mfaEmail = "recovery-user1@example.com";
-        var setupResponse = await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        var setupResponse = await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = mfaEmail
         });
@@ -117,7 +117,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // Verify the MFA setup
         var verificationCode = TestEmailService.GetLastCodeForEmail(mfaEmail);
-        await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto
         {
             Code = verificationCode!
         });
@@ -128,7 +128,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user2Token);
 
         // Act - User 2 tries to regenerate User 1's recovery codes
-        var response = await Client.PostAsync($"/api/auth/mfa/method/{methodId}/recovery-codes", null);
+        var response = await Client.PostAsync($"/api/v1/auth/mfa/method/{methodId}/recovery-codes", null);
 
         // Assert - Should fail
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<string[]>>();
@@ -147,7 +147,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         var user1Token = await CreateUserAndGetTokenAsync(user1Email);
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user1Token);
 
-        var registerResponse = await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        var registerResponse = await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"device-{Guid.NewGuid():N}",
             DeviceName = "User 1 iPhone",
@@ -165,7 +165,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user2Token);
 
         // Act - User 2 tries to update User 1's device token
-        var response = await Client.PutAsJsonAsync($"/api/MfaPush/devices/{deviceId}/token", new UpdatePushTokenDto
+        var response = await Client.PutAsJsonAsync($"/api/v1/MfaPush/devices/{deviceId}/token", new UpdatePushTokenDto
         {
             NewToken = "malicious-token"
         });
@@ -188,7 +188,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         // Act - Try to access admin endpoint
-        var response = await Client.GetAsync("/api/admin/User/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/User/GetAllUsers");
 
         // Assert - Should be forbidden (user exists but doesn't have privilege)
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -205,7 +205,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         var targetUserId = Guid.NewGuid();
 
         // Act - Try to deactivate a user without admin privilege
-        var response = await Client.DeleteAsync($"/api/admin/User/{targetUserId}");
+        var response = await Client.DeleteAsync($"/api/v1/admin/User/{targetUserId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -220,7 +220,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         // Act - Try to access MFA admin statistics
-        var response = await Client.GetAsync("/api/admin/MfaAdmin/statistics/system");
+        var response = await Client.GetAsync("/api/v1/admin/MfaAdmin/statistics/system");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -235,7 +235,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         // Act - Try to cleanup unverified MFA methods
-        var response = await Client.DeleteAsync("/api/admin/MfaAdmin/cleanup/unverified?olderThanHours=24");
+        var response = await Client.DeleteAsync("/api/v1/admin/MfaAdmin/cleanup/unverified?olderThanHours=24");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -255,12 +255,12 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // User 1 sets up email MFA
         var user1MfaEmail = "privacy-mfa-user1@example.com";
-        await Client.PostAsJsonAsync("/api/auth/mfa/setup/email", new StartEmailMfaSetupDto
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/setup/email", new StartEmailMfaSetupDto
         {
             EmailAddress = user1MfaEmail
         });
         var code1 = TestEmailService.GetLastCodeForEmail(user1MfaEmail);
-        await Client.PostAsJsonAsync("/api/auth/mfa/verify/email", new VerifyMfaSetupDto { Code = code1! });
+        await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/email", new VerifyMfaSetupDto { Code = code1! });
 
         // Arrange - User 2 logs in (no MFA setup)
         var user2Email = "privacy-user2@example.com";
@@ -268,7 +268,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user2Token);
 
         // Act - User 2 gets their MFA overview
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert - User 2 should see NO MFA methods (not User 1's)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -290,7 +290,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         var user1Token = await CreateUserAndGetTokenAsync(user1Email);
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user1Token);
 
-        await Client.PostAsJsonAsync("/api/MfaPush/register-device", new RegisterPushDeviceRequest
+        await Client.PostAsJsonAsync("/api/v1/MfaPush/register-device", new RegisterPushDeviceRequest
         {
             DeviceId = $"user1-device-{Guid.NewGuid():N}",
             DeviceName = "User 1 Device",
@@ -305,7 +305,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user2Token);
 
         // Act - User 2 gets their devices
-        var response = await Client.GetAsync("/api/MfaPush/devices");
+        var response = await Client.GetAsync("/api/v1/MfaPush/devices");
 
         // Assert - User 2 should see NO devices
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -328,7 +328,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // Act - Try to delete a random MFA method ID
         var randomId = Guid.NewGuid();
-        var response = await Client.DeleteAsync($"/api/auth/mfa/method/{randomId}");
+        var response = await Client.DeleteAsync($"/api/v1/auth/mfa/method/{randomId}");
 
         // Assert - Should fail gracefully (not found or unauthorized, not server error)
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -346,7 +346,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
 
         // Act - Try to delete a random device ID
         var randomId = Guid.NewGuid();
-        var response = await Client.DeleteAsync($"/api/MfaPush/devices/{randomId}");
+        var response = await Client.DeleteAsync($"/api/v1/MfaPush/devices/{randomId}");
 
         // Assert
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -366,7 +366,7 @@ public class PrivilegeEscalationTests(SqlServerContainerFixture dbFixture) : Int
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

@@ -3,6 +3,7 @@ using Application.DTOs.Mfa;
 using Application.Interfaces.Services;
 using Application.Security;
 using Application.Validators;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -13,7 +14,8 @@ namespace Starbase.Controllers;
 /// Controller for managing push notification multi-factor authentication.
 /// Handles device registration, challenge sending, and response processing.
 /// </summary>
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 [Authorize]
 [RequireActiveUser]

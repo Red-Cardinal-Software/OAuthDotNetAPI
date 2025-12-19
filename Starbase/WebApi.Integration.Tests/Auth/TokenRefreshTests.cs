@@ -21,7 +21,7 @@ public class TokenRefreshTests(SqlServerContainerFixture dbFixture) : Integratio
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -37,7 +37,7 @@ public class TokenRefreshTests(SqlServerContainerFixture dbFixture) : Integratio
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", refreshRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -66,7 +66,7 @@ public class TokenRefreshTests(SqlServerContainerFixture dbFixture) : Integratio
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", refreshRequest);
 
         // Assert - Invalid token returns either 200 with Success=false or 500 (unhandled)
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
@@ -89,7 +89,7 @@ public class TokenRefreshTests(SqlServerContainerFixture dbFixture) : Integratio
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/refresh", refreshRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

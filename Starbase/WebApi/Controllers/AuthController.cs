@@ -2,6 +2,7 @@ using Application.Common.Utilities;
 using Application.DTOs.Auth;
 using Application.DTOs.Mfa;
 using Application.Interfaces.Services;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Starbase.Controllers;
 
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 public class AuthController(IAuthService authService, IMfaConfigurationService mfaService, ILogger<AuthController> logger) : BaseAppController(logger)
 {

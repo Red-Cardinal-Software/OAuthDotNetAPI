@@ -24,7 +24,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -41,7 +41,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
     public async Task GetMfaOverview_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.GetAsync("/api/auth/mfa/overview");
+        var response = await Client.GetAsync("/api/v1/auth/mfa/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -59,7 +59,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.PostAsync("/api/auth/mfa/setup/totp", null);
+        var response = await Client.PostAsync("/api/v1/auth/mfa/setup/totp", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -77,7 +77,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
     public async Task StartTotpSetup_Unauthenticated_ReturnsUnauthorized()
     {
         // Act
-        var response = await Client.PostAsync("/api/auth/mfa/setup/totp", null);
+        var response = await Client.PostAsync("/api/v1/auth/mfa/setup/totp", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -91,7 +91,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Start TOTP setup to get the secret
-        var setupResponse = await Client.PostAsync("/api/auth/mfa/setup/totp", null);
+        var setupResponse = await Client.PostAsync("/api/v1/auth/mfa/setup/totp", null);
         var setupResult = await setupResponse.Content.ReadFromJsonAsync<ServiceResponse<MfaSetupDto>>();
         setupResult!.Success.Should().BeTrue();
 
@@ -107,7 +107,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/verify/totp", verifyRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/totp", verifyRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -129,7 +129,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Start TOTP setup
-        await Client.PostAsync("/api/auth/mfa/setup/totp", null);
+        await Client.PostAsync("/api/v1/auth/mfa/setup/totp", null);
 
         var verifyRequest = new VerifyMfaSetupDto
         {
@@ -138,7 +138,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/verify/totp", verifyRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/totp", verifyRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -163,7 +163,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         };
 
         // Act
-        var response = await Client.PutAsJsonAsync($"/api/auth/mfa/method/{methodId}", updateRequest);
+        var response = await Client.PutAsJsonAsync($"/api/v1/auth/mfa/method/{methodId}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -180,13 +180,13 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var methodId = await SetupMfaAndGetMethodIdAsync("delete-method@example.com");
 
         // Act
-        var response = await Client.DeleteAsync($"/api/auth/mfa/method/{methodId}");
+        var response = await Client.DeleteAsync($"/api/v1/auth/mfa/method/{methodId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify MFA is no longer enabled
-        var overviewResponse = await Client.GetAsync("/api/auth/mfa/overview");
+        var overviewResponse = await Client.GetAsync("/api/v1/auth/mfa/overview");
         var overview = await overviewResponse.Content.ReadFromJsonAsync<ServiceResponse<MfaOverviewDto>>();
         overview!.Data!.HasEnabledMfa.Should().BeFalse("MFA should be disabled after removing only method");
     }
@@ -198,7 +198,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var methodId = await SetupMfaAndGetMethodIdAsync("regen-codes@example.com");
 
         // Act
-        var response = await Client.PostAsync($"/api/auth/mfa/method/{methodId}/recovery-codes", null);
+        var response = await Client.PostAsync($"/api/v1/auth/mfa/method/{methodId}/recovery-codes", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -224,7 +224,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -251,7 +251,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
 
         Client.DefaultRequestHeaders.Authorization = null;
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -264,7 +264,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var totpCode = GenerateTotpCode(secret);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = challengeToken,
             Code = totpCode
@@ -289,7 +289,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
 
         Client.DefaultRequestHeaders.Authorization = null;
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -299,7 +299,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var challengeToken = loginResult!.Data!.MfaChallenge!.ChallengeToken;
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = challengeToken,
             Code = "000000" // Invalid code
@@ -327,7 +327,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
 
         // Login to get MFA challenge
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -340,7 +340,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var recoveryCode = recoveryCodes.First();
 
         // Act - Complete MFA with recovery code
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = challengeToken,
             Code = recoveryCode,
@@ -369,7 +369,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var recoveryCode = recoveryCodes.First();
 
         // First login - use the recovery code
-        var firstLoginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var firstLoginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -377,7 +377,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var firstLoginResult = await firstLoginResponse.Content.ReadFromJsonAsync<ServiceResponse<JwtResponseDto>>();
         var firstChallengeToken = firstLoginResult!.Data!.MfaChallenge!.ChallengeToken;
 
-        var firstMfaResponse = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var firstMfaResponse = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = firstChallengeToken,
             Code = recoveryCode,
@@ -387,7 +387,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         firstMfaResult!.Success.Should().BeTrue("first use of recovery code should succeed");
 
         // Second login - try to reuse the same recovery code
-        var secondLoginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var secondLoginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -396,7 +396,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var secondChallengeToken = secondLoginResult!.Data!.MfaChallenge!.ChallengeToken;
 
         // Act - Try to reuse the recovery code
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = secondChallengeToken,
             Code = recoveryCode,
@@ -420,7 +420,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
 
         Client.DefaultRequestHeaders.Authorization = null;
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -430,7 +430,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var challengeToken = loginResult!.Data!.MfaChallenge!.ChallengeToken;
 
         // Act - Try with invalid recovery code
-        var response = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = challengeToken,
             Code = "INVALID-RECOVERY-CODE",
@@ -459,14 +459,14 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var secondCode = recoveryCodes[1];
 
         // First login with first code
-        var login1 = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var login1 = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
         });
         var login1Result = await login1.Content.ReadFromJsonAsync<ServiceResponse<JwtResponseDto>>();
 
-        var mfa1Response = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var mfa1Response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = login1Result!.Data!.MfaChallenge!.ChallengeToken,
             Code = firstCode,
@@ -476,7 +476,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         mfa1Result!.Success.Should().BeTrue("first recovery code should work");
 
         // Second login with second code
-        var login2 = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var login2 = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -484,7 +484,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         var login2Result = await login2.Content.ReadFromJsonAsync<ServiceResponse<JwtResponseDto>>();
 
         // Act
-        var mfa2Response = await Client.PostAsJsonAsync("/api/auth/mfa/complete", new CompleteMfaDto
+        var mfa2Response = await Client.PostAsJsonAsync("/api/v1/auth/mfa/complete", new CompleteMfaDto
         {
             ChallengeToken = login2Result!.Data!.MfaChallenge!.ChallengeToken,
             Code = secondCode,
@@ -509,7 +509,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -525,14 +525,14 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Start TOTP setup
-        var setupResponse = await Client.PostAsync("/api/auth/mfa/setup/totp", null);
+        var setupResponse = await Client.PostAsync("/api/v1/auth/mfa/setup/totp", null);
         var setupResult = await setupResponse.Content.ReadFromJsonAsync<ServiceResponse<MfaSetupDto>>();
 
         var secret = setupResult!.Data!.Secret;
         var totpCode = GenerateTotpCode(secret);
 
         // Verify setup
-        var verifyResponse = await Client.PostAsJsonAsync("/api/auth/mfa/verify/totp", new VerifyMfaSetupDto
+        var verifyResponse = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/totp", new VerifyMfaSetupDto
         {
             Code = totpCode,
             Name = "Test Authenticator"
@@ -555,7 +555,7 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password
@@ -567,13 +567,13 @@ public class MfaTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Start and complete TOTP setup
-        var setupResponse = await Client.PostAsync("/api/auth/mfa/setup/totp", null);
+        var setupResponse = await Client.PostAsync("/api/v1/auth/mfa/setup/totp", null);
         var setupResult = await setupResponse.Content.ReadFromJsonAsync<ServiceResponse<MfaSetupDto>>();
         var secret = setupResult!.Data!.Secret;
 
         var totpCode = GenerateTotpCode(secret);
 
-        var verifyResponse = await Client.PostAsJsonAsync("/api/auth/mfa/verify/totp", new VerifyMfaSetupDto
+        var verifyResponse = await Client.PostAsJsonAsync("/api/v1/auth/mfa/verify/totp", new VerifyMfaSetupDto
         {
             Code = totpCode,
             Name = "Test Authenticator"

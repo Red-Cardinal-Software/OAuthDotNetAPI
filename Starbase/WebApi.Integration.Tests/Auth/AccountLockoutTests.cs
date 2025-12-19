@@ -29,7 +29,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Act - Exceed the failed attempt threshold
         for (var i = 0; i < FailedAttemptThreshold; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -37,7 +37,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         }
 
         // Try to login with correct password after lockout
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = correctPassword
@@ -64,7 +64,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Act - Make some failed attempts but stay below threshold
         for (var i = 0; i < FailedAttemptThreshold - 1; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -72,7 +72,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         }
 
         // Try to login with correct password
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = correctPassword
@@ -99,7 +99,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Make some failed attempts
         for (var i = 0; i < FailedAttemptThreshold - 2; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -107,7 +107,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         }
 
         // Successful login should reset counter
-        var successResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var successResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = correctPassword
@@ -118,7 +118,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Act - Make more failed attempts (should start from 0 again)
         for (var i = 0; i < FailedAttemptThreshold - 2; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -126,7 +126,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         }
 
         // Should still be able to login since counter was reset
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = correctPassword
@@ -153,14 +153,14 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
             .WithForceResetPassword(false));
 
         // Act - Try to login with non-existent user
-        var nonExistentResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var nonExistentResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = "nonexistent-user@example.com",
             Password = "SomePassword123!"
         });
 
         // Try to login with existing user but wrong password
-        var wrongPasswordResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var wrongPasswordResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = realEmail,
             Password = "WrongPassword123!"
@@ -190,7 +190,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Act - Exceed the failed attempt threshold to trigger lockout
         for (var i = 0; i < FailedAttemptThreshold; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -225,7 +225,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Trigger lockout
         for (var i = 0; i < FailedAttemptThreshold; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -233,7 +233,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         }
 
         // Verify account is locked
-        var lockedResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var lockedResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = correctPassword
@@ -253,7 +253,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         });
 
         // Try to login after lockout expired
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = correctPassword
@@ -280,7 +280,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Trigger lockout
         for (var i = 0; i < FailedAttemptThreshold; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -299,7 +299,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Act - Make more failed attempts while locked
         for (var i = 0; i < 3; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -331,7 +331,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         // Act - Make some failed attempts
         for (var i = 0; i < 3; i++)
         {
-            await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+            await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
             {
                 Username = email,
                 Password = "WrongPassword!"
@@ -339,7 +339,7 @@ public class AccountLockoutTests(SqlServerContainerFixture dbFixture) : Integrat
         }
 
         // Make a successful attempt
-        await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = correctPassword
