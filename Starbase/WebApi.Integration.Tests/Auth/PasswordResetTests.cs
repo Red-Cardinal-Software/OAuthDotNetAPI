@@ -25,7 +25,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             .WithPassword("OldPassword123!"));
 
         // Act
-        var response = await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
+        var response = await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -53,7 +53,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         var email = "nonexistent-user@example.com";
 
         // Act
-        var response = await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
+        var response = await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
 
         // Assert
         // Should return success to prevent username enumeration attacks
@@ -74,8 +74,8 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             .WithPassword("OldPassword123!"));
 
         // Act - Request reset twice
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
 
         // Assert - Multiple tokens should exist (until one is claimed)
         await WithDbContextAsync(async db =>
@@ -106,7 +106,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             .WithForceResetPassword(false));
 
         // Request password reset through API (creates token in proper context)
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
 
         // Get the token from the database
         var tokenId = await GetPasswordResetTokenIdAsync(email);
@@ -118,7 +118,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ResetUserPassword", resetRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ResetUserPassword", resetRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -127,7 +127,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         result!.Success.Should().BeTrue();
 
         // Verify user can log in with new password
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = newPassword
@@ -137,7 +137,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         loginResult!.Success.Should().BeTrue("user should be able to log in with new password");
 
         // Verify old password no longer works
-        var oldLoginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var oldLoginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = oldPassword
@@ -158,7 +158,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ResetUserPassword", resetRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ResetUserPassword", resetRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -179,7 +179,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ResetUserPassword", resetRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ResetUserPassword", resetRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -201,7 +201,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             .WithForceResetPassword(false));
 
         // Request password reset through API
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
 
         // Get the token from the database
         var tokenId = await GetPasswordResetTokenIdAsync(email);
@@ -213,7 +213,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         };
 
         // First reset should succeed
-        var firstResponse = await Client.PostAsJsonAsync("/api/auth/ResetUserPassword", firstResetRequest);
+        var firstResponse = await Client.PostAsJsonAsync("/api/v1/auth/ResetUserPassword", firstResetRequest);
         var firstResult = await firstResponse.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
         firstResult!.Success.Should().BeTrue("first reset should succeed");
 
@@ -224,7 +224,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             Password = "AnotherPassword123!"
         };
 
-        var secondResponse = await Client.PostAsJsonAsync("/api/auth/ResetUserPassword", secondResetRequest);
+        var secondResponse = await Client.PostAsJsonAsync("/api/v1/auth/ResetUserPassword", secondResetRequest);
 
         // Assert
         var secondResult = await secondResponse.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -242,7 +242,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             .WithPassword("StrongPassword123!"));
 
         // Request password reset through API
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
 
         var tokenId = await GetPasswordResetTokenIdAsync(email);
 
@@ -253,7 +253,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ResetUserPassword", resetRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ResetUserPassword", resetRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -274,9 +274,9 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             .WithForceResetPassword(false));
 
         // Create multiple reset tokens through the API
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
-        await Client.PostAsync($"/api/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
+        await Client.PostAsync($"/api/v1/auth/ResetPassword/{email}", null);
 
         // Get the first token
         var tokenId1 = await GetPasswordResetTokenIdAsync(email);
@@ -288,7 +288,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ResetUserPassword", resetRequest);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ResetUserPassword", resetRequest);
 
         // Assert
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -323,7 +323,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
             .WithForceResetPassword(true)); // Flag is set
 
         // Login to get token (login should work even with force reset flag)
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = oldPassword
@@ -337,7 +337,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ForcePasswordReset", newPassword);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ForcePasswordReset", newPassword);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -348,7 +348,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         // Clear auth and verify new password works
         Client.DefaultRequestHeaders.Authorization = null;
 
-        var newLoginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var newLoginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = newPassword
@@ -375,7 +375,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ForcePasswordReset", "NewPassword123!");
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ForcePasswordReset", "NewPassword123!");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -390,7 +390,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         // Arrange - No authentication header set
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ForcePasswordReset", "NewPassword123!");
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ForcePasswordReset", "NewPassword123!");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -412,7 +412,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act - Try to reset to the same password
-        var response = await Client.PostAsJsonAsync("/api/auth/ForcePasswordReset", currentPassword);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ForcePasswordReset", currentPassword);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -437,7 +437,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/auth/ForcePasswordReset", "weak");
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/ForcePasswordReset", "weak");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -452,7 +452,7 @@ public class PasswordResetTests(SqlServerContainerFixture dbFixture) : Integrati
 
     private async Task<string> LoginAndGetTokenAsync(string email, string password)
     {
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

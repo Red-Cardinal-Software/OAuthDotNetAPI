@@ -3,6 +3,7 @@ using Application.Common.Utilities;
 using Application.DTOs.Mfa;
 using Application.Interfaces.Services;
 using Application.Security;
+using Asp.Versioning;
 using Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,8 @@ namespace Starbase.Controllers;
 /// Administrative controller for multi-factor authentication metrics and management.
 /// Provides system-wide and organization-scoped MFA statistics for authorized administrators.
 /// </summary>
-[Route("api/admin/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/admin/[controller]")]
 [ApiController]
 [Authorize]
 [RequireActiveUser]

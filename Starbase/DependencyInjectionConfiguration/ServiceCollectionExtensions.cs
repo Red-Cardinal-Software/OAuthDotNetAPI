@@ -42,6 +42,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Application.Interfaces.Providers;
+using Asp.Versioning;
 using Fido2NetLib;
 using Infrastructure.Providers;
 using OpenTelemetry.Metrics;
@@ -67,6 +68,7 @@ public class AppDependencyOptions
     public bool IncludeRateLimiting { get; set; } = true;
     public bool IncludeCaching { get; set; } = true;
     public bool IncludeCors { get; set; } = true;
+    public bool IncludeApiVersioning { get; set; } = true;
 }
 
 /// <summary>
@@ -108,6 +110,7 @@ public static class ServiceCollectionExtensions
         if (options.IncludeHealthChecks) services.AddAppHealthChecks(configuration);
         if (options.IncludeRateLimiting) services.AddRateLimiting(configuration);
         if (options.IncludeCors) services.AddConfigurableCors(configuration);
+        if (options.IncludeApiVersioning) services.AddApiVersioningConfiguration();
         if (options.IncludeCaching)
         {
             // Support both local (memory) and Cloud (redis) automatically
@@ -566,6 +569,37 @@ public static class ServiceCollectionExtensions
                     policy.SetPreflightMaxAge(TimeSpan.FromSeconds(corsOptions.PreflightMaxAgeSeconds));
                 }
             });
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures API versioning for the application.
+    /// Uses URL path versioning (e.g., /api/v1/users) with v1 as the default.
+    /// Reports available versions in response headers for API discoverability.
+    /// </summary>
+    /// <param name="services">The IServiceCollection instance to which API versioning will be added.</param>
+    /// <returns>The modified IServiceCollection instance with API versioning configured.</returns>
+    private static IServiceCollection AddApiVersioningConfiguration(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            // Default to v1 when no version is specified
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+
+            // Report available versions in response headers
+            options.ReportApiVersions = true;
+
+            // Read version from URL path segment (e.g., /api/v1/users)
+            options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        })
+        .AddApiExplorer(options =>
+        {
+            // Format version as 'v'major[.minor] (e.g., v1, v1.1)
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
         });
 
         return services;

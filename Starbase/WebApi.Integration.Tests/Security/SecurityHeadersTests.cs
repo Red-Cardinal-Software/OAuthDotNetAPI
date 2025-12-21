@@ -118,7 +118,7 @@ public class SecurityHeadersTests(SqlServerContainerFixture dbFixture) : Integra
     public async Task SecurityHeaders_PresentOnErrorResponses()
     {
         // Act - Request a protected endpoint without auth to get 401
-        var response = await Client.GetAsync("/api/admin/user/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/user/GetAllUsers");
 
         // Assert - Security headers should still be present
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

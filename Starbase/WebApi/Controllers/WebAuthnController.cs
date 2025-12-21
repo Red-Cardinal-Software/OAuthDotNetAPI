@@ -1,6 +1,7 @@
 using Application.DTOs.Mfa.WebAuthn;
 using Application.Interfaces.Services;
 using Application.Validators;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,8 +11,9 @@ namespace Starbase.Controllers;
 /// Controller for WebAuthn/FIDO2 Multi-Factor Authentication operations.
 /// Provides endpoints for registering and authenticating with WebAuthn credentials.
 /// </summary>
+[ApiVersion("1.0")]
 [ApiController]
-[Route("api/mfa/webauthn")]
+[Route("api/v{version:apiVersion}/mfa/webauthn")]
 [Authorize]
 public class WebAuthnController(
     IMfaWebAuthnService mfaWebAuthnService,

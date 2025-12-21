@@ -66,7 +66,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.GetAsync("/api/admin/user/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/user/GetAllUsers");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -108,7 +108,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await Client.GetAsync("/api/admin/user/GetAllUsers");
+        var response = await Client.GetAsync("/api/v1/admin/user/GetAllUsers");
 
         // Assert - Should only see the 1 admin user from isolated Org A
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<List<AppUserDto>>>();
@@ -142,7 +142,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act - Try to deactivate user from Org B while logged in as Org A admin
-        var response = await Client.DeleteAsync($"/api/admin/user/{targetUser.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/admin/user/{targetUser.Id}");
 
         // Assert - Should be forbidden or return error
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -177,7 +177,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act - Deactivate user from same organization
-        var response = await Client.DeleteAsync($"/api/admin/user/{targetUser.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/admin/user/{targetUser.Id}");
 
         // Assert - Should succeed
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -210,7 +210,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         var nonExistentUserId = Guid.NewGuid();
 
         // Act
-        var response = await Client.DeleteAsync($"/api/admin/user/{nonExistentUserId}");
+        var response = await Client.DeleteAsync($"/api/v1/admin/user/{nonExistentUserId}");
 
         // Assert - Should return consistent error (not leak whether user exists in other org)
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<bool>>();
@@ -244,7 +244,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -291,7 +291,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert - Should fail due to duplicate username in same org
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -327,7 +327,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/user", newUser);
+        var response = await Client.PostAsJsonAsync("/api/v1/admin/user", newUser);
 
         // Assert - Should succeed because username is unique within Org A
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -382,7 +382,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
         };
 
         // Act - Try to update user from Org B while logged in as Org A admin
-        var response = await Client.PutAsJsonAsync("/api/admin/user", updateDto);
+        var response = await Client.PutAsJsonAsync("/api/v1/admin/user", updateDto);
 
         // Assert - Should fail
         var result = await response.Content.ReadFromJsonAsync<ServiceResponse<AppUserDto>>();
@@ -402,7 +402,7 @@ public class OrganizationIsolationTests(SqlServerContainerFixture dbFixture) : I
 
     private async Task<string> LoginAndGetTokenAsync(string email, string password)
     {
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

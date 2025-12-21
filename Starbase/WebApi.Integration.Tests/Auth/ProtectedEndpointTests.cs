@@ -11,7 +11,7 @@ namespace WebApi.Integration.Tests.Auth;
 
 public class ProtectedEndpointTests(SqlServerContainerFixture dbFixture) : IntegrationTestBase(dbFixture)
 {
-    private const string ProtectedEndpoint = "/api/auth/mfa/overview";
+    private const string ProtectedEndpoint = "/api/v1/auth/mfa/overview";
 
     [Fact]
     public async Task ProtectedEndpoint_WithoutToken_ReturnsUnauthorized()
@@ -48,7 +48,7 @@ public class ProtectedEndpointTests(SqlServerContainerFixture dbFixture) : Integ
             .WithPassword(password)
             .WithForceResetPassword(false));
 
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new UserLoginDto
+        var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new UserLoginDto
         {
             Username = email,
             Password = password

@@ -34,7 +34,7 @@ public class CorsTests(SqlServerContainerFixture dbFixture) : IntegrationTestBas
     public async Task PreflightRequest_IncludesAccessControlMaxAge()
     {
         // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Options, "/api/auth/login");
+        var request = new HttpRequestMessage(HttpMethod.Options, "/api/v1/auth/login");
         request.Headers.Add("Origin", AllowedOrigin);
         request.Headers.Add("Access-Control-Request-Method", "POST");
 
@@ -88,7 +88,7 @@ public class CorsTests(SqlServerContainerFixture dbFixture) : IntegrationTestBas
     public async Task PreflightRequest_ForAuthEndpoint_AllowsAuthorizationHeader()
     {
         // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Options, "/api/auth/login");
+        var request = new HttpRequestMessage(HttpMethod.Options, "/api/v1/auth/login");
         request.Headers.Add("Origin", AllowedOrigin);
         request.Headers.Add("Access-Control-Request-Method", "POST");
         request.Headers.Add("Access-Control-Request-Headers", "Content-Type, Authorization");
@@ -128,7 +128,7 @@ public class CorsTests(SqlServerContainerFixture dbFixture) : IntegrationTestBas
     public async Task CrossOriginRequest_ToProtectedEndpoint_StillRequiresAuthentication()
     {
         // Arrange - Even with CORS headers, auth is still required
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/user/GetAllUsers");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/user/GetAllUsers");
         request.Headers.Add("Origin", AllowedOrigin);
 
         // Act
@@ -156,7 +156,7 @@ public class CorsTests(SqlServerContainerFixture dbFixture) : IntegrationTestBas
     public async Task PreflightRequest_ForDeleteMethod_IsHandled()
     {
         // Arrange - DELETE is often restricted in CORS
-        var request = new HttpRequestMessage(HttpMethod.Options, "/api/admin/user/00000000-0000-0000-0000-000000000001");
+        var request = new HttpRequestMessage(HttpMethod.Options, "/api/v1/admin/user/00000000-0000-0000-0000-000000000001");
         request.Headers.Add("Origin", AllowedOrigin);
         request.Headers.Add("Access-Control-Request-Method", "DELETE");
 
@@ -175,7 +175,7 @@ public class CorsTests(SqlServerContainerFixture dbFixture) : IntegrationTestBas
     public async Task PostRequest_WithContentType_FromCrossOrigin_IsHandled()
     {
         // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login");
         request.Headers.Add("Origin", AllowedOrigin);
         request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
 
