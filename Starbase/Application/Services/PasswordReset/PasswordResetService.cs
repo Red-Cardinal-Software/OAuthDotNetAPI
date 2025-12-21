@@ -67,7 +67,7 @@ public class PasswordResetService(
         tokenEntity.Claim(passwordHasher.Hash(password), claimedByIpAddress);
         var unclaimedTokens = await passwordResetTokenRepository.GetAllUnclaimedResetTokensForUserAsync(tokenEntity.AppUserId);
 
-        foreach (var unclaimedToken in unclaimedTokens)
+        foreach (var unclaimedToken in unclaimedTokens.Where(t => t.Id != tokenEntity.Id))
         {
             unclaimedToken.ClaimRedundantToken(claimedByIpAddress);
         }

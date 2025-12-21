@@ -60,7 +60,7 @@ public class AppUserRepository(
 
 
     public async Task<AppUser?> GetUserByUsernameAsync(string username) =>
-        await userCrudOperator.GetAll().FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+        await GetAllUsersWithChildren().FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
 
     public async Task<int> GetTotalUserCountAsync() =>
         await userCrudOperator.GetAll().CountAsync();

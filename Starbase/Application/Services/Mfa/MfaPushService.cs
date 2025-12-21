@@ -1,7 +1,9 @@
 using Application.Common.Configuration;
 using Application.Common.Factories;
+using Application.Common.Services;
 using Application.Models;
 using Application.DTOs.Mfa;
+using Application.Interfaces.Persistence;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Providers;
 using Application.Interfaces.Services;
@@ -18,12 +20,13 @@ namespace Application.Services.Mfa;
 /// Service for managing push notification-based multi-factor authentication.
 /// </summary>
 public class MfaPushService(
+    IUnitOfWork unitOfWork,
     IMfaPushRepository mfaRepository,
     IMfaMethodRepository mfaMethodRepository,
     IPushNotificationProvider pushProvider,
     IOptions<PushMfaOptions> pushMfaOptions,
     IOptions<AppOptions> appOptions,
-    ILogger<MfaPushService> logger) : IMfaPushService
+    ILogger<MfaPushService> logger) : BaseAppService(unitOfWork), IMfaPushService
 {
     private readonly PushMfaOptions _options = pushMfaOptions.Value;
     private readonly AppOptions _appOptions = appOptions.Value;
@@ -32,7 +35,7 @@ public class MfaPushService(
     public async Task<ServiceResponse<MfaPushDeviceDto>> RegisterDeviceAsync(
         Guid userId,
         RegisterPushDeviceRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         try
         {
@@ -95,14 +98,14 @@ public class MfaPushService(
             return ServiceResponseFactory.Error<MfaPushDeviceDto>(
                 "Failed to register device");
         }
-    }
+    });
 
     /// <inheritdoc />
     public async Task<ServiceResponse<MfaPushChallengeDto>> SendChallengeAsync(
         Guid userId,
         Guid deviceId,
         PushChallengeSessionInfo sessionInfo,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         try
         {
@@ -186,7 +189,7 @@ public class MfaPushService(
             return ServiceResponseFactory.Error<MfaPushChallengeDto>(
                 "Failed to send push notification");
         }
-    }
+    });
 
     /// <inheritdoc />
     public async Task<ServiceResponse<MfaPushChallengeStatusDto>> CheckChallengeStatusAsync(
@@ -235,7 +238,7 @@ public class MfaPushService(
     public async Task<ServiceResponse<bool>> RespondToChallengeAsync(
         Guid challengeId,
         PushChallengeResponse response,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         try
         {
@@ -303,7 +306,7 @@ public class MfaPushService(
             return ServiceResponseFactory.Error<bool>(
                 "Failed to process response");
         }
-    }
+    });
 
     /// <inheritdoc />
     public async Task<ServiceResponse<IEnumerable<MfaPushDeviceDto>>> GetUserDevicesAsync(
@@ -332,7 +335,7 @@ public class MfaPushService(
     public async Task<ServiceResponse<bool>> RemoveDeviceAsync(
         Guid userId,
         Guid deviceId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         try
         {
@@ -361,13 +364,14 @@ public class MfaPushService(
             return ServiceResponseFactory.Error<bool>(
                 "Failed to remove device");
         }
-    }
+    });
 
     /// <inheritdoc />
     public async Task<ServiceResponse<bool>> UpdateDeviceTokenAsync(
         Guid deviceId,
         string newToken,
-        CancellationToken cancellationToken = default)
+        Guid userId,
+        CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         try
         {
@@ -377,6 +381,11 @@ public class MfaPushService(
             {
                 return ServiceResponseFactory.Error<bool>(
                     "Device not found");
+            }
+
+            if (device.UserId != userId)
+            {
+                return ServiceResponseFactory.Error<bool>("Not authorized");
             }
 
             if (!pushProvider.ValidatePushToken(newToken, device.Platform))
@@ -398,12 +407,12 @@ public class MfaPushService(
             return ServiceResponseFactory.Error<bool>(
                 "Failed to update device token");
         }
-    }
+    });
 
     /// <inheritdoc />
     public async Task<int> CleanupExpiredChallengesAsync(
         TimeSpan olderThan,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => await RunWithCommitAsync(async () =>
     {
         try
         {
@@ -415,7 +424,7 @@ public class MfaPushService(
             logger.LogError(ex, "Error cleaning up expired push challenges");
             return 0;
         }
-    }
+    });
 
     private static MfaPushDeviceDto MapToDto(MfaPushDevice device)
     {

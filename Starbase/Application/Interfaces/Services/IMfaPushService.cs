@@ -90,6 +90,7 @@ public interface IMfaPushService
     Task<ServiceResponse<bool>> UpdateDeviceTokenAsync(
         Guid deviceId,
         string newToken,
+        Guid userId,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -10,7 +10,8 @@ public class StartEmailMfaSetupDto
     /// <summary>
     /// The email address to use for MFA (can be different from login email)
     /// </summary>
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage = "Email address is required")]
+    [EmailAddress(ErrorMessage = "Invalid email address format")]
+    [StringLength(256, ErrorMessage = "Email address must not exceed 256 characters")]
     public string EmailAddress { get; set; } = string.Empty;
 }

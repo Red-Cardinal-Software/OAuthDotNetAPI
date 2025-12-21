@@ -1,4 +1,5 @@
 using Application.DTOs.Mfa;
+using Application.Models;
 using Domain.Entities.Security;
 
 namespace Application.Interfaces.Services;
@@ -18,7 +19,7 @@ public interface IMfaConfigurationService
     /// <param name="accountName">Account identifier (username/email) for the authenticator app</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Setup information including QR code and secret</returns>
-    Task<MfaSetupDto> StartTotpSetupAsync(Guid userId, string accountName, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaSetupDto>> StartTotpSetupAsync(Guid userId, string accountName, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Verifies TOTP setup by validating the user's first code from their authenticator app.
@@ -27,7 +28,7 @@ public interface IMfaConfigurationService
     /// <param name="verificationDto">Verification code and optional method name</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Completion information including recovery codes</returns>
-    Task<MfaSetupCompleteDto> VerifyTotpSetupAsync(Guid userId, VerifyMfaSetupDto verificationDto, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaSetupCompleteDto>> VerifyTotpSetupAsync(Guid userId, VerifyMfaSetupDto verificationDto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Initiates email MFA setup for a user.
@@ -36,7 +37,7 @@ public interface IMfaConfigurationService
     /// <param name="emailAddress">Email address to use for MFA (can be different from login email)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Setup information</returns>
-    Task<EmailSetupDto> StartEmailSetupAsync(Guid userId, string emailAddress, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<EmailSetupDto>> StartEmailSetupAsync(Guid userId, string emailAddress, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Verifies email MFA setup by validating the code sent to the user's email.
@@ -45,7 +46,7 @@ public interface IMfaConfigurationService
     /// <param name="verificationDto">Verification code</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Completion information including recovery codes</returns>
-    Task<MfaSetupCompleteDto> VerifyEmailSetupAsync(Guid userId, VerifyMfaSetupDto verificationDto, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaSetupCompleteDto>> VerifyEmailSetupAsync(Guid userId, VerifyMfaSetupDto verificationDto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancels an in-progress MFA setup that hasn't been verified yet.
@@ -54,7 +55,7 @@ public interface IMfaConfigurationService
     /// <param name="mfaType">The type of MFA setup to cancel</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if a setup was cancelled</returns>
-    Task<bool> CancelSetupAsync(Guid userId, MfaType mfaType, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<bool>> CancelSetupAsync(Guid userId, MfaType mfaType, CancellationToken cancellationToken = default);
 
     #endregion
 
@@ -66,7 +67,7 @@ public interface IMfaConfigurationService
     /// <param name="userId">The user ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>MFA overview including all methods and status</returns>
-    Task<MfaOverviewDto> GetMfaOverviewAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaOverviewDto>> GetMfaOverviewAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets detailed information about a specific MFA method.
@@ -75,7 +76,7 @@ public interface IMfaConfigurationService
     /// <param name="methodId">The MFA method ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Method details or null if not found</returns>
-    Task<MfaMethodDto?> GetMfaMethodAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaMethodDto?>> GetMfaMethodAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates an existing MFA method's settings.
@@ -85,7 +86,7 @@ public interface IMfaConfigurationService
     /// <param name="updateDto">Update information</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Updated method information</returns>
-    Task<MfaMethodDto> UpdateMfaMethodAsync(Guid userId, Guid methodId, UpdateMfaMethodDto updateDto, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaMethodDto>> UpdateMfaMethodAsync(Guid userId, Guid methodId, UpdateMfaMethodDto updateDto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sets an MFA method as the user's default.
@@ -93,7 +94,7 @@ public interface IMfaConfigurationService
     /// <param name="userId">The user ID</param>
     /// <param name="methodId">The MFA method ID to set as default</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    Task SetDefaultMfaMethodAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<bool>> SetDefaultMfaMethodAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Enables or disables an MFA method.
@@ -102,7 +103,7 @@ public interface IMfaConfigurationService
     /// <param name="methodId">The MFA method ID</param>
     /// <param name="enabled">Whether to enable or disable the method</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    Task SetMfaMethodEnabledAsync(Guid userId, Guid methodId, bool enabled, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<bool>> SetMfaMethodEnabledAsync(Guid userId, Guid methodId, bool enabled, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes an MFA method from the user's account.
@@ -111,7 +112,7 @@ public interface IMfaConfigurationService
     /// <param name="methodId">The MFA method ID to remove</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if the method was removed</returns>
-    Task<bool> RemoveMfaMethodAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<bool>> RemoveMfaMethodAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
 
     #endregion
 
@@ -124,7 +125,7 @@ public interface IMfaConfigurationService
     /// <param name="methodId">The MFA method ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>New recovery codes</returns>
-    Task<string[]> RegenerateRecoveryCodesAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<string[]>> RegenerateRecoveryCodesAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the count of unused recovery codes for an MFA method.
@@ -133,7 +134,7 @@ public interface IMfaConfigurationService
     /// <param name="methodId">The MFA method ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Number of unused recovery codes</returns>
-    Task<int> GetRecoveryCodeCountAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<int>> GetRecoveryCodeCountAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
 
     #endregion
 
@@ -145,7 +146,7 @@ public interface IMfaConfigurationService
     /// <param name="userId">The user ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if the user has enabled MFA</returns>
-    Task<bool> UserHasMfaEnabledAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<bool>> UserHasMfaEnabledAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates that a user can safely remove an MFA method.
@@ -155,7 +156,7 @@ public interface IMfaConfigurationService
     /// <param name="methodId">The MFA method ID to remove</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Validation result with any warnings</returns>
-    Task<MfaRemovalValidationResult> ValidateMethodRemovalAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaRemovalValidationResult>> ValidateMethodRemovalAsync(Guid userId, Guid methodId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks if a user can set up a specific type of MFA.
@@ -164,7 +165,7 @@ public interface IMfaConfigurationService
     /// <param name="mfaType">The MFA type to check</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if the user can set up this MFA type</returns>
-    Task<bool> CanSetupMfaTypeAsync(Guid userId, MfaType mfaType, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<bool>> CanSetupMfaTypeAsync(Guid userId, MfaType mfaType, CancellationToken cancellationToken = default);
 
     #endregion
 
@@ -176,7 +177,7 @@ public interface IMfaConfigurationService
     /// <param name="organizationId">Organization ID for scoped statistics. If null, returns system-wide statistics.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>MFA statistics for the specified organization or system-wide</returns>
-    Task<MfaStatisticsDto> GetMfaStatisticsAsync(Guid? organizationId = null, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<MfaStatisticsDto>> GetMfaStatisticsAsync(Guid? organizationId = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cleans up unverified MFA methods older than the specified age.
@@ -184,7 +185,7 @@ public interface IMfaConfigurationService
     /// <param name="maxAge">Maximum age for unverified methods</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Number of methods cleaned up</returns>
-    Task<int> CleanupUnverifiedMethodsAsync(TimeSpan maxAge, CancellationToken cancellationToken = default);
+    Task<ServiceResponse<int>> CleanupUnverifiedMethodsAsync(TimeSpan maxAge, CancellationToken cancellationToken = default);
 
     #endregion
 }

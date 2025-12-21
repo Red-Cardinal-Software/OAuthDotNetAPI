@@ -42,7 +42,7 @@ public class PasswordResetServiceTests
     {
         // Arrange
         var appUser = new AppUserBuilder().Build();
-        var updatedAppUser = new AppUserBuilder().WithPasswordHash("newhash").Build();
+        var updatedAppUser = new AppUserBuilder().WithPassword("newhash").Build();
         var token = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
 
         var newPassword = "newpassword12345";
@@ -79,7 +79,7 @@ public class PasswordResetServiceTests
     {
         // Arrange
         var appUser = new AppUserBuilder().Build();
-        var updatedAppUser = new AppUserBuilder().WithPasswordHash("newhash").Build();
+        var updatedAppUser = new AppUserBuilder().WithPassword("newhash").Build();
         var token = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
         var unclaimedToken = new PasswordResetToken(appUser, DateTime.UtcNow.AddHours(1), "127.0.0.1");
 
