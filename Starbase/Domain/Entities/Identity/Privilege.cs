@@ -1,8 +1,11 @@
+using Domain.Attributes;
+
 namespace Domain.Entities.Identity;
 
 /// <summary>
 /// Represents a system privilege that can be assigned to roles to grant specific access rights.
 /// </summary>
+[Audited]
 public class Privilege : IEquatable<Privilege>
 {
     /// <summary>

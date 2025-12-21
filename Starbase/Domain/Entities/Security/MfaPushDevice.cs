@@ -1,3 +1,4 @@
+using Domain.Attributes;
 using Domain.Exceptions;
 
 namespace Domain.Entities.Security;
@@ -5,6 +6,7 @@ namespace Domain.Entities.Security;
 /// <summary>
 /// Represents a device registered for push notification multi-factor authentication.
 /// </summary>
+[Audited]
 public class MfaPushDevice
 {
     /// <summary>

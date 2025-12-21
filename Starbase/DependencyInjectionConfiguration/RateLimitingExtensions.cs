@@ -21,57 +21,76 @@ public static class RateLimitingExtensions
             var rateLimitOptions = configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>() ?? new RateLimitingOptions();
 
             // Policy for authentication endpoints (login, refresh) - most restrictive
-            options.AddFixedWindowLimiter("auth", opt =>
+            // Partitioned by IP to prevent one attacker from blocking all users
+            options.AddPolicy("auth", context =>
             {
-                opt.PermitLimit = rateLimitOptions.Auth.PermitLimit;
-                opt.Window = TimeSpan.FromMinutes(rateLimitOptions.Auth.WindowMinutes);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0; // No queuing - reject immediately when limit exceeded
+                var ip = GetClientIpAddress(context);
+                return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = rateLimitOptions.Auth.PermitLimit,
+                    Window = TimeSpan.FromMinutes(rateLimitOptions.Auth.WindowMinutes),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0 // No queuing - reject immediately when limit exceeded
+                });
             });
 
             // Policy for password reset - moderate restrictions to prevent email spam
-            options.AddFixedWindowLimiter("password-reset", opt =>
+            options.AddPolicy("password-reset", context =>
             {
-                opt.PermitLimit = rateLimitOptions.PasswordReset.PermitLimit;
-                opt.Window = TimeSpan.FromMinutes(rateLimitOptions.PasswordReset.WindowMinutes);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0;
+                var ip = GetClientIpAddress(context);
+                return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = rateLimitOptions.PasswordReset.PermitLimit,
+                    Window = TimeSpan.FromMinutes(rateLimitOptions.PasswordReset.WindowMinutes),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
             });
 
             // Policy for general API endpoints - more permissive
-            options.AddFixedWindowLimiter("api", opt =>
+            options.AddPolicy("api", context =>
             {
-                opt.PermitLimit = rateLimitOptions.Api.PermitLimit;
-                opt.Window = TimeSpan.FromMinutes(rateLimitOptions.Api.WindowMinutes);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0;
+                var ip = GetClientIpAddress(context);
+                return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = rateLimitOptions.Api.PermitLimit,
+                    Window = TimeSpan.FromMinutes(rateLimitOptions.Api.WindowMinutes),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
             });
 
             // Policy for health check endpoints - moderate limits to prevent abuse
-            options.AddFixedWindowLimiter("health", opt =>
+            options.AddPolicy("health", context =>
             {
-                opt.PermitLimit = rateLimitOptions.Health.PermitLimit;
-                opt.Window = TimeSpan.FromMinutes(rateLimitOptions.Health.WindowMinutes);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0;
+                var ip = GetClientIpAddress(context);
+                return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = rateLimitOptions.Health.PermitLimit,
+                    Window = TimeSpan.FromMinutes(rateLimitOptions.Health.WindowMinutes),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
             });
 
             // Policy for MFA setup endpoints - restrictive to prevent brute force attacks
-            options.AddFixedWindowLimiter("mfa-setup", opt =>
+            options.AddPolicy("mfa-setup", context =>
             {
-                opt.PermitLimit = rateLimitOptions.MfaSetup.PermitLimit;
-                opt.Window = TimeSpan.FromMinutes(rateLimitOptions.MfaSetup.WindowMinutes);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0;
+                var ip = GetClientIpAddress(context);
+                return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = rateLimitOptions.MfaSetup.PermitLimit,
+                    Window = TimeSpan.FromMinutes(rateLimitOptions.MfaSetup.WindowMinutes),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
             });
 
             // Global rate limiter - prevents any single IP from overwhelming the API
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
-                // Partition by IP address
-                var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-                return RateLimitPartition.GetFixedWindowLimiter(ipAddress, _ => new FixedWindowRateLimiterOptions
+                var ip = GetClientIpAddress(context);
+                return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = rateLimitOptions.Global.PermitLimit,
                     Window = TimeSpan.FromMinutes(rateLimitOptions.Global.WindowMinutes),
@@ -108,5 +127,26 @@ public static class RateLimitingExtensions
     public static IApplicationBuilder UseRateLimiting(this IApplicationBuilder app)
     {
         return app.UseRateLimiter();
+    }
+
+    /// <summary>
+    /// Gets the client IP address, checking for forwarded headers (X-Forwarded-For)
+    /// when behind a reverse proxy like nginx or a load balancer.
+    /// </summary>
+    private static string GetClientIpAddress(HttpContext context)
+    {
+        // Check for X-Forwarded-For header (set by reverse proxies)
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(forwardedFor))
+        {
+            // X-Forwarded-For can contain multiple IPs: client, proxy1, proxy2
+            // The first one is the original client IP
+            var ip = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+            if (!string.IsNullOrEmpty(ip))
+                return ip;
+        }
+
+        // Fall back to the direct connection IP
+        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 }

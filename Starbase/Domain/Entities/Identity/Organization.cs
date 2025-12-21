@@ -1,3 +1,4 @@
+using Domain.Attributes;
 using Domain.Exceptions;
 
 namespace Domain.Entities.Identity;
@@ -5,6 +6,7 @@ namespace Domain.Entities.Identity;
 /// <summary>
 /// Represents an organization entity with basic information and user membership management.
 /// </summary>
+[Audited]
 public class Organization
 {
     /// <summary>

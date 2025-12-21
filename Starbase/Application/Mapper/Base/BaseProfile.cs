@@ -1,7 +1,11 @@
+using Application.DTOs.Audit;
 using Application.DTOs.Auth;
+using Application.DTOs.Mfa;
 using Application.DTOs.Organization;
 using AutoMapper;
+using Domain.Entities.Audit;
 using Domain.Entities.Identity;
+using Domain.Entities.Security;
 
 namespace Application.Mapper.Base;
 
@@ -19,5 +23,12 @@ public class BaseProfile : Profile
         CreateMap<Role, RoleDto>().ReverseMap();
         CreateMap<Privilege, PrivilegeDto>();
         CreateMap<Organization, BasicOrganizationDto>();
+
+        // Audit mappings
+        CreateMap<AuditArchiveManifest, ArchiveManifestDto>();
+        CreateMap<AuditLedgerEntry, AuditEntryDto>();
+
+        // MFA mappings
+        CreateMap<MfaPushDevice, MfaPushDeviceDto>();
     }
 }

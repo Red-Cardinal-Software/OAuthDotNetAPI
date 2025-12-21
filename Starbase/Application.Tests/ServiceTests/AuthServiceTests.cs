@@ -8,6 +8,7 @@ using Application.Logging;
 using Application.Services.Auth;
 using Domain.Entities.Identity;
 using FluentAssertions;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -28,6 +29,7 @@ public class AuthServiceTests
     private readonly Mock<IPasswordResetTokenRepository> _passwordResetTokenRepository = new();
     private readonly Mock<IAccountLockoutService> _accountLockoutService = new();
     private readonly Mock<IMfaAuthenticationService> _mfaAuthenticationService = new();
+    private readonly Mock<IMediator> _mediator = new();
     private readonly Mock<ILogger<AuthService>> _mockLogger = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
@@ -65,6 +67,7 @@ public class AuthServiceTests
             _passwordResetTokenRepository.Object,
             _accountLockoutService.Object,
             _mfaAuthenticationService.Object,
+            _mediator.Object,
             logger,
             mockAppOptions.Object
         );

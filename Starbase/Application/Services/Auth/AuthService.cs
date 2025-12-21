@@ -7,6 +7,7 @@ using Application.Common.Services;
 using Application.Common.Utilities;
 using Application.DTOs.Auth;
 using Application.DTOs.Jwt;
+using Application.Events.Auth;
 using Application.Interfaces.Persistence;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Security;
@@ -14,6 +15,7 @@ using Application.Interfaces.Services;
 using Application.Logging;
 using Application.Models;
 using Domain.Entities.Identity;
+using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -33,6 +35,7 @@ public class AuthService(
     IPasswordResetTokenRepository passwordResetTokenRepository,
     IAccountLockoutService accountLockoutService,
     IMfaAuthenticationService mfaAuthenticationService,
+    IMediator mediator,
     LogContextHelper<AuthService> logger,
     IOptions<AppOptions> appOptions)
     : BaseAppService(unitOfWork), IAuthService
@@ -56,6 +59,16 @@ public class AuthService(
                 ipAddress,
                 null,
                 ServiceResponseConstants.UserDoesNotExist);
+
+            // Publish domain event for audit
+            await mediator.Publish(new LoginAttemptedEvent
+            {
+                UserId = Guid.Empty,
+                Username = username,
+                Success = false,
+                FailureReason = "User does not exist",
+                IpAddress = ipAddress
+            });
 
             logger.Critical(new StructuredLogBuilder()
                 .SetAction(AuthActions.Login)
@@ -96,6 +109,17 @@ public class AuthService(
                 ? ServiceResponseConstants.AccountTemporarilyLocked
                 : ServiceResponseConstants.AccountLocked;
 
+            // Publish domain event for audit
+            await mediator.Publish(new LoginAttemptedEvent
+            {
+                UserId = user.Id,
+                Username = username,
+                Success = false,
+                FailureReason = "Account locked",
+                IpAddress = ipAddress,
+                AccountLocked = true
+            });
+
             logger.Warning(new StructuredLogBuilder()
                 .SetAction(AuthActions.Login)
                 .SetStatus(LogStatuses.Failure)
@@ -119,6 +143,17 @@ public class AuthService(
             var errorMessage = wasLocked
                 ? ServiceResponseConstants.AccountTemporarilyLocked
                 : ServiceResponseConstants.UsernameOrPasswordIncorrect;
+
+            // Publish domain event for audit
+            await mediator.Publish(new LoginAttemptedEvent
+            {
+                UserId = user.Id,
+                Username = username,
+                Success = false,
+                FailureReason = "Invalid credentials",
+                IpAddress = ipAddress,
+                AccountLocked = wasLocked
+            });
 
             logger.Critical(new StructuredLogBuilder()
                 .SetAction(AuthActions.Login)
@@ -244,6 +279,15 @@ public class AuthService(
 
         if (!thisToken.IsValid())
         {
+            // Publish domain event for successful token refresh audit
+            await mediator.Publish(new TokenRefreshedEvent
+            {
+                UserId = user.Id,
+                Username = username,
+                Success = true,
+                IpAddress = ipAddress
+            });
+
             logger.Info(new StructuredLogBuilder()
                 .SetAction(AuthActions.RefreshJwtToken)
                 .SetStatus(LogStatuses.Success)
@@ -301,13 +345,22 @@ public class AuthService(
             return ServiceResponseFactory.Error<bool>(ServiceResponseConstants.UserUnauthorized);
         }
 
+        var result = await refreshTokenRepository.RevokeRefreshTokenFamilyAsync(thisRefreshToken.TokenFamily);
+
+        // Publish domain event for logout audit
+        await mediator.Publish(new LogoutEvent
+        {
+            UserId = user.Id,
+            Username = username
+        });
+
         logger.Info(new StructuredLogBuilder()
             .SetAction(AuthActions.Logout)
             .SetStatus(LogStatuses.Success)
             .SetTarget(AuthTargets.User(username))
             .SetEntity(nameof(Domain.Entities.Identity.AppUser))
             .SetDetail(ServiceResponseConstants.UserLoggedOut));
-        return ServiceResponseFactory.Success(await refreshTokenRepository.RevokeRefreshTokenFamilyAsync(thisRefreshToken.TokenFamily));
+        return ServiceResponseFactory.Success(result);
     });
 
     /// <summary>
@@ -342,6 +395,15 @@ public class AuthService(
         var tokenEntity = await passwordResetTokenRepository.CreateResetPasswordTokenAsync(newPasswordResetToken);
 
         await passwordResetEmailService.SendPasswordResetEmail(user, tokenEntity);
+
+        // Publish domain event for password reset request audit
+        await mediator.Publish(new PasswordResetRequestedEvent
+        {
+            UserId = user.Id,
+            Email = email,
+            IpAddress = ipAddress,
+            UserExists = true
+        });
 
         logger.Info(new StructuredLogBuilder()
             .SetAction(AuthActions.RequestPasswordReset)
@@ -479,6 +541,15 @@ public class AuthService(
     {
         var refreshTokenEntity = new RefreshToken(user, DateTime.UtcNow.AddHours(appOptions.Value.RefreshTokenExpirationTimeHours), ipAddress);
         await refreshTokenRepository.SaveRefreshTokenAsync(refreshTokenEntity);
+
+        // Publish domain event for successful login audit
+        await mediator.Publish(new LoginAttemptedEvent
+        {
+            UserId = user.Id,
+            Username = username,
+            Success = true,
+            IpAddress = ipAddress
+        });
 
         logger.Info(new StructuredLogBuilder()
             .SetAction(AuthActions.Login)

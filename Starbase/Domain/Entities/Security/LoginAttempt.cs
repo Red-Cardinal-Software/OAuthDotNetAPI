@@ -8,6 +8,10 @@ namespace Domain.Entities.Security;
 /// This entity follows Domain-Driven Design principles with protected state mutations
 /// and invariant enforcement.
 /// </summary>
+/// <remarks>
+/// This entity is NOT marked with [Audited] because auth events are audited
+/// via domain events (LoginAttemptedEvent) for better decoupling and extensibility.
+/// </remarks>
 public class LoginAttempt
 {
     /// <summary>

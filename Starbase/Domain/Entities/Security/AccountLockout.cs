@@ -1,3 +1,4 @@
+using Domain.Attributes;
 using Domain.Exceptions;
 
 namespace Domain.Entities.Security;
@@ -8,6 +9,7 @@ namespace Domain.Entities.Security;
 /// maintaining usability. This entity enforces domain invariants and business rules
 /// around account lockout behavior.
 /// </summary>
+[Audited]
 public class AccountLockout
 {
     /// <summary>

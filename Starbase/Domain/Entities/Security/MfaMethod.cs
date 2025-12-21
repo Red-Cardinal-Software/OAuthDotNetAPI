@@ -1,3 +1,4 @@
+using Domain.Attributes;
 using Domain.Entities.Identity;
 using Domain.Exceptions;
 
@@ -8,6 +9,7 @@ namespace Domain.Entities.Security;
 /// Supports multiple MFA types (TOTP, WebAuthn, SMS, Email) with a flexible schema
 /// that can accommodate different authentication mechanisms without database changes.
 /// </summary>
+[Audited]
 public class MfaMethod
 {
     /// <summary>
