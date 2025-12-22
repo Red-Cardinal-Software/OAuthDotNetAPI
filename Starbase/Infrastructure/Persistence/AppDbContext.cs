@@ -1,3 +1,4 @@
+using Domain.Entities.Audit;
 using Domain.Entities.Configuration;
 using Domain.Entities.Identity;
 using Domain.Entities.Security;
@@ -34,6 +35,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
 
     // App Tables
     public DbSet<Organization> Organizations { get; set; }
+
+    // Audit Tables
+    public DbSet<AuditLedgerEntry> AuditLedger { get; set; }
+    public DbSet<AuditArchiveManifest> AuditArchiveManifests { get; set; }
 
     // Model Creating and Configuring
     protected override void OnModelCreating(ModelBuilder modelBuilder)

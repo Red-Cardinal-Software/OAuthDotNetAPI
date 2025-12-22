@@ -19,6 +19,7 @@ using Application.Services.AppUser;
 using Application.Services.AccountLockout;
 using Application.Services.Auth;
 using Application.Services.Email;
+using Application.Services.Audit;
 using Application.Services.Mfa;
 using Application.Services.PasswordReset;
 using Application.Validators;
@@ -27,6 +28,7 @@ using FluentValidation;
 using Infrastructure.Emailing;
 using Infrastructure.HealthChecks;
 using Infrastructure.Persistence;
+using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Infrastructure.Security.Repository;
@@ -45,6 +47,8 @@ using Application.Interfaces.Providers;
 using Asp.Versioning;
 using Fido2NetLib;
 using Infrastructure.Providers;
+using Infrastructure.Services;
+using MediatR;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -160,6 +164,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWebAuthnCredentialRepository, WebAuthnCredentialRepository>();
         services.AddScoped<IMfaPushRepository, MfaPushRepository>();
         services.AddScoped<IPushNotificationProvider, MockPushNotificationProvider>();
+        services.AddScoped<IAuditLedgerRepository, AuditLedgerRepository>();
 
         return services;
     }
@@ -202,6 +207,20 @@ public static class ServiceCollectionExtensions
         });
         services.AddScoped<ITotpProvider, TotpProvider>();
         services.AddScoped<IMfaPushService, MfaPushService>();
+        services.AddScoped<IAuditLedger, AuditLedgerService>();
+
+        // Audit archive services
+        services.AddScoped<IAuditArchiver, AuditArchiverService>();
+        services.AddScoped<IAuditBlobStorage, NotImplementedAuditBlobStorage>(); // Replace with Azure/S3 implementation
+        services.AddHostedService<AuditArchiveBackgroundService>();
+
+        // MediatR for domain events (auth auditing, extensibility)
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<AuditQueue>());
+
+        // Audit queue for batched processing mode
+        // Singleton: shared across all scopes, background processor consumes from same queue
+        services.AddSingleton<IAuditQueue, AuditQueue>();
+        services.AddHostedService<AuditQueueProcessor>();
 
         return services;
     }
@@ -260,6 +279,16 @@ public static class ServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<AuditArchiveOptions>()
+            .BindConfiguration(AuditArchiveOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<AuditOptions>()
+            .BindConfiguration(AuditOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         return services;
     }
 
@@ -291,10 +320,17 @@ public static class ServiceCollectionExtensions
     /// <returns>The modified IServiceCollection instance with the registered database and persistence components.</returns>
     private static IServiceCollection AddDbContext(this IServiceCollection services, IHostEnvironment environment)
     {
+        // Register the audit interceptor as scoped (each DbContext gets its own instance)
+        services.AddScoped<AuditInterceptor>();
+
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             var configuration = sp.GetRequiredService<IConfiguration>();
             options.UseSqlServer(configuration.GetConnectionString("SqlConnection"));
+
+            // Add audit interceptor for automatic entity change tracking
+            var auditInterceptor = sp.GetRequiredService<AuditInterceptor>();
+            options.AddInterceptors(auditInterceptor);
 
             // Only allow sensitive data logging when in development
             if (environment.IsDevelopment())

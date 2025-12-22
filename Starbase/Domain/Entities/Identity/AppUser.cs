@@ -1,3 +1,4 @@
+using Domain.Attributes;
 using Domain.Exceptions;
 
 namespace Domain.Entities.Identity;
@@ -5,6 +6,7 @@ namespace Domain.Entities.Identity;
 /// <summary>
 /// Represents a user in the system, associated with an organization and assigned one or more roles.
 /// </summary>
+[Audited(EntityTypeName = "User", IncludeNewValues = true, IncludeOldValues = true)]
 public class AppUser
 {
     /// <summary>

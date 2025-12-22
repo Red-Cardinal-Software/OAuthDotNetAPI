@@ -11,7 +11,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace WebApi.Integration.Tests.Fixtures;
@@ -112,13 +111,6 @@ internal class TestPushNotificationProvider : IPushNotificationProvider
 internal class IntegrationTestWebApplicationFactory(SqlServerContainerFixture dbFixture)
     : WebApplicationFactory<Program>
 {
-    protected override IHost CreateHost(IHostBuilder builder)
-    {
-        // Serilog is already configured in Program.cs via builder.Host.UseSerilog()
-        // No additional configuration needed here
-        return base.CreateHost(builder);
-    }
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Override configuration for testing
@@ -162,6 +154,10 @@ internal class IntegrationTestWebApplicationFactory(SqlServerContainerFixture db
             // Replace push notification provider with test implementation
             services.RemoveAll<IPushNotificationProvider>();
             services.AddScoped<IPushNotificationProvider, TestPushNotificationProvider>();
+
+            // Replace audit blob storage with test implementation
+            services.RemoveAll<IAuditBlobStorage>();
+            services.AddScoped<IAuditBlobStorage, TestAuditBlobStorage>();
         });
 
         builder.UseEnvironment("Testing");

@@ -7,6 +7,7 @@ using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Application.Models;
 using Application.Services.Mfa;
+using AutoMapper;
 using Domain.Entities.Security;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ public class MfaPushServiceTests
     private readonly Mock<IMfaPushRepository> _mfaRepository;
     private readonly Mock<IMfaMethodRepository> _mfaMethodRepository;
     private readonly Mock<IPushNotificationProvider> _pushProvider;
+    private readonly Mock<IMapper> _mapper;
     private readonly Mock<ILogger<MfaPushService>> _logger;
     private readonly IOptions<PushMfaOptions> _pushMfaOptions;
     private readonly IOptions<AppOptions> _appOptions;
@@ -37,6 +39,7 @@ public class MfaPushServiceTests
         _mfaRepository = new Mock<IMfaPushRepository>();
         _mfaMethodRepository = new Mock<IMfaMethodRepository>();
         _pushProvider = new Mock<IPushNotificationProvider>();
+        _mapper = new Mock<IMapper>();
         _logger = new Mock<ILogger<MfaPushService>>();
 
         var pushOptions = new PushMfaOptions
@@ -58,11 +61,39 @@ public class MfaPushServiceTests
         };
         _appOptions = Options.Create(appOptions);
 
+        // Setup mapper to return a simple DTO
+        _mapper.Setup(x => x.Map<MfaPushDeviceDto>(It.IsAny<MfaPushDevice>()))
+            .Returns((MfaPushDevice d) => new MfaPushDeviceDto
+            {
+                Id = d.Id,
+                DeviceId = d.DeviceId,
+                DeviceName = d.DeviceName,
+                Platform = d.Platform,
+                RegisteredAt = d.RegisteredAt,
+                LastUsedAt = d.LastUsedAt,
+                IsActive = d.IsActive,
+                TrustScore = d.TrustScore
+            });
+
+        _mapper.Setup(x => x.Map<List<MfaPushDeviceDto>>(It.IsAny<IEnumerable<MfaPushDevice>>()))
+            .Returns((IEnumerable<MfaPushDevice> devices) => devices.Select(d => new MfaPushDeviceDto
+            {
+                Id = d.Id,
+                DeviceId = d.DeviceId,
+                DeviceName = d.DeviceName,
+                Platform = d.Platform,
+                RegisteredAt = d.RegisteredAt,
+                LastUsedAt = d.LastUsedAt,
+                IsActive = d.IsActive,
+                TrustScore = d.TrustScore
+            }).ToList());
+
         _service = new MfaPushService(
             _unitOfWork.Object,
             _mfaRepository.Object,
             _mfaMethodRepository.Object,
             _pushProvider.Object,
+            _mapper.Object,
             _pushMfaOptions,
             _appOptions,
             _logger.Object);

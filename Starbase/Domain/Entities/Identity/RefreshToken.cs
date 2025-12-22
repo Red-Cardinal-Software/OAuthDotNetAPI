@@ -3,6 +3,9 @@ namespace Domain.Entities.Identity;
 /// <summary>
 /// Represents a refresh token used to re-authenticate a user without requiring credentials again.
 /// </summary>
+/// <remarks>
+/// Not marked with [Audited] - token refresh actions are audited via domain events (TokenRefreshedEvent).
+/// </remarks>
 public class RefreshToken
 {
     /// <summary>

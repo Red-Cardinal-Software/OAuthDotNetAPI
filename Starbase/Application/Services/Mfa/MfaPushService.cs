@@ -7,6 +7,7 @@ using Application.Interfaces.Persistence;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Providers;
 using Application.Interfaces.Services;
+using AutoMapper;
 using Domain.Entities.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,6 +25,7 @@ public class MfaPushService(
     IMfaPushRepository mfaRepository,
     IMfaMethodRepository mfaMethodRepository,
     IPushNotificationProvider pushProvider,
+    IMapper mapper,
     IOptions<PushMfaOptions> pushMfaOptions,
     IOptions<AppOptions> appOptions,
     ILogger<MfaPushService> logger) : BaseAppService(unitOfWork), IMfaPushService
@@ -56,7 +58,7 @@ public class MfaPushService(
                 existingDevice.UpdatePushToken(request.PushToken);
 
                 return ServiceResponseFactory.Success(
-                    MapToDto(existingDevice),
+                    mapper.Map<MfaPushDeviceDto>(existingDevice),
                     "Device token updated successfully");
             }
 
@@ -86,7 +88,7 @@ public class MfaPushService(
                 userId, request.Platform);
 
             return ServiceResponseFactory.Success(
-                MapToDto(device),
+                mapper.Map<MfaPushDeviceDto>(device),
                 "Device registered successfully");
         }
         catch (Exception ex)
@@ -316,7 +318,7 @@ public class MfaPushService(
         try
         {
             var devices = await mfaRepository.GetUserPushDevicesAsync(userId, cancellationToken);
-            var dtos = devices.Select(MapToDto).ToList();
+            var dtos = mapper.Map<List<MfaPushDeviceDto>>(devices);
 
             return ServiceResponseFactory.Success<IEnumerable<MfaPushDeviceDto>>(dtos);
         }
@@ -425,21 +427,6 @@ public class MfaPushService(
             return 0;
         }
     });
-
-    private static MfaPushDeviceDto MapToDto(MfaPushDevice device)
-    {
-        return new MfaPushDeviceDto
-        {
-            Id = device.Id,
-            DeviceId = device.DeviceId,
-            DeviceName = device.DeviceName,
-            Platform = device.Platform,
-            RegisteredAt = device.RegisteredAt,
-            LastUsedAt = device.LastUsedAt,
-            IsActive = device.IsActive,
-            TrustScore = device.TrustScore
-        };
-    }
 
     private static string ParseUserAgent(string userAgent)
     {

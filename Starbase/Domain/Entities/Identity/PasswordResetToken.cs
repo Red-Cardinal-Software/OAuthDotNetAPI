@@ -3,6 +3,9 @@ namespace Domain.Entities.Identity;
 /// <summary>
 /// Represents a password reset token issued to a user for resetting their password.
 /// </summary>
+/// <remarks>
+/// Not marked with [Audited] - password reset requests are audited via domain events (PasswordResetRequestedEvent).
+/// </remarks>
 public class PasswordResetToken
 {
     /// <summary>

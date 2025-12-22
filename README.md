@@ -791,6 +791,211 @@ activity?.SetTag("operation.type", "mfa-verification");
 - User context enriches logs for audit trails
 - Exception context provides detailed error information
 
+## Audit Logging
+
+This template includes an enterprise-grade audit logging system designed for compliance, security monitoring, and forensic analysis. The audit ledger uses a tamper-evident hash chain and integrates with SQL Server 2022+ Ledger tables for cryptographic verification.
+
+### Architecture
+
+**Dual Audit Strategy:**
+| Mechanism | Purpose | Captures |
+|-----------|---------|----------|
+| **Entity Interceptor** | Tracks data changes | User created/updated, Role changes, MFA enabled |
+| **Domain Events** | Tracks business actions | Login attempts, Logout, Token refresh, Password reset |
+
+**Key Features:**
+- **Hash Chain Integrity** – Each audit entry includes a SHA-256 hash of the previous entry, creating a tamper-evident chain
+- **SQL Server Ledger Tables** – Cryptographic verification using database-level append-only ledger (SQL Server 2022+)
+- **Monthly Partitioning** – Automatic partition management for performance and archival
+- **Configurable Processing** – Sync (reliable) or Batched (high-performance) modes
+- **Domain Event Integration** – MediatR-based events for extensibility (SIEM, notifications)
+
+### Configuration
+
+Audit settings in `appsettings.json`:
+
+```json
+{
+  "Audit": {
+    "ProcessingMode": "Sync",
+    "BatchSize": 100,
+    "FlushIntervalMs": 5000,
+    "EnableConsoleLogging": false
+  },
+  "AuditArchive": {
+    "Enabled": true,
+    "CheckInterval": "01:00:00",
+    "AddPartitionOnDay": 25,
+    "ArchiveOnDay": 5,
+    "MonthsToKeepBeforeArchive": 2,
+    "AutoPurgeAfterArchive": true,
+    "MinWaitBeforePurge": "1.00:00:00",
+    "RetentionPolicy": "default"
+  }
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **ProcessingMode** | Sync | `Sync` for reliability, `Batched` for high-throughput |
+| **BatchSize** | 100 | Entries per batch (Batched mode only) |
+| **FlushIntervalMs** | 5000 | Max time before flush (Batched mode only) |
+| **AddPartitionOnDay** | 25 | Day of month to add next partition |
+| **MonthsToKeepBeforeArchive** | 2 | Months to retain before archiving |
+
+### Processing Modes
+
+**Sync Mode (Default):**
+- Audit entry written immediately with each event
+- Transactional consistency – audit entry guaranteed if action succeeds
+- Best for: Compliance requirements, smaller deployments
+
+**Batched Mode:**
+- Events queued in-memory using `Channel<T>`
+- Background service flushes batches to database
+- Best for: High-throughput applications, eventual consistency acceptable
+
+```json
+{
+  "Audit": {
+    "ProcessingMode": "Batched",
+    "BatchSize": 100,
+    "FlushIntervalMs": 5000
+  }
+}
+```
+
+### Domain Events
+
+Authentication events are captured via MediatR domain events:
+
+| Event | Trigger | Data Captured |
+|-------|---------|---------------|
+| `LoginAttemptedEvent` | Login success/failure | UserId, Username, IP, Success, FailureReason |
+| `LogoutEvent` | User logout | UserId, Username |
+| `TokenRefreshedEvent` | Token refresh | UserId, Username, IP |
+| `PasswordResetRequestedEvent` | Password reset request | UserId, Email, IP |
+
+**Extensibility:**
+Add custom handlers to react to auth events (e.g., SIEM integration, Slack alerts):
+
+```csharp
+public class SiemNotificationHandler : INotificationHandler<LoginAttemptedEvent>
+{
+    public async Task Handle(LoginAttemptedEvent notification, CancellationToken cancellationToken)
+    {
+        if (!notification.Success)
+        {
+            await _siemClient.SendSecurityEventAsync(new SecurityEvent
+            {
+                Type = "FailedLogin",
+                Username = notification.Username,
+                IpAddress = notification.IpAddress,
+                Timestamp = notification.OccurredAt
+            });
+        }
+    }
+}
+```
+
+### Entity Auditing
+
+Entities marked with `[Audited]` are automatically tracked via EF Core interceptor:
+
+```csharp
+[Audited]
+public class Role : IEquatable<Role>
+{
+    // Changes to this entity are automatically audited
+}
+```
+
+**Currently Audited Entities:**
+- `Organization` – Org lifecycle and settings
+- `Role` – Role changes
+- `Privilege` – Permission changes
+- `AccountLockout` – Lockout state changes
+- `MfaMethod` – MFA configuration changes
+- `MfaPushDevice` – Push device registration
+- `WebAuthnCredential` – WebAuthn credential lifecycle
+
+### Audit Ledger Schema
+
+The audit ledger captures comprehensive event data:
+
+| Column | Description |
+|--------|-------------|
+| `SequenceNumber` | Monotonically increasing sequence |
+| `EventId` | Unique event identifier |
+| `OccurredAt` | Event timestamp (partition key) |
+| `Hash` | SHA-256 hash of entry (includes PreviousHash) |
+| `PreviousHash` | Hash of previous entry (chain integrity) |
+| `UserId` / `Username` | Acting user |
+| `IpAddress` / `UserAgent` | Request context |
+| `EventType` | Category (Authentication, DataChange, etc.) |
+| `Action` | Specific action (LoginSuccess, LoginFailed, Create, Update) |
+| `EntityType` / `EntityId` | Affected entity |
+| `OldValues` / `NewValues` | JSON of changed values |
+| `Success` / `FailureReason` | Outcome details |
+
+### Partition Management
+
+Partitions are managed automatically:
+
+1. **Initial Setup** – Migration creates 12 months back + 24 months forward
+2. **Runtime** – Background service adds new partitions on the 25th of each month
+3. **Archival** – Old partitions archived to blob storage (configurable)
+4. **Purge** – Archived partitions purged after verification
+
+**Manual Partition Operations:**
+```csharp
+// Add partition boundary
+await auditArchiver.AddPartitionBoundaryAsync(new DateTime(2027, 1, 1));
+
+// Archive a partition
+var result = await auditArchiver.ArchivePartitionAsync(
+    new DateTime(2024, 1, 1),
+    archivedBy: "admin",
+    retentionPolicy: "7-year");
+```
+
+### Verification
+
+Verify audit chain integrity:
+
+```csharp
+// Verify hash chain
+var verification = await auditLedger.VerifyChainIntegrityAsync(
+    fromSequence: 1,
+    toSequence: 1000);
+
+if (!verification.IsValid)
+{
+    _logger.LogCritical("Audit chain tampered at sequence {Seq}",
+        verification.FirstInvalidSequence);
+}
+```
+
+### Compliance Considerations
+
+**SOC 2 / HIPAA:**
+- All authentication events are captured
+- Data changes include before/after values
+- Hash chain provides tamper evidence
+- SQL Server Ledger provides database-level verification
+
+**GDPR:**
+- Audit entries include user context for access tracking
+- Archival system supports retention policies
+- Consider data export requirements for audit data
+
+**Best Practices:**
+1. Use Sync mode for compliance-critical deployments
+2. Regularly verify hash chain integrity
+3. Archive old partitions to immutable storage
+4. Monitor for audit chain breaks
+5. Include audit data in backup strategy
+
 ## Technologies Used
 - ASP.NET Core 8
 - Entity Framework Core 9
@@ -799,6 +1004,8 @@ activity?.SetTag("operation.type", "mfa-verification");
 - Microsoft.AspNetCore.RateLimiting (built-in .NET 8)
 - Serilog (Structured Logging)
 - OpenTelemetry (Distributed Tracing & Metrics)
+- MediatR (Domain Events)
+- SQL Server Ledger Tables (Tamper-evident auditing)
 - xUnit + Moq + FluentAssertions
 - Clean Architecture / Domain Driven Design
 

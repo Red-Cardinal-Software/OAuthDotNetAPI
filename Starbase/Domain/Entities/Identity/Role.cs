@@ -1,3 +1,4 @@
+using Domain.Attributes;
 using Domain.Exceptions;
 
 namespace Domain.Entities.Identity;
@@ -5,6 +6,7 @@ namespace Domain.Entities.Identity;
 /// <summary>
 /// Represents a role that can be assigned to users and associated with specific privileges.
 /// </summary>
+[Audited]
 public class Role : IEquatable<Role>
 {
     /// <summary>

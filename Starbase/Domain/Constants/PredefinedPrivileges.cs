@@ -128,4 +128,26 @@ public static class PredefinedPrivileges
         public const string Secrets = "system:secrets:manage";
         public const string SeedingExecute = "system:seeding:execute";
     }
+
+    /// <summary>
+    /// The <c>Audit</c> class provides a set of predefined privilege constants
+    /// for actions related to viewing and managing the audit ledger.
+    /// </summary>
+    /// <remarks>
+    /// Audit privileges control access to security-sensitive audit logs including
+    /// user activity, entity changes, authentication events, and system events.
+    /// These privileges should be restricted to compliance officers, security teams,
+    /// and administrators with a legitimate need to access audit data.
+    /// </remarks>
+    public static class Audit
+    {
+        /// <summary>View audit logs, query entries, and view entity/user history.</summary>
+        public const string View = "audit:view";
+
+        /// <summary>Verify ledger integrity and hash chain consistency.</summary>
+        public const string Verify = "audit:verify";
+
+        /// <summary>View and verify archived audit partitions.</summary>
+        public const string ViewArchives = "audit:archives:view";
+    }
 }

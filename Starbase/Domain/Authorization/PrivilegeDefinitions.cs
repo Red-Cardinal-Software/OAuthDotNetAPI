@@ -65,6 +65,11 @@ public static class PrivilegeDefinitions
         new(PredefinedPrivileges.SystemAdministration.ManageTenants, "Ability to manage tenants"),
         new(PredefinedPrivileges.SystemAdministration.Metrics, "Ability to view metrics"),
         new(PredefinedPrivileges.SystemAdministration.Secrets, "Ability to manage secrets and config for system"),
-        new(PredefinedPrivileges.SystemAdministration.SeedingExecute, "Ability to execute seeding")
+        new(PredefinedPrivileges.SystemAdministration.SeedingExecute, "Ability to execute seeding"),
+
+        // Audit privileges - restricted to compliance/security personnel
+        new(PredefinedPrivileges.Audit.View, "View audit logs, query entries, and view entity/user history", true, true),
+        new(PredefinedPrivileges.Audit.Verify, "Verify ledger integrity and hash chain consistency", true, true),
+        new(PredefinedPrivileges.Audit.ViewArchives, "View and verify archived audit partitions", true, true)
     ];
 }

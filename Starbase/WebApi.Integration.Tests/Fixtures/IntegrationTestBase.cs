@@ -67,6 +67,26 @@ public abstract class IntegrationTestBase(SqlServerContainerFixture dbFixture) :
         return await action(dbContext);
     }
 
+    /// <summary>
+    /// Executes an action with a scoped service.
+    /// </summary>
+    protected async Task WithServiceAsync<TService>(Func<TService, Task> action) where TService : notnull
+    {
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<TService>();
+        await action(service);
+    }
+
+    /// <summary>
+    /// Executes a function with a scoped service and returns the result.
+    /// </summary>
+    protected async Task<TResult> WithServiceAsync<TService, TResult>(Func<TService, Task<TResult>> action) where TService : notnull
+    {
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<TService>();
+        return await action(service);
+    }
+
     #region Test Data Helpers
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Domain.Attributes;
 
 namespace Domain.Entities.Security;
 
@@ -6,6 +7,7 @@ namespace Domain.Entities.Security;
 /// Represents a WebAuthn credential registered for a user's MFA method.
 /// Stores public key and metadata for FIDO2/WebAuthn authentication.
 /// </summary>
+[Audited]
 public class WebAuthnCredential
 {
     /// <summary>
