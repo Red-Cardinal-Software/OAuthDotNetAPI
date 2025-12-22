@@ -1,0 +1,440 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Red Cardinal Software",
+  "classifications": [
+    "Web",
+    "API",
+    "Security",
+    "Authentication",
+    "MFA"
+  ],
+  "identity": "Starbase.SecureApi",
+  "name": "Starbase Secure API",
+  "shortName": "starbase",
+  "description": "A secure .NET API template with JWT authentication, multi-factor authentication (TOTP, WebAuthn, Email, Push), rate limiting, account lockout, and comprehensive security headers.",
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "sourceName": "Starbase",
+  "preferNameDirectory": true,
+  "defaultName": "SecureApi",
+  "symbols": {
+    "nameLower": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": {
+        "source": "name",
+        "toLower": true
+      },
+      "replaces": "starbase"
+    },
+    "ProjectDisplayName": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "name"
+          },
+          {
+            "type": "const",
+            "value": " API"
+          }
+        ]
+      },
+      "replaces": "Starbase Template .NET API"
+    },
+    "ProjectTestDisplayName": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "name"
+          },
+          {
+            "type": "const",
+            "value": " API (Test)"
+          }
+        ]
+      },
+      "replaces": "Starbase Template API (Test)"
+    },
+    "ProjectTestName": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "name"
+          },
+          {
+            "type": "const",
+            "value": " (Test)"
+          }
+        ]
+      },
+      "replaces": "Starbase Template (Test)"
+    },
+    "JwtAudienceProd": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "nameLower"
+          },
+          {
+            "type": "const",
+            "value": "-api"
+          }
+        ]
+      },
+      "replaces": "redcardinal.starbase"
+    },
+    "JwtAudienceDev": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "nameLower"
+          },
+          {
+            "type": "const",
+            "value": "-api-users-dev"
+          }
+        ]
+      },
+      "replaces": "starbase-template-api-users-dev"
+    },
+    "JwtAudienceTest": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "nameLower"
+          },
+          {
+            "type": "const",
+            "value": "-api-users-test"
+          }
+        ]
+      },
+      "replaces": "starbase-template-api-users-test"
+    },
+    "DevDisplayName": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "name"
+          },
+          {
+            "type": "const",
+            "value": " (Development)"
+          }
+        ]
+      },
+      "replaces": "Starbase Template (Development)"
+    },
+    "OtelSourceName": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "name"
+          },
+          {
+            "type": "const",
+            "value": "API"
+          }
+        ]
+      },
+      "replaces": "StarbaseTemplateAPI"
+    },
+    "CacheInstanceName": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "name"
+          },
+          {
+            "type": "const",
+            "value": "_"
+          }
+        ]
+      },
+      "replaces": "StarbaseTemplate_"
+    },
+    "OtelDevServiceName": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          {
+            "type": "ref",
+            "value": "name"
+          },
+          {
+            "type": "const",
+            "value": "-Dev"
+          }
+        ]
+      },
+      "replaces": "StarbaseTemplate-Dev"
+    },
+    "nameKebab": {
+      "type": "generated",
+      "generator": "regex",
+      "dataType": "string",
+      "parameters": {
+        "source": "name",
+        "steps": [
+          {
+            "regex": "([a-z])([A-Z])",
+            "replacement": "$1-$2"
+          },
+          {
+            "regex": "([A-Z]+)([A-Z][a-z])",
+            "replacement": "$1-$2"
+          }
+        ]
+      }
+    },
+    "nameKebabLower": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": {
+        "source": "nameKebab",
+        "toLower": true
+      }
+    },
+    "HttpPort": {
+      "type": "parameter",
+      "datatype": "integer",
+      "description": "HTTP port for development",
+      "defaultValue": "5000"
+    },
+    "HttpsPort": {
+      "type": "parameter",
+      "datatype": "integer",
+      "description": "HTTPS port for development",
+      "defaultValue": "5001"
+    },
+    "IncludeTests": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Include test projects",
+      "defaultValue": "true"
+    },
+    "IncludeDocker": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Include Docker support files",
+      "defaultValue": "true"
+    },
+    "skipRestore": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Skip automatic NuGet restore",
+      "defaultValue": "false"
+    },
+    "CloudProvider": {
+      "type": "parameter",
+      "datatype": "choice",
+      "description": "Cloud provider for secrets management",
+      "defaultValue": "None",
+      "choices": [
+        {
+          "choice": "None",
+          "description": "No cloud secrets management"
+        },
+        {
+          "choice": "Azure",
+          "description": "Azure Key Vault"
+        },
+        {
+          "choice": "AWS",
+          "description": "AWS Secrets Manager"
+        },
+        {
+          "choice": "GCP",
+          "description": "Google Cloud Secret Manager"
+        }
+      ]
+    },
+    "UseAzure": {
+      "type": "computed",
+      "value": "(CloudProvider == \"Azure\")"
+    },
+    "UseAWS": {
+      "type": "computed",
+      "value": "(CloudProvider == \"AWS\")"
+    },
+    "UseGCP": {
+      "type": "computed",
+      "value": "(CloudProvider == \"GCP\")"
+    },
+    "UseCloudSecrets": {
+      "type": "computed",
+      "value": "(CloudProvider != \"None\")"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/[Bb]in/**",
+            "**/[Oo]bj/**",
+            "**/.git/**",
+            "**/.vs/**",
+            "**/.vscode/**",
+            "**/.idea/**",
+            "**/node_modules/**",
+            "**/*.user",
+            "**/*.suo",
+            "**/TestResults/**",
+            "**/coverage/**",
+            "**/.template.config/**",
+            "Starbase.Template.csproj"
+          ]
+        },
+        {
+          "condition": "(!IncludeTests)",
+          "exclude": [
+            "**/Domain.Tests/**",
+            "**/Application.Tests/**",
+            "**/WebApi.Integration.Tests/**",
+            "**/TestUtils/**"
+          ]
+        },
+        {
+          "condition": "(!IncludeDocker)",
+          "exclude": [
+            "Dockerfile",
+            ".dockerignore",
+            "docker-compose.yml",
+            "docker-compose.deps.yml"
+          ]
+        }
+      ]
+    }
+  ],
+  "postActions": [
+    {
+      "condition": "(!skipRestore)",
+      "description": "Restore NuGet packages",
+      "manualInstructions": [
+        {
+          "text": "Run 'dotnet restore'"
+        }
+      ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ],
+  "primaryOutputs": [
+    {
+      "path": "Starbase.sln"
+    }
+  ],
+  "SpecialCustomOperations": {
+    "**/*.json": {
+      "operations": [
+        {
+          "type": "conditional",
+          "configuration": {
+            "if": [
+              "//#if"
+            ],
+            "else": [
+              "//#else"
+            ],
+            "elseif": [
+              "//#elseif"
+            ],
+            "endif": [
+              "//#endif"
+            ],
+            "actionableIf": [
+              "////#if"
+            ],
+            "actionableElse": [
+              "////#else"
+            ],
+            "actionableElseif": [
+              "////#elseif"
+            ],
+            "actions": [
+              "cStyleUncomment",
+              "cStyleReduceComment"
+            ]
+          }
+        }
+      ]
+    },
+    "**/*.csproj": {
+      "operations": [
+        {
+          "type": "conditional",
+          "configuration": {
+            "if": [
+              "<!--#if"
+            ],
+            "else": [
+              "<!--#else"
+            ],
+            "elseif": [
+              "<!--#elseif"
+            ],
+            "endif": [
+              "<!--#endif"
+            ],
+            "trim": true,
+            "wholeLine": true
+          }
+        }
+      ]
+    },
+    "**/Program.cs": {
+      "operations": [
+        {
+          "type": "conditional",
+          "configuration": {
+            "if": [
+              "//#if"
+            ],
+            "else": [
+              "//#else"
+            ],
+            "elseif": [
+              "//#elseif"
+            ],
+            "endif": [
+              "//#endif"
+            ],
+            "trim": true,
+            "wholeLine": true
+          }
+        }
+      ]
+    }
+  }
+}

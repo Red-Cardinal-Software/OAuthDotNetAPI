@@ -1,6 +1,6 @@
 # Starbase
 
-Your new secure .NET API, generated from the [Starbase template](https://github.com/Red-Cardinal-Software/Starbase).
+Your new secure .NET API.
 
 ## Getting Started
 
@@ -26,8 +26,6 @@ Key settings in `WebApi/appsettings.json`:
 | `AppSettings:JwtIssuer` | Token issuer URL |
 | `AppSettings:JwtAudience` | Token audience |
 
-See the [Configuration Guide](https://red-cardinal-software.github.io/Starbase/configuration/) for all options.
-
 ## Project Structure
 
 ```
@@ -39,9 +37,7 @@ WebApi/           → Controllers, middleware, API config
 
 ## Documentation
 
-For detailed documentation on security features, MFA setup, audit logging, and more:
-
-**[Starbase Documentation →](https://red-cardinal-software.github.io/Starbase/)**
+For detailed documentation on security features, MFA setup, audit logging, and more, visit the original template documentation at **red-cardinal-software.github.io**.
 
 ## License
 
