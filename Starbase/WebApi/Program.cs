@@ -14,7 +14,9 @@ using Google.Cloud.SecretManager.V1;
 using Serilog.Sinks.GoogleCloudLogging;
 //#endif
 using DependencyInjectionConfiguration;
+using Infrastructure.Persistence;
 using Infrastructure.Web.Middleware;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -141,7 +143,7 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-//#if (UseAzure)
+    //#if (UseAzure)
     // Azure Application Insights logging
     // Set ApplicationInsights:ConnectionString in appsettings.json or secrets
     var appInsightsConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
@@ -155,8 +157,8 @@ else
             options.ConnectionString = appInsightsConnectionString;
         });
     }
-//#endif
-//#if (UseAWS)
+    //#endif
+    //#if (UseAWS)
     // AWS CloudWatch logging
     // Set AWS:CloudWatch:LogGroup in appsettings.json
     // AWS credentials are loaded from environment, IAM role, or ~/.aws/credentials
@@ -170,8 +172,8 @@ else
         };
         loggerConfig.WriteTo.AWSSeriLog(awsLoggerConfig);
     }
-//#endif
-//#if (UseGCP)
+    //#endif
+    //#if (UseGCP)
     // Google Cloud Logging
     // Set GCP:Logging:ProjectId in appsettings.json
     // GCP credentials are loaded from GOOGLE_APPLICATION_CREDENTIALS environment variable
@@ -183,7 +185,7 @@ else
             ProjectId = gcpProjectId
         });
     }
-//#endif
+    //#endif
 }
 
 Log.Logger = loggerConfig.CreateLogger();
@@ -196,6 +198,16 @@ builder.Services.AddAppDependencies(builder.Environment, builder.Configuration);
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+// Auto-migrate database in Development for frictionless startup
+// Production deployments should use explicit migrations
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+    Log.Information("Database migrated successfully");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

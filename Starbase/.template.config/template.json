@@ -294,6 +294,38 @@
     "UseCloudSecrets": {
       "type": "computed",
       "value": "(CloudProvider != \"None\")"
+    },
+    "DatabaseProvider": {
+      "type": "parameter",
+      "datatype": "choice",
+      "description": "Database provider to use",
+      "defaultValue": "SqlServer",
+      "choices": [
+        {
+          "choice": "SqlServer",
+          "description": "Microsoft SQL Server"
+        },
+        {
+          "choice": "PostgreSQL",
+          "description": "PostgreSQL"
+        },
+        {
+          "choice": "Oracle",
+          "description": "Oracle Database"
+        }
+      ]
+    },
+    "UseSqlServer": {
+      "type": "computed",
+      "value": "(DatabaseProvider == \"SqlServer\")"
+    },
+    "UsePostgreSql": {
+      "type": "computed",
+      "value": "(DatabaseProvider == \"PostgreSQL\")"
+    },
+    "UseOracle": {
+      "type": "computed",
+      "value": "(DatabaseProvider == \"Oracle\")"
     }
   },
   "sources": [
@@ -332,6 +364,17 @@
             ".dockerignore",
             "docker-compose.yml",
             "docker-compose.deps.yml"
+          ]
+        },
+        {
+          "condition": "(UsePostgreSql || UseOracle)",
+          "exclude": [
+            "**/Infrastructure/Migrations/**"
+          ]
+        },
+        {
+          "exclude": [
+            "**/WebApi.Integration.Tests/Fixtures/SqlServerContainerFixture.Local.cs"
           ]
         }
       ]
@@ -413,7 +456,7 @@
         }
       ]
     },
-    "**/Program.cs": {
+    "**/*.cs": {
       "operations": [
         {
           "type": "conditional",
@@ -429,6 +472,19 @@
             ],
             "endif": [
               "//#endif"
+            ],
+            "actionableIf": [
+              "////#if"
+            ],
+            "actionableElse": [
+              "////#else"
+            ],
+            "actionableElseif": [
+              "////#elseif"
+            ],
+            "actions": [
+              "cStyleUncomment",
+              "cStyleReduceComment"
             ],
             "trim": true,
             "wholeLine": true

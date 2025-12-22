@@ -87,28 +87,28 @@ internal class AuditLedgerEntryConfiguration : EntityTypeConfiguration<AuditLedg
             .HasMaxLength(128);
 
         // JSON data columns - database-specific types
-//#if (UsePostgreSql)
+        //#if (UsePostgreSql)
         builder.Property(e => e.OldValues)
             .HasColumnType("jsonb");
         builder.Property(e => e.NewValues)
             .HasColumnType("jsonb");
         builder.Property(e => e.AdditionalData)
             .HasColumnType("jsonb");
-//#elseif (UseOracle)
+        //#elseif (UseOracle)
         builder.Property(e => e.OldValues)
             .HasColumnType("CLOB");
         builder.Property(e => e.NewValues)
             .HasColumnType("CLOB");
         builder.Property(e => e.AdditionalData)
             .HasColumnType("CLOB");
-//#else
+        //#else
         builder.Property(e => e.OldValues)
             .HasColumnType("nvarchar(max)");
         builder.Property(e => e.NewValues)
             .HasColumnType("nvarchar(max)");
         builder.Property(e => e.AdditionalData)
             .HasColumnType("nvarchar(max)");
-//#endif
+        //#endif
 
         // Outcome
         builder.Property(e => e.Success)
@@ -121,16 +121,16 @@ internal class AuditLedgerEntryConfiguration : EntityTypeConfiguration<AuditLedg
         builder.Property(e => e.Dispatched)
             .IsRequired()
             .HasDefaultValue(false);
-//#if (UsePostgreSql)
+        //#if (UsePostgreSql)
         builder.HasIndex(e => e.Dispatched)
             .HasFilter("\"Dispatched\" = false");
-//#elseif (UseOracle)
+        //#elseif (UseOracle)
         // Oracle doesn't support filtered indexes directly; use function-based index via migration
         builder.HasIndex(e => e.Dispatched);
-//#else
+        //#else
         builder.HasIndex(e => e.Dispatched)
             .HasFilter("[Dispatched] = 0");
-//#endif
+        //#endif
 
         builder.Property(e => e.DispatchedAt);
     }

@@ -17,13 +17,13 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         var connectionString = configuration.GetConnectionString("SqlConnection");
 
-//#if (UsePostgreSql)
-        optionsBuilder.UseNpgsql(connectionString);
-//#elseif (UseOracle)
-        optionsBuilder.UseOracle(connectionString);
-//#else
+        ////#if (UsePostgreSql)
+        //optionsBuilder.UseNpgsql(connectionString);
+        ////#elseif (UseOracle)
+        //optionsBuilder.UseOracle(connectionString);
+        ////#else
         optionsBuilder.UseSqlServer(connectionString);
-//#endif
+        ////#endif
 
         return new AppDbContext(optionsBuilder.Options, configuration);
     }

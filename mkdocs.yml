@@ -52,6 +52,7 @@ nav:
   - Security:
     - Rate Limiting: security/rate-limiting.md
     - Security Headers: security/security-headers.md
+    - JWT Key Rotation: security/jwt-key-rotation.md
   - Audit Logging: audit-logging.md
   - Observability: observability.md
   - Health Checks: health-checks.md

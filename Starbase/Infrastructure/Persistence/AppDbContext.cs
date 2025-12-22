@@ -50,30 +50,34 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
     {
         base.OnConfiguring(options);
 
-        var connectionString = configuration.GetConnectionString("SqlConnection");
+        // Only configure the database provider if not already configured (e.g., by tests)
+        if (!options.IsConfigured)
+        {
+            var connectionString = configuration.GetConnectionString("SqlConnection");
 
-//#if (UsePostgreSql)
-        options.UseNpgsql(connectionString, npgsqlOptions =>
-        {
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(5),
-                errorCodesToAdd: null);
-        });
-//#elseif (UseOracle)
-        options.UseOracle(connectionString, oracleOptions =>
-        {
-            oracleOptions.CommandTimeout(30);
-        });
-//#else
-        options.UseSqlServer(connectionString, sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(5),
-                errorNumbersToAdd: null);
-        });
-//#endif
+            ////#if (UsePostgreSql)
+            //options.UseNpgsql(connectionString, npgsqlOptions =>
+            //{
+            //    npgsqlOptions.EnableRetryOnFailure(
+            //        maxRetryCount: 3,
+            //        maxRetryDelay: TimeSpan.FromSeconds(5),
+            //        errorCodesToAdd: null);
+            //});
+            ////#elseif (UseOracle)
+            //options.UseOracle(connectionString, oracleOptions =>
+            //{
+            //    oracleOptions.CommandTimeout(30);
+            //});
+            ////#else
+            options.UseSqlServer(connectionString, sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null);
+            });
+            ////#endif
+        }
 
         options.UseSeeding((context, _) =>
             {
