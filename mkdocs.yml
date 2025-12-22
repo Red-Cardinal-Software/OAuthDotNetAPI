@@ -1,0 +1,65 @@
+site_name: Starbase
+site_description: A Secure .NET Clean Architecture Template
+site_url: https://red-cardinal-software.github.io/Starbase/
+repo_url: https://github.com/Red-Cardinal-Software/Starbase
+repo_name: Red-Cardinal-Software/Starbase
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Authentication:
+    - Overview: authentication/index.md
+    - JWT & Refresh Tokens: authentication/jwt.md
+    - Multi-Factor Authentication: authentication/mfa.md
+    - WebAuthn & Passkeys: authentication/webauthn.md
+    - Account Lockout: authentication/account-lockout.md
+  - Security:
+    - Rate Limiting: security/rate-limiting.md
+    - Security Headers: security/security-headers.md
+  - Audit Logging: audit-logging.md
+  - Observability: observability.md
+  - Health Checks: health-checks.md
+  - Docker: docker.md
+  - Configuration: configuration.md
+  - Contributing: contributing.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Red-Cardinal-Software/Starbase
