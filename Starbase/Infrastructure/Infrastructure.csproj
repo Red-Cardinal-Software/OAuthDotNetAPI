@@ -18,7 +18,14 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <!-- Template selects one; locally all are included since conditionals are XML comments -->
+      <!--#if (UseSqlServer) -->
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
+      <!--#elseif (UsePostgreSql) -->
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+      <!--#elseif (UseOracle) -->
+      <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.80" />
+      <!--#endif -->
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

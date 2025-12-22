@@ -1,16 +1,32 @@
+//#if (UsePostgreSql)
+using Testcontainers.PostgreSql;
+//#elseif (UseOracle)
+using Testcontainers.Oracle;
+//#else
 using Testcontainers.MsSql;
+//#endif
 
 namespace WebApi.Integration.Tests.Fixtures;
 
 /// <summary>
-/// xUnit fixture that manages the SQL Server test container lifecycle.
+/// xUnit fixture that manages the database test container lifecycle.
 /// The container is started once and shared across all tests in the collection.
 /// </summary>
 public class SqlServerContainerFixture : IAsyncLifetime
 {
+//#if (UsePostgreSql)
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
+        .WithImage("postgres:16-alpine")
+        .Build();
+//#elseif (UseOracle)
+    private readonly OracleContainer _container = new OracleBuilder()
+        .WithImage("gvenzl/oracle-free:23-slim-faststart")
+        .Build();
+//#else
     private readonly MsSqlContainer _container = new MsSqlBuilder()
         .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
         .Build();
+//#endif
 
     public string ConnectionString => _container.GetConnectionString();
 

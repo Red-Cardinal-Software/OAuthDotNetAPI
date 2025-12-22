@@ -14,7 +14,14 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.22" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+        <!-- Template selects one; locally all are included since conditionals are XML comments -->
+        <!--#if (UseSqlServer) -->
         <PackageReference Include="Testcontainers.MsSql" Version="4.9.0" />
+        <!--#elseif (UsePostgreSql) -->
+        <PackageReference Include="Testcontainers.PostgreSql" Version="4.9.0" />
+        <!--#elseif (UseOracle) -->
+        <PackageReference Include="Testcontainers.Oracle" Version="4.9.0" />
+        <!--#endif -->
         <PackageReference Include="coverlet.collector" Version="6.0.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,6 +37,14 @@
         <ProjectReference Include="..\WebApi\WebApi.csproj" />
         <ProjectReference Include="..\TestUtils\TestUtils.csproj" />
     </ItemGroup>
+
+    <!--#if (false) -->
+    <!-- LOCAL DEV ONLY: Exclude template fixture, use .Local.cs instead -->
+    <!-- This entire block is removed by template processing -->
+    <ItemGroup>
+        <Compile Remove="Fixtures\SqlServerContainerFixture.cs" />
+    </ItemGroup>
+    <!--#endif -->
 
     <ItemGroup>
         <Using Include="Xunit"/>

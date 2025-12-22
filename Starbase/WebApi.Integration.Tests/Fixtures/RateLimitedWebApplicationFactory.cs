@@ -52,7 +52,14 @@ internal class RateLimitedWebApplicationFactory(SqlServerContainerFixture dbFixt
             services.AddDbContext<AppDbContext>((sp, options) =>
             {
                 var configuration = sp.GetRequiredService<IConfiguration>();
-                options.UseSqlServer(configuration.GetConnectionString("SqlConnection"));
+                var connectionString = configuration.GetConnectionString("SqlConnection");
+//#if (UsePostgreSql)
+                options.UseNpgsql(connectionString);
+//#elseif (UseOracle)
+                options.UseOracle(connectionString);
+//#else
+                options.UseSqlServer(connectionString);
+//#endif
             });
         });
 
