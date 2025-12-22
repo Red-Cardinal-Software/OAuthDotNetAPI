@@ -996,6 +996,62 @@ if (!verification.IsValid)
 4. Monitor for audit chain breaks
 5. Include audit data in backup strategy
 
+## Docker Support
+
+The template includes Docker support for containerized deployments.
+
+### Quick Start
+
+```bash
+# Build and run full stack (API + SQL Server + Redis)
+docker-compose up --build
+
+# Run dependencies only (for local development)
+docker-compose -f docker-compose.deps.yml up -d
+dotnet run --project WebApi
+```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `Dockerfile` | Multi-stage build with non-root user (~200MB image) |
+| `.dockerignore` | Excludes build artifacts and secrets from context |
+| `docker-compose.yml` | Full stack: API + SQL Server + Redis |
+| `docker-compose.deps.yml` | Dependencies only for local development |
+
+### Configuration
+
+Environment variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  - ASPNETCORE_ENVIRONMENT=Development
+  - ConnectionStrings__SqlConnection=Server=sqlserver;Database=Starbase;...
+  - ConnectionStrings__Redis=redis:6379
+  - AppSettings__JwtSigningKey=YourSuperSecretKeyThatIsAtLeast32CharactersLong!
+```
+
+### Building Standalone
+
+```bash
+# Build the image
+docker build -t starbase-api .
+
+# Run with external dependencies
+docker run -p 5000:8080 \
+  -e ConnectionStrings__SqlConnection="your-connection-string" \
+  -e AppSettings__JwtSigningKey="your-32-char-key" \
+  starbase-api
+```
+
+### Production Considerations
+
+- Replace default passwords in `docker-compose.yml`
+- Use Docker secrets or environment-specific compose files for credentials
+- Consider using Azure Container Apps, AWS ECS, or Kubernetes for production
+- The image runs as non-root user `starbase` for security
+
 ## Technologies Used
 - ASP.NET Core 8
 - Entity Framework Core 9
