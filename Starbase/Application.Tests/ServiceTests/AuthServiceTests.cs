@@ -1,6 +1,7 @@
 using Application.Common.Configuration;
 using Application.Common.Constants;
 using Application.Interfaces.Persistence;
+using Application.Interfaces.Providers;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Security;
 using Application.Interfaces.Services;
@@ -11,6 +12,7 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using TestUtils.EntityBuilders;
 using TestUtils.Utilities;
@@ -29,6 +31,7 @@ public class AuthServiceTests
     private readonly Mock<IPasswordResetTokenRepository> _passwordResetTokenRepository = new();
     private readonly Mock<IAccountLockoutService> _accountLockoutService = new();
     private readonly Mock<IMfaAuthenticationService> _mfaAuthenticationService = new();
+    private readonly Mock<ISigningKeyProvider> _signingKeyProvider = new();
     private readonly Mock<IMediator> _mediator = new();
     private readonly Mock<ILogger<AuthService>> _mockLogger = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
@@ -56,6 +59,20 @@ public class AuthServiceTests
         var mockAppOptions = new Mock<IOptions<AppOptions>>();
         mockAppOptions.Setup(x => x.Value).Returns(appOptions);
 
+        // Setup signing key provider mock
+        var keyBytes = new byte[64];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
+        var testSigningKey = new SymmetricSecurityKey(keyBytes);
+        var signingKeyInfo = new SigningKeyInfo
+        {
+            KeyId = "test-key",
+            Key = testSigningKey,
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsPrimary = true
+        };
+        _signingKeyProvider.Setup(x => x.GetCurrentSigningKeyAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(signingKeyInfo);
+
         _authService = new AuthService(
             _userRepo.Object,
             _emailService.Object,
@@ -67,6 +84,7 @@ public class AuthServiceTests
             _passwordResetTokenRepository.Object,
             _accountLockoutService.Object,
             _mfaAuthenticationService.Object,
+            _signingKeyProvider.Object,
             _mediator.Object,
             logger,
             mockAppOptions.Object

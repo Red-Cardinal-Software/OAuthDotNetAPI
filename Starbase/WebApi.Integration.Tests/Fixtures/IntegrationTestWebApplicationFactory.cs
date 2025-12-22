@@ -141,7 +141,14 @@ internal class IntegrationTestWebApplicationFactory(SqlServerContainerFixture db
             services.AddDbContext<AppDbContext>((sp, options) =>
             {
                 var configuration = sp.GetRequiredService<IConfiguration>();
-                options.UseSqlServer(configuration.GetConnectionString("SqlConnection"));
+                var connectionString = configuration.GetConnectionString("SqlConnection");
+                ////#if (UsePostgreSql)
+                //options.UseNpgsql(connectionString);
+                ////#elseif (UseOracle)
+                //options.UseOracle(connectionString);
+                ////#else
+                options.UseSqlServer(connectionString);
+                ////#endif
             });
 
             // Replace email services with no-op test implementations

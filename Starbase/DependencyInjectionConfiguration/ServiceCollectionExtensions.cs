@@ -48,6 +48,8 @@ using Asp.Versioning;
 using Fido2NetLib;
 using Infrastructure.Providers;
 using Infrastructure.Services;
+using Infrastructure.Services.Development;
+using Infrastructure.Security.SigningKey;
 using MediatR;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -184,7 +186,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<IAppUserService, AppUserService>();
-        services.AddScoped<IEmailService, NotImplementedEmailService>(); // Replace it with your own implementation
+        // Development: Logs emails to console. Replace with SendGrid/Postmark/SES for production.
+        services.AddScoped<IEmailService, ConsoleEmailService>();
         services.AddScoped<IAccountLockoutService, AccountLockoutService>();
         services.AddScoped<IMfaConfigurationService, MfaConfigurationService>();
         services.AddScoped<IMfaAuthenticationService, MfaAuthenticationService>();
@@ -211,7 +214,8 @@ public static class ServiceCollectionExtensions
 
         // Audit archive services
         services.AddScoped<IAuditArchiver, AuditArchiverService>();
-        services.AddScoped<IAuditBlobStorage, NotImplementedAuditBlobStorage>(); // Replace with Azure/S3 implementation
+        // Development: Writes to local file system. Replace with Azure Blob/S3 for production.
+        services.AddScoped<IAuditBlobStorage, FileSystemAuditBlobStorage>();
         services.AddHostedService<AuditArchiveBackgroundService>();
 
         // MediatR for domain events (auth auditing, extensibility)
@@ -221,6 +225,21 @@ public static class ServiceCollectionExtensions
         // Singleton: shared across all scopes, background processor consumes from same queue
         services.AddSingleton<IAuditQueue, AuditQueue>();
         services.AddHostedService<AuditQueueProcessor>();
+
+        // Signing key provider for JWT key rotation
+        // Cloud providers support automatic rotation; local provider is for development only
+        ////#if (UseAzure)
+        //services.AddSingleton<ISigningKeyProvider, AzureKeyVaultSigningKeyProvider>();
+        ////#elseif (UseAWS)
+        //services.AddSingleton<ISigningKeyProvider, AwsSecretsManagerSigningKeyProvider>();
+        ////#elseif (UseGCP)
+        //services.AddSingleton<ISigningKeyProvider, GcpSecretManagerSigningKeyProvider>();
+        ////#else
+        services.AddSingleton<ISigningKeyProvider, LocalSigningKeyProvider>();
+        ////#endif
+
+        // Background service for automatic key rotation (only active when enabled in config)
+        services.AddHostedService<SigningKeyRotationBackgroundService>();
 
         return services;
     }
@@ -289,6 +308,33 @@ public static class ServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        // Signing key rotation options (for JWT key rotation)
+        services.AddOptions<SigningKeyRotationOptions>()
+            .BindConfiguration(SigningKeyRotationOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        ////#if (UseAzure)
+        //services.AddOptions<AzureKeyVaultOptions>()
+        //    .BindConfiguration(AzureKeyVaultOptions.SectionName)
+        //    .ValidateDataAnnotations()
+        //    .ValidateOnStart();
+        ////#endif
+
+        ////#if (UseAWS)
+        //services.AddOptions<AwsSecretsManagerOptions>()
+        //    .BindConfiguration(AwsSecretsManagerOptions.SectionName)
+        //    .ValidateDataAnnotations()
+        //    .ValidateOnStart();
+        ////#endif
+
+        ////#if (UseGCP)
+        //services.AddOptions<GcpSecretManagerOptions>()
+        //    .BindConfiguration(GcpSecretManagerOptions.SectionName)
+        //    .ValidateDataAnnotations()
+        //    .ValidateOnStart();
+        ////#endif
+
         return services;
     }
 
@@ -326,7 +372,15 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             var configuration = sp.GetRequiredService<IConfiguration>();
-            options.UseSqlServer(configuration.GetConnectionString("SqlConnection"));
+            var connectionString = configuration.GetConnectionString("SqlConnection");
+
+            ////#if (UsePostgreSql)
+            //options.UseNpgsql(connectionString);
+            ////#elseif (UseOracle)
+            //options.UseOracle(connectionString);
+            ////#else
+            options.UseSqlServer(connectionString);
+            ////#endif
 
             // Add audit interceptor for automatic entity change tracking
             var auditInterceptor = sp.GetRequiredService<AuditInterceptor>();
@@ -446,9 +500,10 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Configures JWT Bearer authentication with proper security validation.
+    /// Configures JWT Bearer authentication with proper security validation and key rotation support.
     /// This method sets up secure JWT token validation including issuer, audience, and signing key validation
-    /// to prevent token misuse and security vulnerabilities.
+    /// to prevent token misuse and security vulnerabilities. Supports validating tokens signed with
+    /// multiple keys during key rotation windows.
     /// </summary>
     /// <param name="services">The IServiceCollection instance to which JWT authentication will be added.</param>
     /// <param name="configuration">Configuration instance to read JWT settings from</param>
@@ -458,49 +513,65 @@ public static class ServiceCollectionExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer();
 
-        // Configure JWT Bearer options using PostConfigure to access IOptions<AppOptions>
-        // This avoids BuildServiceProvider while still using strongly-typed options
-        services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, (jwtOptions) =>
-        {
-            // We need to use a factory pattern here since PostConfigure doesn't give us the service provider
-            // For now, fall back to reading from configuration directly but using the strongly-typed approach
-            var appOptions = configuration.GetSection("AppSettings").Get<AppOptions>();
-
-            if (appOptions == null)
-                throw new InvalidOperationException("AppSettings configuration section not found");
-            if (string.IsNullOrEmpty(appOptions.JwtSigningKey))
-                throw new InvalidOperationException("JWT signing key is not configured");
-            if (string.IsNullOrEmpty(appOptions.JwtIssuer))
-                throw new InvalidOperationException("JWT issuer is not configured");
-            if (string.IsNullOrEmpty(appOptions.JwtAudience))
-                throw new InvalidOperationException("JWT audience is not configured");
-
-            jwtOptions.TokenValidationParameters = new TokenValidationParameters
+        // Configure JWT Bearer options to use IssuerSigningKeyResolver for multi-key validation
+        // This enables seamless key rotation by validating against current and previous keys
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IServiceProvider>((jwtOptions, sp) =>
             {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appOptions.JwtSigningKey)),
+                var appOptions = configuration.GetSection("AppSettings").Get<AppOptions>();
 
-                // SECURITY: Enable issuer validation to prevent cross-application token attacks
-                ValidateIssuer = true,
-                ValidIssuer = appOptions.JwtIssuer,
+                if (appOptions == null)
+                    throw new InvalidOperationException("AppSettings configuration section not found");
+                if (string.IsNullOrEmpty(appOptions.JwtIssuer))
+                    throw new InvalidOperationException("JWT issuer is not configured");
+                if (string.IsNullOrEmpty(appOptions.JwtAudience))
+                    throw new InvalidOperationException("JWT audience is not configured");
 
-                // SECURITY: Enable audience validation to prevent token misuse
-                ValidateAudience = true,
-                ValidAudience = appOptions.JwtAudience,
+                jwtOptions.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
 
-                // Validate token lifetime
-                ValidateLifetime = true,
+                    // Use IssuerSigningKeyResolver to support multiple valid keys during rotation
+                    // This allows tokens signed with previous keys to remain valid during the overlap window
+                    IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
+                    {
+                        var keyProvider = sp.GetService<ISigningKeyProvider>();
+                        if (keyProvider != null)
+                        {
+                            // Get all valid keys from the provider (current + previous within overlap window)
+                            var keysTask = keyProvider.GetValidationKeysAsync();
+                            keysTask.Wait(); // Safe in this context as it's cached
+                            return keysTask.Result.Select(k => k.Key);
+                        }
 
-                // Zero clock skew for maximum security
-                ClockSkew = TimeSpan.Zero, // No tolerance for clock drift
+                        // Fallback to static key from configuration if no provider registered
+                        if (string.IsNullOrEmpty(appOptions.JwtSigningKey))
+                            throw new InvalidOperationException("JWT signing key is not configured and no ISigningKeyProvider is registered");
 
-                // Ensure tokens have not been tampered with
-                RequireSignedTokens = true,
+                        return new[] { new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appOptions.JwtSigningKey)) };
+                    },
 
-                // Ensure the token has an expiration
-                RequireExpirationTime = true
-            };
-        });
+                    // SECURITY: Enable issuer validation to prevent cross-application token attacks
+                    ValidateIssuer = true,
+                    ValidIssuer = appOptions.JwtIssuer,
+
+                    // SECURITY: Enable audience validation to prevent token misuse
+                    ValidateAudience = true,
+                    ValidAudience = appOptions.JwtAudience,
+
+                    // Validate token lifetime
+                    ValidateLifetime = true,
+
+                    // Zero clock skew for maximum security
+                    ClockSkew = TimeSpan.Zero, // No tolerance for clock drift
+
+                    // Ensure tokens have not been tampered with
+                    RequireSignedTokens = true,
+
+                    // Ensure the token has an expiration
+                    RequireExpirationTime = true
+                };
+            });
 
         return services;
     }

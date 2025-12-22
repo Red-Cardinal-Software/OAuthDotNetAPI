@@ -63,15 +63,17 @@ public class AccountLockoutRepository(ICrudOperator<AccountLockout> accountLocko
 
     /// <summary>
     /// Determines if a DbUpdateException was caused by a unique constraint violation.
+    /// Works across different database providers by checking for common error patterns.
     /// </summary>
     private static bool IsUniqueConstraintViolation(DbUpdateException ex)
     {
-        // Check for SQL Server unique constraint violation
-        // Error 2627: Violation of UNIQUE KEY constraint
-        // Error 2601: Cannot insert duplicate key row
-        return ex.InnerException?.Message?.Contains("UX_AccountLockouts_UserId") == true ||
-               ex.InnerException?.Message?.Contains("duplicate key") == true ||
-               (ex.InnerException as Microsoft.Data.SqlClient.SqlException)?.Number is 2627 or 2601;
+        var message = ex.InnerException?.Message ?? "";
+
+        // Check for constraint name or common duplicate key messages (works for SQL Server, PostgreSQL, etc.)
+        return message.Contains("UX_AccountLockouts_UserId") ||
+               message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("UNIQUE constraint", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

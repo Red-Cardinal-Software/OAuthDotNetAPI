@@ -11,12 +11,18 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Azure.Identity" Version="1.17.1" />
+      <!-- Cloud secrets manager SDK packages - all included in source for compilation -->
+      <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.7.0" />
+      <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.0.9" />
+      <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.6.0" />
       <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <!-- Database provider: Source uses SqlServer only to avoid EF Core multi-provider conflict -->
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
         <PrivateAssets>all</PrivateAssets>

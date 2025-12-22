@@ -9,6 +9,7 @@ using Application.DTOs.Auth;
 using Application.DTOs.Jwt;
 using Application.Events.Auth;
 using Application.Interfaces.Persistence;
+using Application.Interfaces.Providers;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Security;
 using Application.Interfaces.Services;
@@ -35,6 +36,7 @@ public class AuthService(
     IPasswordResetTokenRepository passwordResetTokenRepository,
     IAccountLockoutService accountLockoutService,
     IMfaAuthenticationService mfaAuthenticationService,
+    ISigningKeyProvider signingKeyProvider,
     IMediator mediator,
     LogContextHelper<AuthService> logger,
     IOptions<AppOptions> appOptions)
@@ -594,8 +596,9 @@ public class AuthService(
         var userInfoClaims = ClaimsUtility.BuildClaimsForUser(user, allRoles);
         claims.AddRange(userInfoClaims);
 
-        var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(appOptions.Value.JwtSigningKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+        // Get the current signing key from the provider (supports key rotation)
+        var signingKeyInfo = await signingKeyProvider.GetCurrentSigningKeyAsync();
+        var credentials = new SigningCredentials(signingKeyInfo.Key, SecurityAlgorithms.HmacSha512Signature);
 
         var jwtExpirationTimeMinutes = appOptions.Value.JwtExpirationTimeMinutes;
 

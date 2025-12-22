@@ -50,16 +50,36 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
     {
         base.OnConfiguring(options);
 
-        // Use any database for connection, this example is using SqlServer
-        // The configuration path shown makes it easy to set up config in Azure if it is hosted there
-        options.UseSqlServer(configuration.GetConnectionString("SqlConnection"), sqlOptions =>
+        // Only configure the database provider if not already configured (e.g., by tests)
+        if (!options.IsConfigured)
+        {
+            var connectionString = configuration.GetConnectionString("SqlConnection");
+
+            ////#if (UsePostgreSql)
+            //options.UseNpgsql(connectionString, npgsqlOptions =>
+            //{
+            //    npgsqlOptions.EnableRetryOnFailure(
+            //        maxRetryCount: 3,
+            //        maxRetryDelay: TimeSpan.FromSeconds(5),
+            //        errorCodesToAdd: null);
+            //});
+            ////#elseif (UseOracle)
+            //options.UseOracle(connectionString, oracleOptions =>
+            //{
+            //    oracleOptions.CommandTimeout(30);
+            //});
+            ////#else
+            options.UseSqlServer(connectionString, sqlOptions =>
             {
                 sqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 3,
                     maxRetryDelay: TimeSpan.FromSeconds(5),
                     errorNumbersToAdd: null);
-            })
-            .UseSeeding((context, _) =>
+            });
+            ////#endif
+        }
+
+        options.UseSeeding((context, _) =>
             {
                 context.ApplySeedData();
                 context.SaveChanges();
@@ -69,20 +89,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration
                 await context.ApplySeedDataAsync();
                 await context.SaveChangesAsync(cancellationToken);
             });
-
-        // If you want to use other databases, here are some examples
-
-        //PostgreSQL
-        // options.UseNpgsql(connectionString);
-
-        //MySql
-        // options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-
-        //Sqlite - Note: Change "yourdbfile.db" to whatever file you are using
-        // options.UseSqlite("Data Source=yourdbfile.db");
-
-        //Oracle
-        // options.UseOracle(connectionString);
     }
 
 }

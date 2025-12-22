@@ -1,6 +1,22 @@
+//#if (UseAzure)
 using Azure.Identity;
+using Microsoft.ApplicationInsights.Extensibility;
+using Serilog.Events;
+//#endif
+//#if (UseAWS)
+using Amazon;
+using Kralizek.Extensions.Configuration;
+using AWS.Logger.SeriLog;
+using AWS.Logger;
+//#endif
+//#if (UseGCP)
+using Google.Cloud.SecretManager.V1;
+using Serilog.Sinks.GoogleCloudLogging;
+//#endif
 using DependencyInjectionConfiguration;
+using Infrastructure.Persistence;
 using Infrastructure.Web.Middleware;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +31,63 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     // Default is ~28.6MB, we limit to 1MB which is generous for JSON API requests
     serverOptions.Limits.MaxRequestBodySize = 1 * 1024 * 1024; // 1MB
 });
+
+//#if (UseAzure)
+// Azure Key Vault Configuration
+// Requires: Azure.Identity and Azure.Extensions.AspNetCore.Configuration.Secrets packages
+// Set KeyVaultName in appsettings.json or as environment variable
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultName = builder.Configuration["KeyVaultName"];
+    if (!string.IsNullOrEmpty(keyVaultName))
+    {
+        var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+        builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+    }
+}
+//#endif
+
+//#if (UseAWS)
+// AWS Secrets Manager Configuration
+// Requires: AWSSDK.SecretsManager and Kralizek.Extensions.Configuration.AWSSecretsManager packages
+// Set AWS:SecretsManager:SecretName in appsettings.json or as environment variable
+// AWS credentials are loaded from environment, IAM role, or ~/.aws/credentials
+if (!builder.Environment.IsDevelopment())
+{
+    var secretName = builder.Configuration["AWS:SecretsManager:SecretName"];
+    if (!string.IsNullOrEmpty(secretName))
+    {
+        var region = builder.Configuration["AWS:SecretsManager:Region"] ?? "us-east-1";
+        builder.Configuration.AddSecretsManager(region: RegionEndpoint.GetBySystemName(region), configurator: options =>
+        {
+            options.SecretFilter = entry => entry.Name == secretName;
+        });
+    }
+}
+//#endif
+
+//#if (UseGCP)
+// Google Cloud Secret Manager Configuration
+// Requires: Google.Cloud.SecretManager.V1 package
+// Set GCP:SecretManager:ProjectId and GCP:SecretManager:SecretId in appsettings.json
+// GCP credentials are loaded from GOOGLE_APPLICATION_CREDENTIALS environment variable
+if (!builder.Environment.IsDevelopment())
+{
+    var projectId = builder.Configuration["GCP:SecretManager:ProjectId"];
+    var secretId = builder.Configuration["GCP:SecretManager:SecretId"];
+    if (!string.IsNullOrEmpty(projectId) && !string.IsNullOrEmpty(secretId))
+    {
+        var client = SecretManagerServiceClient.Create();
+        var secretVersionName = new SecretVersionName(projectId, secretId, "latest");
+        var response = client.AccessSecretVersion(secretVersionName);
+        var secretPayload = response.Payload.Data.ToStringUtf8();
+
+        // Parse the secret as JSON and add to configuration
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(secretPayload));
+        builder.Configuration.AddJsonStream(stream);
+    }
+}
+//#endif
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -59,19 +132,6 @@ if (builder.Environment.IsDevelopment())
     });
 }
 
-/**
-// Uncomment this section if using Azure Key Vault
-if (builder.Environment.IsProduction())
-{
-    var keyVaultName = builder.Configuration["KeyVaultName"];
-    if (!string.IsNullOrEmpty(keyVaultName))
-    {
-        var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
-        builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
-    }
-}
-*/
-
 var loggerConfig = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext();
@@ -80,6 +140,52 @@ var loggerConfig = new LoggerConfiguration()
 if (builder.Environment.IsDevelopment())
 {
     loggerConfig.WriteTo.Console();
+}
+else
+{
+    //#if (UseAzure)
+    // Azure Application Insights logging
+    // Set ApplicationInsights:ConnectionString in appsettings.json or secrets
+    var appInsightsConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+    if (!string.IsNullOrEmpty(appInsightsConnectionString))
+    {
+        var telemetryConfig = TelemetryConfiguration.CreateDefault();
+        telemetryConfig.ConnectionString = appInsightsConnectionString;
+        loggerConfig.WriteTo.ApplicationInsights(telemetryConfig, TelemetryConverter.Traces);
+        builder.Services.AddApplicationInsightsTelemetry(options =>
+        {
+            options.ConnectionString = appInsightsConnectionString;
+        });
+    }
+    //#endif
+    //#if (UseAWS)
+    // AWS CloudWatch logging
+    // Set AWS:CloudWatch:LogGroup in appsettings.json
+    // AWS credentials are loaded from environment, IAM role, or ~/.aws/credentials
+    var logGroup = builder.Configuration["AWS:CloudWatch:LogGroup"];
+    var region = builder.Configuration["AWS:CloudWatch:Region"] ?? "us-east-1";
+    if (!string.IsNullOrEmpty(logGroup))
+    {
+        var awsLoggerConfig = new AWSLoggerConfig(logGroup)
+        {
+            Region = region
+        };
+        loggerConfig.WriteTo.AWSSeriLog(awsLoggerConfig);
+    }
+    //#endif
+    //#if (UseGCP)
+    // Google Cloud Logging
+    // Set GCP:Logging:ProjectId in appsettings.json
+    // GCP credentials are loaded from GOOGLE_APPLICATION_CREDENTIALS environment variable
+    var gcpProjectId = builder.Configuration["GCP:Logging:ProjectId"];
+    if (!string.IsNullOrEmpty(gcpProjectId))
+    {
+        loggerConfig.WriteTo.GoogleCloudLogging(new GoogleCloudLoggingSinkOptions
+        {
+            ProjectId = gcpProjectId
+        });
+    }
+    //#endif
 }
 
 Log.Logger = loggerConfig.CreateLogger();
@@ -92,6 +198,16 @@ builder.Services.AddAppDependencies(builder.Environment, builder.Configuration);
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+// Auto-migrate database in Development for frictionless startup
+// Production deployments should use explicit migrations
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+    Log.Information("Database migrated successfully");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
