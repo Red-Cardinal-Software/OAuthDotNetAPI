@@ -135,22 +135,22 @@ public class LocalSigningKeyProviderTests
     }
 
     [Fact]
-    public void Constructor_GeneratesConsistentKeyId()
+    public async Task Constructor_GeneratesConsistentKeyId()
     {
         // Arrange & Act - Create two providers with same config
         var provider1 = CreateProvider();
         var provider2 = CreateProvider();
 
         // Assert - Same key content should produce same key ID
-        var keyInfo1 = provider1.GetCurrentSigningKeyAsync().Result;
-        var keyInfo2 = provider2.GetCurrentSigningKeyAsync().Result;
+        var keyInfo1 = await provider1.GetCurrentSigningKeyAsync();
+        var keyInfo2 = await provider2.GetCurrentSigningKeyAsync();
 
         keyInfo1.KeyId.Should().Be(keyInfo2.KeyId,
             "same signing key should produce same key ID for consistency");
     }
 
     [Fact]
-    public void Constructor_DifferentKeysProduceDifferentKeyIds()
+    public async Task Constructor_DifferentKeysProduceDifferentKeyIds()
     {
         // Arrange
         var differentKeyOptions = new Mock<IOptions<AppOptions>>();
@@ -168,8 +168,8 @@ public class LocalSigningKeyProviderTests
             _loggerMock.Object);
 
         // Act
-        var keyInfo1 = provider1.GetCurrentSigningKeyAsync().Result;
-        var keyInfo2 = provider2.GetCurrentSigningKeyAsync().Result;
+        var keyInfo1 = await provider1.GetCurrentSigningKeyAsync();
+        var keyInfo2 = await provider2.GetCurrentSigningKeyAsync();
 
         // Assert
         keyInfo1.KeyId.Should().NotBe(keyInfo2.KeyId,
