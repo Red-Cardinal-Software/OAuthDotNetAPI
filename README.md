@@ -50,7 +50,7 @@ WebApi/           → Controllers, middleware, API configuration
 
 ## Documentation
 
-**[View Full Documentation →](https://red-cardinal-software.github.io/starbase/)**
+**[View Full Documentation →](https://red-cardinal-software.github.io/Secure-DotNet-Clean-Architecture/)**
 
 | Topic | Description |
 |-------|-------------|

@@ -37,7 +37,7 @@ WebApi/           → Controllers, middleware, API config
 
 ## Documentation
 
-For detailed documentation on security features, MFA setup, audit logging, and more, visit the original template documentation at **red-cardinal-software.github.io**.
+For detailed documentation on security features, MFA setup, audit logging, and more, visit the original template documentation at **[View Full Documentation →](https://red-cardinal-software.github.io/Secure-DotNet-Clean-Architecture/)**.
 
 ## License
 
