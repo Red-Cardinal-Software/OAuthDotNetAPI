@@ -1,6 +1,38 @@
 # Starbase
 
-Your new secure .NET API.
+A secure, production-ready .NET API template with JWT authentication, MFA, rate limiting, audit logging, and security headers.
+
+## Installation
+
+```bash
+# Install the template from NuGet
+dotnet new install Starbase
+
+# Create a new project
+dotnet new starbase -n MyApi
+```
+
+## Template Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-n, --name` | Project name | SecureApi |
+| `--DatabaseProvider` | Database: `SqlServer`, `PostgreSQL`, `Oracle` | SqlServer |
+| `--CloudProvider` | Secrets management: `None`, `Azure`, `AWS`, `GCP` | None |
+| `--IncludeDocker` | Include Docker files | true |
+
+### Examples
+
+```bash
+# Basic project
+dotnet new starbase -n MyApi
+
+# With PostgreSQL and Azure Key Vault
+dotnet new starbase -n MyApi --DatabaseProvider PostgreSQL --CloudProvider Azure
+
+# Without Docker files
+dotnet new starbase -n MyApi --IncludeDocker false
+```
 
 ## Getting Started
 
@@ -37,7 +69,7 @@ WebApi/           → Controllers, middleware, API config
 
 ## Documentation
 
-For detailed documentation on security features, MFA setup, audit logging, and more, visit the original template documentation at **red-cardinal-software.github.io**.
+For detailed documentation on security features, MFA setup, audit logging, and more, visit the original template documentation at **[View Full Documentation →](https://red-cardinal-software.github.io/Secure-DotNet-Clean-Architecture/)**.
 
 ## License
 

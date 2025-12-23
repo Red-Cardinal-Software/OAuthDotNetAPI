@@ -237,12 +237,6 @@
       "description": "HTTPS port for development",
       "defaultValue": "5001"
     },
-    "IncludeTests": {
-      "type": "parameter",
-      "datatype": "bool",
-      "description": "Include test projects",
-      "defaultValue": "true"
-    },
     "IncludeDocker": {
       "type": "parameter",
       "datatype": "bool",
@@ -346,15 +340,6 @@
             "**/coverage/**",
             "**/.template.config/**",
             "Starbase.Template.csproj"
-          ]
-        },
-        {
-          "condition": "(!IncludeTests)",
-          "exclude": [
-            "**/Domain.Tests/**",
-            "**/Application.Tests/**",
-            "**/WebApi.Integration.Tests/**",
-            "**/TestUtils/**"
           ]
         },
         {
