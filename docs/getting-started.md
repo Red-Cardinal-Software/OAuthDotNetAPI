@@ -16,7 +16,7 @@ nav_order: 2
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/Red-Cardinal-Software/Starbase.git
+git clone https://github.com/Red-Cardinal-Software/Secure-DotNet-Clean-Architecture.git
 cd Starbase
 ```
 
