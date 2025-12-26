@@ -1,3 +1,8 @@
+---
+title: Contributing
+nav_order: 10
+---
+
 # Contributing
 
 Thank you for your interest in contributing to Starbase!
